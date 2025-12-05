@@ -1,730 +1,602 @@
-import React, { useState, useEffect } from 'react';
-import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, Square, Users, Trophy, RotateCcw, Info, XCircle, AlertCircle, HelpCircle } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九九乘法佔地遊戲 2.0</title>
+    
+    <!-- 1. 載入 Tailwind CSS (樣式) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. 載入 React 核心庫 -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. 載入 Babel (讓瀏覽器看懂 JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-const MathTerritoryGame = () => {
-  // 遊戲狀態
-  const [gameStage, setGameStage] = useState('setup'); // setup, playing, finished
-  const [playerCount, setPlayerCount] = useState(2); // Selected number of human players (1, 2, 3, or 4)
-  const [grid, setGrid] = useState([]);
-  const [players, setPlayers] = useState([]);
-  const [currentTurn, setCurrentTurn] = useState(0);
-  const [diceValues, setDiceValues] = useState([1, 1, 1]);
-  const [isRolling, setIsRolling] = useState(false);
-  const [possibleMoves, setPossibleMoves] = useState([]); // Used by human logic for skip check
-  const [hasRolled, setHasRolled] = useState(false);
-  const [winner, setWinner] = useState(null);
-  const [showRules, setShowRules] = useState(false);
-  
-  // 回饋訊息與確認視窗狀態
-  const [feedback, setFeedback] = useState({ show: false, message: '', type: '' });
-  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
-  // 重置確認狀態
-  const [showResetConfirm, setShowResetConfirm] = useState(false); 
-
-  // 玩家顏色設定
-  const PLAYER_CONFIG = [
-    { id: 0, name: '玩家 1', color: 'bg-red-500', lightColor: 'bg-red-100', border: 'border-red-500', text: 'text-red-600', isAI: false },
-    { id: 1, name: '玩家 2', color: 'bg-blue-500', lightColor: 'bg-blue-100', border: 'border-blue-500', text: 'text-blue-600', isAI: false },
-    { id: 2, name: '玩家 3', color: 'bg-green-500', lightColor: 'bg-green-100', border: 'border-green-500', text: 'text-green-600', isAI: false },
-    { id: 3, name: '玩家 4', color: 'bg-yellow-500', lightColor: 'bg-yellow-100', border: 'border-yellow-500', text: 'text-yellow-600', isAI: false },
-  ];
-  
-  // =========================================================================
-  // 🎲 骰子音效函式 (模擬大富翁遊戲的滾動聲)
-  // =========================================================================
-  const playDiceSound = () => {
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (!audioContext) return;
-
-      const numClacks = 30; // 增加聲響次數，模擬連續滾動
-      const baseTime = audioContext.currentTime;
-      const clackInterval = 0.03; // 更短的間隔，讓聲音更密集連貫
-
-      for (let i = 0; i < numClacks; i++) {
-        const time = baseTime + (i * clackInterval); 
-
-        // 1. 產生噪聲 (Noise Generator)
-        const noise = audioContext.createBufferSource();
-        const bufferSize = audioContext.sampleRate * 0.1;
-        const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-        const output = buffer.getChannelData(0);
-        for (let j = 0; j < bufferSize; j++) {
-          output[j] = Math.random() * 2 - 1; // 填充隨機噪聲
-        }
-        noise.buffer = buffer;
-
-        // 2. 音量控制 (Gain Node)
-        const gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(0.001, time); 
-        // 快速上升，並讓音量在滾動中隨機變化
-        gainNode.gain.linearRampToValueAtTime(0.1 + (Math.random() * 0.25), time + 0.005); 
-        // 快速衰減 (模擬單次敲擊)
-        const decayTime = 0.04; 
-        gainNode.gain.exponentialRampToValueAtTime(0.001, time + decayTime); 
-
-        // 3. 帶通濾波器 (Filter) 模擬空心 clatter 聲
-        const filter = audioContext.createBiquadFilter();
-        filter.type = 'bandpass'; // 設置為帶通
-        // 中心頻率在 800-1200Hz 之間，產生木質敲擊感
-        filter.frequency.setValueAtTime(800 + (Math.random() * 400), time); 
-        filter.Q.setValueAtTime(3 + (Math.random() * 2), time); // Q值決定頻寬，讓聲音更集中
-
-        // 連接節點: 噪聲 -> 音量 -> 濾波 -> 輸出
-        noise.connect(gainNode);
-        gainNode.connect(filter);
-        filter.connect(audioContext.destination);
-
-        // 啟動與停止聲響 (停止時間與衰減時間一致)
-        noise.start(time);
-        noise.stop(time + decayTime);
-      }
-
-    } catch (e) {
-      // 忽略音效錯誤，不影響遊戲功能
-      console.log("Failed to play dice sound:", e.message); 
-    }
-  };
-
-
-  // 初始化遊戲
-  const startGame = () => {
-    // 產生 1-9 互乘的所有不重複數字 (共 36 個)
-    const uniqueProducts = new Set();
-    for (let i = 1; i <= 9; i++) {
-      for (let j = 1; j <= 9; j++) {
-        uniqueProducts.add(i * j);
-      }
-    }
-
-    // 將 Set 轉為陣列並隨機洗牌
-    const productArray = Array.from(uniqueProducts);
-    for (let i = productArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [productArray[i], productArray[j]] = [productArray[j], productArray[i]];
-    }
-
-    const gridValues = productArray.slice(0, 36);
-
-    const newGrid = gridValues.map((val, index) => {
-      return {
-        id: index,
-        value: val,
-        owner: null, 
-      };
-    });
-
-    // 處理單人模式 (Human vs. AI)
-    let actualPlayerCount = playerCount;
-    if (playerCount === 1) {
-      actualPlayerCount = 2; // Human (0) vs. AI (1)
-    }
-
-    const newPlayers = PLAYER_CONFIG.slice(0, actualPlayerCount).map((p, index) => {
-      const isAI = playerCount === 1 && index === 1;
-      let name = p.name;
-      if (playerCount === 1 && index === 0) {
-        name = '玩家'; // Human player name
-      } else if (isAI) {
-        name = '電腦 AI 🤖'; // AI player name
-      }
+    <style>
+      /* 基本字體設定 */
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+      body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
       
-      return {
-        ...p,
-        name,
-        score: 0,
-        territories: 0,
-        isAI: isAI // Add isAI flag
-      };
-    });
-
-    setGrid(newGrid);
-    setPlayers(newPlayers);
-    setCurrentTurn(0);
-    setDiceValues([1, 1, 1]);
-    setHasRolled(false);
-    setPossibleMoves([]);
-    setGameStage('playing');
-    setWinner(null);
-    setFeedback({ show: false, message: '', type: '' });
-    setShowSkipConfirm(false);
-    setShowResetConfirm(false); // 確保重置確認視窗關閉
-  };
-
-  // 擲骰子邏輯 (人類玩家)
-  const rollDice = () => {
-    setIsRolling(true);
-    setPossibleMoves([]);
-    setFeedback({ show: false, message: '', type: '' });
-    setShowSkipConfirm(false);
-    
-    // [更新] 播放大富翁風格的骰子音效
-    playDiceSound(); 
-    
-    let count = 0;
-    const interval = setInterval(() => {
-      setDiceValues([
-        Math.floor(Math.random() * 9) + 1,
-        Math.floor(Math.random() * 9) + 1,
-        Math.floor(Math.random() * 9) + 1
-      ]);
-      count++;
-      if (count > 10) {
-        clearInterval(interval);
-        finishRoll();
+      /* 動畫定義 */
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
       }
-    }, 100);
-  };
-
-  const finishRoll = () => {
-    const d1 = Math.floor(Math.random() * 9) + 1;
-    const d2 = Math.floor(Math.random() * 9) + 1;
-    const d3 = Math.floor(Math.random() * 9) + 1;
-    
-    setDiceValues([d1, d2, d3]);
-    setIsRolling(false);
-    setHasRolled(true);
-
-    const products = [d1 * d2, d1 * d3, d2 * d3];
-    const uniqueProducts = [...new Set(products)];
-    const moves = [];
-    
-    // 計算所有可能的 moves (用於人類玩家的跳過檢查)
-    grid.forEach(cell => {
-      if (cell.owner === null && uniqueProducts.includes(cell.value)) {
-        moves.push(cell.id);
+      .animate-fade-in-up { animation: fadeInUp 0.5s ease-out; }
+      
+      @keyframes bounce {
+        0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+        50% { transform: translateY(0); animation-timing-function: cubic-bezier(0,0,0.2,1); }
       }
-    });
+      .animate-bounce { animation: bounce 1s infinite; }
+    </style>
+</head>
+<body>
+    <!-- React 應用程式掛載點 -->
+    <div id="root"></div>
 
-    setPossibleMoves(moves);
-  };
+    <!-- 4. 您的遊戲程式碼 (type="text/babel") -->
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
 
-  // 處理格子點擊 (人類玩家)
-  const handleCellClick = (cellId) => {
-    if (!hasRolled || gameStage !== 'playing') return;
-    if (grid[cellId].owner !== null) return; 
+        // --- SVG 圖標組件 (替代 lucide-react) ---
+        const IconWrapper = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
 
-    // 重新計算可能的乘積 (避免 possibleMoves 狀態延遲)
-    const [d1, d2, d3] = diceValues;
-    const products = [d1 * d2, d1 * d3, d2 * d3];
-    const uniqueProducts = [...new Set(products)];
+        const DiceIcon = ({ value, size, className }) => {
+            // 簡單的骰子圖示邏輯
+            return (
+                <IconWrapper size={size} className={className}>
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                    <path d="M12 12h.01" /> {/* 簡化顯示，實際遊戲中是用數字顯示 */}
+                </IconWrapper>
+            );
+        };
 
-    if (uniqueProducts.includes(grid[cellId].value)) {
-      const newGrid = [...grid];
-      newGrid[cellId].owner = currentTurn;
-      setGrid(newGrid);
-      setFeedback({ show: false, message: '', type: '' });
+        const Users = (props) => <IconWrapper {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconWrapper>;
+        const Trophy = (props) => <IconWrapper {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14h4"/><path d="M12 17v-3"/><path d="M21 19v-2a7 7 0 0 0-14 0v2"/></IconWrapper>;
+        const RotateCcw = (props) => <IconWrapper {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-2.887 0"/><path d="M6 12H3"/><path d="M6.3 5.3L3 7v-4"/></IconWrapper>;
+        const Info = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconWrapper>;
+        const XCircle = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></IconWrapper>;
+        const AlertCircle = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></IconWrapper>;
+        const HelpCircle = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></IconWrapper>;
 
-      updateScores(newGrid);
-      checkGameEnd(newGrid);
-    } else {
-      showFeedback('算錯囉！這不是骰子相乘的結果，再算算看。', 'error');
-    }
-  };
-
-  const showFeedback = (msg, type) => {
-    setFeedback({ show: true, message: msg, type });
-    setTimeout(() => {
-      setFeedback(prev => ({ ...prev, show: false }));
-    }, 2500);
-  };
-
-  // 處理跳過請求 (人類玩家)
-  const handleSkipRequest = () => {
-    if (possibleMoves.length > 0) {
-      // 還有答案，跳出確認框
-      setShowSkipConfirm(true);
-    } else {
-      // 真的沒答案，直接跳過
-      confirmSkip();
-    }
-  };
-
-  // 確認執行跳過
-  const confirmSkip = () => {
-    setShowSkipConfirm(false);
-    setFeedback({ show: false, message: '', type: '' });
-    updateScores(grid); // Update scores just in case
-    nextTurn();
-  };
-  
-  // 處理重置遊戲請求
-  const handleResetRequest = () => {
-    setShowResetConfirm(true);
-  };
-  
-  // 確認執行重置
-  const confirmReset = () => {
-    setShowResetConfirm(false);
-    setGameStage('setup');
-  };
-
-  const nextTurn = () => {
-    setHasRolled(false);
-    setPossibleMoves([]);
-    // 循環到下一位玩家
-    setCurrentTurn((prev) => (prev + 1) % players.length);
-  };
-
-  // 取得鄰居
-  const getNeighbors = (index) => {
-    const row = Math.floor(index / 6);
-    const col = index % 6;
-    const neighbors = [];
-
-    if (row > 0) neighbors.push(index - 6); // Up
-    if (row < 5) neighbors.push(index + 6); // Down
-    if (col > 0) neighbors.push(index - 1); // Left
-    if (col < 5) neighbors.push(index + 1); // Right
-
-    return neighbors;
-  };
-  
-  // 更新分數 (並返回最新玩家列表)
-  const updateScores = (currentGrid) => {
-    const updatedPlayers = players.map(player => {
-      let baseScore = 0;
-      let territoryCount = 0;
-
-      currentGrid.forEach((cell, index) => {
-        if (cell.owner === player.id) {
-          territoryCount++;
-          const neighbors = getNeighbors(index);
-          // 檢查是否與自己的地相連
-          const isConnected = neighbors.some(nIndex => currentGrid[nIndex] && currentGrid[nIndex].owner === player.id);
-          // 相連得 2 分，孤立得 1 分
-          baseScore += isConnected ? 2 : 1;
-        }
-      });
-
-      return { ...player, score: baseScore, territories: territoryCount, isAI: player.isAI || false };
-    });
-    setPlayers(updatedPlayers);
-    return updatedPlayers; 
-  };
-
-  // 檢查遊戲是否結束
-  const checkGameEnd = (currentGrid) => {
-    const isFull = currentGrid.every(cell => cell.owner !== null);
-    if (isFull) {
-      // 確保分數更新完畢後再判定勝者
-      const finalPlayers = updateScores(currentGrid); 
-      setGameStage('finished');
-      const sortedPlayers = [...finalPlayers].sort((a, b) => b.score - a.score);
-      setWinner(sortedPlayers[0]);
-    } else {
-      nextTurn();
-    }
-  };
-  
-  // =========================================================================
-  // 電腦 AI 邏輯
-  // =========================================================================
-  const handleAIMove = (aiPlayer) => {
-    // 1. 模擬擲骰動畫
-    setIsRolling(true);
-    playDiceSound(); // AI 擲骰也播放音效
-    
-    // 延遲 0.5 秒後確定骰子結果
-    setTimeout(() => {
-        // 最終擲骰結果 (1-9)
-        const d1 = Math.floor(Math.random() * 9) + 1;
-        const d2 = Math.floor(Math.random() * 9) + 1;
-        const d3 = Math.floor(Math.random() * 9) + 1;
-        const finalDice = [d1, d2, d3];
-
-        // 更新 UI 狀態
-        setDiceValues(finalDice);
-        setIsRolling(false);
-        setHasRolled(true);
-
-        const products = [d1 * d2, d1 * d3, d2 * d3];
-        const uniqueProducts = [...new Set(products)];
-        
-        // 2. AI 決策 (找出最佳落點)
-        const moves = [];
-        grid.forEach(cell => {
-          if (cell.owner === null && uniqueProducts.includes(cell.value)) {
-            moves.push({ id: cell.id, value: cell.value });
-          }
-        });
-
-        let bestMoveId = null;
-        let maxScore = 0;
-        
-        const currentGrid = grid; 
-
-        for (const move of moves) {
-            const neighbors = getNeighbors(move.id);
-            // 檢查是否能相連 (2 分)
-            const isConnected = neighbors.some(nIndex => currentGrid[nIndex].owner === aiPlayer.id);
-            const score = isConnected ? 2 : 1;
+        // --- 主遊戲組件 ---
+        const MathTerritoryGame = () => {
+            // 遊戲狀態
+            const [gameStage, setGameStage] = useState('setup');
+            const [playerCount, setPlayerCount] = useState(2);
+            const [aiDifficulty, setAiDifficulty] = useState('medium'); 
+            const [grid, setGrid] = useState([]);
+            const [players, setPlayers] = useState([]);
+            const [currentTurn, setCurrentTurn] = useState(0);
+            const [diceValues, setDiceValues] = useState([1, 1, 1]);
+            const [isRolling, setIsRolling] = useState(false);
+            const [possibleMoves, setPossibleMoves] = useState([]);
+            const [hasRolled, setHasRolled] = useState(false);
+            const [winner, setWinner] = useState(null);
+            const [showRules, setShowRules] = useState(false);
             
-            // 策略：選擇能拿最高分數 (2分) 的格子，若平手則隨意
-            if (score > maxScore) {
-                maxScore = score;
-                bestMoveId = move.id;
+            const [feedback, setFeedback] = useState({ show: false, message: '', type: '' });
+            const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+            const [showResetConfirm, setShowResetConfirm] = useState(false); 
+
+            // 玩家配置
+            const PLAYER_CONFIG = [
+                { id: 0, name: '玩家 1', color: 'bg-red-500', lightColor: 'bg-red-100', border: 'border-red-500', text: 'text-red-600', isAI: false },
+                { id: 1, name: '玩家 2', color: 'bg-blue-500', lightColor: 'bg-blue-100', border: 'border-blue-500', text: 'text-blue-600', isAI: false },
+                { id: 2, name: '玩家 3', color: 'bg-green-500', lightColor: 'bg-green-100', border: 'border-green-500', text: 'text-green-600', isAI: false },
+                { id: 3, name: '玩家 4', color: 'bg-yellow-500', lightColor: 'bg-yellow-100', border: 'border-yellow-500', text: 'text-yellow-600', isAI: false },
+            ];
+
+            const DIFFICULTY_CONFIG = [
+                { key: 'easy', label: '簡單 👶', color: 'bg-blue-500', activeBorder: 'border-blue-700', desc: 'AI 優先選擇不連線的土地，得分不積極' }, 
+                { key: 'medium', label: '普通 🧑', color: 'bg-green-500', activeBorder: 'border-green-700', desc: 'AI 有時會忽略連線地，讓玩家有更多獲勝機會' }, 
+                { key: 'hard', label: '困難 🧠', color: 'bg-red-500', activeBorder: 'border-red-700', desc: 'AI 永遠追求連線和得分最大化，最難挑戰' }, 
+            ];
+            
+            // 音效邏輯
+            const playDiceSound = () => {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    if (!audioContext) return;
+
+                    const numClacks = 30;
+                    const baseTime = audioContext.currentTime;
+                    const clackInterval = 0.03; 
+
+                    for (let i = 0; i < numClacks; i++) {
+                        const time = baseTime + (i * clackInterval); 
+                        const noise = audioContext.createBufferSource();
+                        const bufferSize = audioContext.sampleRate * 0.1;
+                        const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                        const output = buffer.getChannelData(0);
+                        for (let j = 0; j < bufferSize; j++) {
+                            output[j] = Math.random() * 2 - 1; 
+                        }
+                        noise.buffer = buffer;
+
+                        const gainNode = audioContext.createGain();
+                        gainNode.gain.setValueAtTime(0.001, time); 
+                        gainNode.gain.linearRampToValueAtTime(0.1 + (Math.random() * 0.25), time + 0.005); 
+                        const decayTime = 0.04; 
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, time + decayTime); 
+
+                        const filter = audioContext.createBiquadFilter();
+                        filter.type = 'bandpass'; 
+                        filter.frequency.setValueAtTime(800 + (Math.random() * 400), time); 
+                        filter.Q.setValueAtTime(3 + (Math.random() * 2), time); 
+
+                        noise.connect(gainNode);
+                        gainNode.connect(filter);
+                        filter.connect(audioContext.destination);
+
+                        noise.start(time);
+                        noise.stop(time + decayTime);
+                    }
+                } catch (e) {
+                    console.log("Failed to play dice sound:", e.message); 
+                }
+            };
+
+            // 遊戲初始化
+            const startGame = () => {
+                const uniqueProducts = new Set();
+                for (let i = 1; i <= 9; i++) {
+                    for (let j = 1; j <= 9; j++) {
+                        uniqueProducts.add(i * j);
+                    }
+                }
+
+                const productArray = Array.from(uniqueProducts);
+                for (let i = productArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [productArray[i], productArray[j]] = [productArray[j], productArray[i]];
+                }
+
+                const gridValues = productArray.slice(0, 36);
+                const newGrid = gridValues.map((val, index) => ({
+                    id: index, value: val, owner: null, 
+                }));
+
+                let actualPlayerCount = playerCount;
+                if (playerCount === 1) actualPlayerCount = 2;
+
+                const newPlayers = PLAYER_CONFIG.slice(0, actualPlayerCount).map((p, index) => {
+                    const isAI = playerCount === 1 && index === 1;
+                    let name = p.name;
+                    if (playerCount === 1 && index === 0) name = '玩家';
+                    else if (isAI) name = '電腦 AI 🤖';
+                    
+                    return { ...p, name, score: 0, territories: 0, isAI: isAI };
+                });
+
+                setGrid(newGrid);
+                setPlayers(newPlayers);
+                setCurrentTurn(0);
+                setDiceValues([1, 1, 1]);
+                setHasRolled(false);
+                setPossibleMoves([]);
+                setGameStage('playing');
+                setWinner(null);
+                setFeedback({ show: false, message: '', type: '' });
+                setShowSkipConfirm(false);
+                setShowResetConfirm(false);
+            };
+
+            const getNeighbors = (index) => {
+                const row = Math.floor(index / 6);
+                const col = index % 6;
+                const neighbors = [];
+                if (row > 0) neighbors.push(index - 6);
+                if (row < 5) neighbors.push(index + 6);
+                if (col > 0) neighbors.push(index - 1);
+                if (col < 5) neighbors.push(index + 1);
+                return neighbors;
+            };
+
+            const updateScores = useCallback((currentGrid) => {
+                const updatedPlayers = players.map(player => {
+                    let baseScore = 0;
+                    let territoryCount = 0;
+                    currentGrid.forEach((cell, index) => {
+                        if (cell.owner === player.id) {
+                            territoryCount++;
+                            const neighbors = getNeighbors(index);
+                            const isConnected = neighbors.some(nIndex => currentGrid[nIndex] && currentGrid[nIndex].owner === player.id);
+                            baseScore += isConnected ? 2 : 1;
+                        }
+                    });
+                    return { ...player, score: baseScore, territories: territoryCount };
+                });
+                setPlayers(updatedPlayers);
+            }, [players]);
+
+            const nextTurn = () => {
+                setHasRolled(false);
+                setPossibleMoves([]);
+                setCurrentTurn((prev) => (prev + 1) % players.length);
+            };
+
+            const checkGameEnd = (currentGrid) => {
+                const isFull = currentGrid.every(cell => cell.owner !== null);
+                if (isFull) {
+                    const finalPlayers = players.map(player => { // Re-calculate one last time to be safe
+                        let baseScore = 0;
+                        let territoryCount = 0;
+                        currentGrid.forEach((cell, index) => {
+                            if (cell.owner === player.id) {
+                                territoryCount++;
+                                const neighbors = getNeighbors(index);
+                                const isConnected = neighbors.some(nIndex => currentGrid[nIndex] && currentGrid[nIndex].owner === player.id);
+                                baseScore += isConnected ? 2 : 1;
+                            }
+                        });
+                        return { ...player, score: baseScore, territories: territoryCount };
+                    });
+                    
+                    setPlayers(finalPlayers);
+                    setGameStage('finished');
+                    const sortedPlayers = [...finalPlayers].sort((a, b) => b.score - a.score);
+                    setWinner(sortedPlayers[0]);
+                } else {
+                    nextTurn();
+                }
+            };
+
+            const showFeedbackFn = (msg, type) => {
+                setFeedback({ show: true, message: msg, type });
+                setTimeout(() => {
+                    setFeedback(prev => ({ ...prev, show: false }));
+                }, 2500);
+            };
+            
+            const finishRoll = () => {
+                const d1 = Math.floor(Math.random() * 9) + 1;
+                const d2 = Math.floor(Math.random() * 9) + 1;
+                const d3 = Math.floor(Math.random() * 9) + 1;
+                setDiceValues([d1, d2, d3]);
+                setIsRolling(false);
+                setHasRolled(true);
+                const products = [d1 * d2, d1 * d3, d2 * d3];
+                const uniqueProducts = [...new Set(products)];
+                const moves = [];
+                grid.forEach(cell => {
+                    if (cell.owner === null && uniqueProducts.includes(cell.value)) {
+                        moves.push(cell.id);
+                    }
+                });
+                setPossibleMoves(moves);
+            };
+
+            const rollDice = () => {
+                setIsRolling(true);
+                setPossibleMoves([]);
+                setFeedback({ show: false, message: '', type: '' });
+                setShowSkipConfirm(false);
+                playDiceSound();
+                let count = 0;
+                const interval = setInterval(() => {
+                    setDiceValues([
+                        Math.floor(Math.random() * 9) + 1,
+                        Math.floor(Math.random() * 9) + 1,
+                        Math.floor(Math.random() * 9) + 1
+                    ]);
+                    count++;
+                    if (count > 10) {
+                        clearInterval(interval);
+                        finishRoll();
+                    }
+                }, 100);
+            };
+
+            const handleCellClick = (cellId) => {
+                if (!hasRolled || gameStage !== 'playing') return;
+                if (grid[cellId].owner !== null) return; 
+                const [d1, d2, d3] = diceValues;
+                const products = [d1 * d2, d1 * d3, d2 * d3];
+                const uniqueProducts = [...new Set(products)];
+                if (uniqueProducts.includes(grid[cellId].value)) {
+                    const newGrid = [...grid];
+                    newGrid[cellId].owner = currentTurn;
+                    setGrid(newGrid);
+                    setFeedback({ show: false, message: '', type: '' });
+                    updateScores(newGrid);
+                    checkGameEnd(newGrid);
+                } else {
+                    showFeedbackFn('算錯囉！這不是骰子相乘的結果，再算算看。', 'error');
+                }
+            };
+
+            const confirmSkip = () => {
+                setShowSkipConfirm(false);
+                setFeedback({ show: false, message: '', type: '' });
+                updateScores(grid);
+                nextTurn();
+            };
+
+            const handleSkipRequest = () => {
+                if (possibleMoves.length > 0) setShowSkipConfirm(true);
+                else confirmSkip();
+            };
+
+            const confirmReset = () => {
+                setShowResetConfirm(false);
+                setGameStage('setup');
+            };
+
+            const handleAIMove = useCallback((aiPlayer) => {
+                setIsRolling(true);
+                playDiceSound();
+                setTimeout(() => {
+                    const d1 = Math.floor(Math.random() * 9) + 1;
+                    const d2 = Math.floor(Math.random() * 9) + 1;
+                    const d3 = Math.floor(Math.random() * 9) + 1;
+                    const finalDice = [d1, d2, d3];
+                    setDiceValues(finalDice);
+                    setIsRolling(false);
+                    setHasRolled(true);
+                    
+                    const products = [d1 * d2, d1 * d3, d2 * d3];
+                    const uniqueProducts = [...new Set(products)];
+                    const moves = [];
+                    
+                    grid.forEach(cell => {
+                        if (cell.owner === null && uniqueProducts.includes(cell.value)) {
+                            const neighbors = getNeighbors(cell.id);
+                            const isConnected = neighbors.some(nIndex => grid[nIndex] && grid[nIndex].owner === aiPlayer.id);
+                            const score = isConnected ? 2 : 1;
+                            moves.push({ id: cell.id, value: cell.value, score: score });
+                        }
+                    });
+
+                    let bestMoveId = null;
+                    if (moves.length > 0) {
+                        if (aiDifficulty === 'easy') {
+                            const nonConnecting = moves.filter(m => m.score === 1);
+                            if (nonConnecting.length > 0) bestMoveId = nonConnecting[Math.floor(Math.random() * nonConnecting.length)].id;
+                            else bestMoveId = moves[Math.floor(Math.random() * moves.length)].id;
+                        } else if (aiDifficulty === 'medium') {
+                            const connecting = moves.filter(m => m.score === 2);
+                            if (connecting.length > 0 && Math.random() < 0.5) bestMoveId = connecting[Math.floor(Math.random() * connecting.length)].id;
+                            else bestMoveId = moves[Math.floor(Math.random() * moves.length)].id;
+                        } else { // hard
+                            const topScore = moves.reduce((max, m) => Math.max(max, m.score), 0);
+                            const bestMoves = moves.filter(m => m.score === topScore);
+                            bestMoveId = bestMoves[Math.floor(Math.random() * bestMoves.length)].id;
+                        }
+                    }
+
+                    setTimeout(() => {
+                        if (bestMoveId !== null) {
+                            const newGrid = [...grid];
+                            newGrid[bestMoveId].owner = aiPlayer.id;
+                            setGrid(newGrid);
+                            updateScores(newGrid);
+                            checkGameEnd(newGrid);
+                        } else {
+                            showFeedbackFn('電腦 AI 選擇跳過回合。', 'info');
+                            nextTurn();
+                        }
+                        setPossibleMoves([]);
+                    }, 1000);
+                }, 500);
+            }, [grid, aiDifficulty, updateScores]); // Removed cyclical dependency
+
+            useEffect(() => {
+                if (players.length > 0 && gameStage === 'playing') {
+                    const aiPlayer = players.find(p => p.id === currentTurn && p.isAI);
+                    if (aiPlayer && !isRolling && !hasRolled) {
+                        handleAIMove(aiPlayer);
+                    }
+                }
+            }, [currentTurn, players, gameStage, grid, isRolling, hasRolled, handleAIMove]);
+
+            // --- 渲染部分 ---
+            
+            // Dice Display Component
+            const DiceDisplay = ({ value }) => (
+                <div className="w-12 h-12 bg-white border-2 border-gray-800 rounded-lg flex items-center justify-center text-xl font-bold shadow-md">
+                    {value}
+                </div>
+            );
+
+            const isCurrentPlayerAI = players[currentTurn]?.isAI;
+
+            // SETUP STAGE
+            if (gameStage === 'setup') {
+                return (
+                    <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center p-4 font-sans">
+                        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-green-500">
+                            <h1 className="text-4xl font-black text-green-600 mb-2 tracking-wider">✨ 九九乘法 ✨</h1>
+                            <h2 className="text-2xl font-bold text-green-500 mb-6">🏰 佔地遊戲 2.0 🏰</h2>
+                            
+                            <div className="bg-green-50 p-5 rounded-2xl mb-6 text-left border-2 border-green-200 shadow-inner">
+                                <h3 className="font-bold text-green-800 mb-3 text-center text-lg flex items-center justify-center gap-2">
+                                    <Info size={20} className="text-green-600"/> 怎麼玩？
+                                </h3>
+                                <ul className="space-y-2 text-green-700 text-sm font-medium">
+                                    <li className="flex items-start gap-2"><span className="text-lg">🎲</span> <span><b>擲骰子</b>：每回合擲出 3 顆數字骰。</span></li>
+                                    <li className="flex items-start gap-2"><span className="text-lg">🧮</span> <span><b>算乘法</b>：任選 2 顆骰子相乘。</span></li>
+                                    <li className="flex items-start gap-2"><span className="text-lg">🚩</span> <span><b>佔領地</b>：點擊對應的數字格子佔領。</span></li>
+                                    <li className="flex items-start gap-2"><span className="text-lg">🔗</span> <span><b>連連看</b>：與自己土地相連，分數加倍！</span></li>
+                                    <li className="flex items-start gap-2"><span className="text-lg">👑</span> <span><b>爭冠軍</b>：土地被佔滿後，分數高者獲勝。</span></li>
+                                </ul>
+                            </div>
+
+                            <div className="mb-8">
+                                <label className="block text-gray-700 text-lg font-bold mb-4">👥 選擇玩家人數</label>
+                                <div className="flex justify-center gap-4">
+                                    {[1, 2, 3, 4].map(num => (
+                                        <button key={num} onClick={() => setPlayerCount(num)} className={`w-16 h-16 rounded-2xl text-2xl font-black transition-all duration-200 border-b-4 ${playerCount === num ? 'bg-green-500 text-white border-green-700 scale-110 shadow-lg translate-y-[-4px]' : 'bg-gray-100 text-gray-400 border-gray-300 hover:bg-gray-200 hover:border-gray-400'}`}>{num}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {playerCount === 1 && (
+                                <div className="mb-8 animate-fade-in-up border border-gray-200 rounded-xl p-4 bg-gray-50">
+                                    <label className="block text-gray-700 text-lg font-bold mb-4">🤖 選擇電腦 AI 難度</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {DIFFICULTY_CONFIG.map(d => (
+                                            <button key={d.key} onClick={() => setAiDifficulty(d.key)} className={`py-3 rounded-xl font-bold transition-all duration-200 border-b-4 shadow-md ${aiDifficulty === d.key ? `${d.color} text-white ${d.activeBorder} scale-105` : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200'}`}>{d.label}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <button onClick={startGame} className="w-full bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xl font-black py-4 rounded-2xl shadow-lg border-b-4 border-green-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 group">
+                                <DiceIcon value={5} className="group-hover:rotate-180 transition-transform duration-500"/> 開始遊戲 GO!
+                            </button>
+
+                            <div className="mt-6 text-green-400 text-xs font-bold tracking-widest">遊戲設計：小益的布拉格廣場FB；網頁設計：彭彭老師</div>
+                        </div>
+                    </div>
+                );
             }
-        }
-        
-        // 3. 執行動作 (延遲 1 秒模擬思考時間)
-        setTimeout(() => {
-          if (bestMoveId !== null) {
-            const newGrid = [...grid];
-            newGrid[bestMoveId].owner = aiPlayer.id;
-            
-            setGrid(newGrid);
-            updateScores(newGrid);
-            checkGameEnd(newGrid); 
-          } else {
-            // AI 跳過
-            showFeedback('電腦 AI 選擇跳過回合。', 'info');
-            nextTurn(); 
-          }
-          
-          setPossibleMoves([]); // 清除可能的步數
-        }, 1000); 
-    }, 500); // 模擬擲骰動畫延遲
-  };
-  
-  // =========================================================================
-  // useEffect 處理 AI 自動回合
-  // =========================================================================
-  useEffect(() => {
-    if (players.length > 0 && gameStage === 'playing') {
-        const aiPlayer = players.find(p => p.id === currentTurn && p.isAI);
-        if (aiPlayer) {
-          handleAIMove(aiPlayer);
-        }
-    }
-  }, [currentTurn, players, gameStage, grid]); // 必須依賴 grid 才能在 AI 決策時拿到最新盤面
 
-  // =========================================================================
-  // 組件渲染
-  // =========================================================================
+            // GAME STAGE
+            return (
+                <div className="min-h-screen bg-slate-100 p-2 md:p-6 font-sans flex flex-col md:flex-row gap-4 max-w-7xl mx-auto">
+                    {/* 左側：計分板 */}
+                    <div className="w-full md:w-1/4 flex flex-col gap-4 order-2 md:order-1">
+                        <div className="bg-white rounded-xl shadow-md p-4 border-t-4 border-green-600">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Users size={20} /> 計分板</h3>
+                                <button onClick={() => setShowRules(!showRules)} className="text-gray-400 hover:text-green-600"><Info size={20} /></button>
+                            </div>
+                            <div className="space-y-3">
+                                {players.map((player) => (
+                                    <div key={player.id} className={`flex justify-between items-center p-3 rounded-lg border-l-4 ${player.border} ${currentTurn === player.id ? 'bg-gray-50 shadow-inner ring-2 ring-offset-1 ring-green-400' : 'bg-white'}`}>
+                                        <div><span className={`font-bold block ${player.text}`}>{player.name}</span><span className="text-xs text-gray-500">佔地: {player.territories}</span></div>
+                                        <div className="text-2xl font-black text-gray-700">{player.score}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        {showRules && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
+                                <h4 className="font-bold mb-2">遊戲規則：</h4>
+                                <ul className="list-disc list-inside space-y-1">
+                                    <li>擲 3 顆 1-9 數字骰子。</li>
+                                    <li>任選其中兩顆相乘。</li>
+                                    <li>乘積即為可佔領的土地。</li>
+                                    <li>一塊地得 1 分。</li>
+                                    <li>與自己領土<strong>相連</strong>的地，分數加倍。</li>
+                                    <li>若無地可佔，請按「跳過回合」。</li>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
 
-  const DiceDisplay = ({ value }) => {
-    return (
-      <div className="w-12 h-12 bg-white border-2 border-gray-800 rounded-lg flex items-center justify-center text-xl font-bold shadow-md">
-        {value}
-      </div>
-    );
-  };
+                    {/* 中間：棋盤 */}
+                    <div className="flex-1 flex flex-col items-center justify-center order-1 md:order-2 relative">
+                        {feedback.show && (
+                            <div className="absolute top-4 z-10 animate-bounce">
+                                <div className={`px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 ${feedback.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+                                    {feedback.type === 'error' ? <AlertCircle size={20}/> : <Info size={20}/>} {feedback.message}
+                                </div>
+                            </div>
+                        )}
+                        <div className="bg-white p-2 md:p-6 rounded-xl shadow-xl border-4 border-gray-800">
+                            <div className="grid grid-cols-6 gap-1 md:gap-2 bg-gray-300 p-1 md:p-2 rounded">
+                                {grid.map((cell) => {
+                                    const owner = players.find(p => p.id === cell.owner);
+                                    const isOccupied = cell.owner !== null;
+                                    return (
+                                        <button
+                                            key={cell.id}
+                                            disabled={isCurrentPlayerAI || !hasRolled || isOccupied}
+                                            onClick={() => handleCellClick(cell.id)}
+                                            className={`w-12 h-12 md:w-20 md:h-20 flex items-center justify-center text-lg md:text-2xl font-black rounded transition-all duration-200 ${cell.owner === null ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' : `${owner?.color} text-white shadow-inner`} ${(isCurrentPlayerAI || !hasRolled) && cell.owner === null ? 'opacity-50 cursor-not-allowed' : ''} ${!isCurrentPlayerAI && hasRolled && !isOccupied ? 'cursor-pointer hover:scale-105 hover:shadow-md active:scale-95' : ''}`}
+                                        >
+                                            {cell.value}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
 
-  const isCurrentPlayerAI = players[currentTurn]?.isAI;
+                    {/* 右側：控制區 */}
+                    <div className="w-full md:w-1/4 flex flex-col gap-4 order-3">
+                        <div className={`bg-white rounded-xl shadow-lg p-6 border-t-4 ${players[currentTurn]?.border}`}>
+                            <div className="text-center mb-4">
+                                <span className="text-gray-500 text-sm uppercase tracking-wider">當前回合</span>
+                                <h2 className={`text-2xl font-bold ${players[currentTurn]?.text}`}>{players[currentTurn]?.name}</h2>
+                                {isCurrentPlayerAI && <span className="text-xs text-gray-400 block mt-1">(難度: {DIFFICULTY_CONFIG.find(d => d.key === aiDifficulty)?.label.split(' ')[0]})</span>}
+                            </div>
+                            <div className="flex justify-center gap-3 mb-6">
+                                {diceValues.map((val, i) => <DiceDisplay key={i} value={val} />)}
+                            </div>
+                            {!hasRolled && !isCurrentPlayerAI ? (
+                                <button onClick={rollDice} disabled={isRolling} className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${isRolling ? 'bg-gray-400' : 'bg-gray-800 hover:bg-gray-900'}`}>
+                                    {isRolling ? '擲骰中...' : <><DiceIcon value={5} size={24} /> 擲骰子</>}
+                                </button>
+                            ) : isCurrentPlayerAI ? (
+                                <div className="w-full py-4 bg-gray-200 text-gray-600 rounded-xl text-center font-bold text-lg animate-pulse">電腦 AI 思考中...</div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <div className="text-center text-gray-600 font-bold mb-2">請點選計算出的乘積格子</div>
+                                    {possibleMoves.length === 0 && <div className="bg-red-50 text-red-600 p-2 rounded text-center text-sm mb-2">似乎沒有可以佔領的格子囉...</div>}
+                                    <button onClick={handleSkipRequest} className="w-full py-3 bg-red-100 text-red-600 hover:bg-red-200 rounded-xl font-bold flex items-center justify-center gap-2"><XCircle size={20} /> 跳過回合</button>
+                                </div>
+                            )}
+                        </div>
+                        <button onClick={handleResetRequest} className="bg-white text-gray-500 hover:text-red-500 p-4 rounded-xl shadow hover:shadow-md transition-all flex items-center justify-center gap-2"><RotateCcw size={18} /> 重置遊戲</button>
+                    </div>
 
-  if (gameStage === 'setup') {
-    return (
-      <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center p-4 font-sans">
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-green-500">
-          <h1 className="text-4xl font-black text-green-600 mb-2 tracking-wider">✨ 九九乘法 ✨</h1>
-          <h2 className="text-2xl font-bold text-green-500 mb-6">🏰 佔地遊戲 2.0 🏰</h2>
-          
-          <div className="bg-green-50 p-5 rounded-2xl mb-6 text-left border-2 border-green-200 shadow-inner">
-            <h3 className="font-bold text-green-800 mb-3 text-center text-lg flex items-center justify-center gap-2">
-              <Info size={20} className="text-green-600"/> 怎麼玩？
-            </h3>
-            <ul className="space-y-2 text-green-700 text-sm font-medium">
-              <li className="flex items-start gap-2">
-                <span className="text-lg">🎲</span> 
-                <span><b>擲骰子</b>：每回合擲出 3 顆數字骰。</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-lg">🧮</span> 
-                <span><b>算乘法</b>：任選 2 顆骰子相乘。</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-lg">🚩</span> 
-                <span><b>佔領地</b>：點擊對應的數字格子佔領。</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-lg">🔗</span> 
-                <span><b>連連看</b>：與自己土地相連，分數加倍！</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-lg">👑</span> 
-                <span><b>爭冠軍</b>：土地被佔滿後，分數高者獲勝。</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="mb-8">
-            <label className="block text-gray-700 text-lg font-bold mb-4">👥 選擇玩家人數</label>
-            <div className="flex justify-center gap-4">
-              {[1, 2, 3, 4].map(num => (
-                <button
-                  key={num}
-                  onClick={() => setPlayerCount(num)}
-                  className={`w-16 h-16 rounded-2xl text-2xl font-black transition-all duration-200 border-b-4 ${
-                    playerCount === num 
-                      ? 'bg-green-500 text-white border-green-700 scale-110 shadow-lg translate-y-[-4px]' 
-                      : 'bg-gray-100 text-gray-400 border-gray-300 hover:bg-gray-200 hover:border-gray-400'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={startGame}
-            className="w-full bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xl font-black py-4 rounded-2xl shadow-lg border-b-4 border-green-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 group"
-          >
-            <Dice5 size={28} className="group-hover:rotate-180 transition-transform duration-500"/>
-            開始遊戲 GO!
-          </button>
-
-          <div className="mt-6 text-green-400 text-xs font-bold tracking-widest">
-            遊戲設計：小益的布拉格廣場FB；網頁設計：彭彭老師
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-100 p-2 md:p-6 font-sans flex flex-col md:flex-row gap-4 max-w-7xl mx-auto">
-      {/* 左側：計分板 */}
-      <div className="w-full md:w-1/4 flex flex-col gap-4 order-2 md:order-1">
-        <div className="bg-white rounded-xl shadow-md p-4 border-t-4 border-green-600">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Users size={20} />
-              計分板
-            </h3>
-            <button 
-              onClick={() => setShowRules(!showRules)}
-              className="text-gray-400 hover:text-green-600"
-            >
-              <Info size={20} />
-            </button>
-          </div>
-          
-          <div className="space-y-3">
-            {players.map((player) => (
-              <div 
-                key={player.id} 
-                className={`flex justify-between items-center p-3 rounded-lg border-l-4 ${player.border} ${currentTurn === player.id ? 'bg-gray-50 shadow-inner ring-2 ring-offset-1 ring-green-400' : 'bg-white'}`}
-              >
-                <div>
-                  <span className={`font-bold block ${player.text}`}>{player.name}</span>
-                  <span className="text-xs text-gray-500">佔地: {player.territories}</span>
+                    {/* Modals */}
+                    {showSkipConfirm && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center animate-fade-in-up border-4 border-yellow-400">
+                                <div className="flex justify-center mb-4"><HelpCircle size={64} className="text-yellow-500" /></div>
+                                <h3 className="text-2xl font-black text-gray-800 mb-4">確定要跳過嗎？</h3>
+                                <p className="text-gray-600 mb-8 font-medium">盤面上還有可以佔領的答案喔！<br/>再仔細算算看？</p>
+                                <div className="flex gap-3 justify-center">
+                                    <button onClick={() => setShowSkipConfirm(false)} className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-colors">我再想想</button>
+                                    <button onClick={confirmSkip} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg transition-transform active:scale-95">忍痛跳過</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showResetConfirm && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center animate-fade-in-up border-4 border-red-400">
+                                <div className="flex justify-center mb-4"><AlertCircle size={64} className="text-red-500" /></div>
+                                <h3 className="text-2xl font-black text-gray-800 mb-4">確定要重置遊戲嗎？</h3>
+                                <div className="flex gap-3 justify-center">
+                                    <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-colors">取消</button>
+                                    <button onClick={confirmReset} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg transition-transform active:scale-95">確認重置</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {gameStage === 'finished' && winner && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center animate-fade-in-up">
+                                <div className="flex justify-center mb-4"><Trophy size={64} className="text-yellow-500" /></div>
+                                <h2 className="text-3xl font-black text-gray-800 mb-2">遊戲結束!</h2>
+                                <div className="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-200 mb-6">
+                                    <span className="text-sm text-yellow-600 font-bold uppercase">獲勝者</span>
+                                    <div className={`text-3xl font-black ${winner.text} mt-1`}>{winner.name}</div>
+                                    <div className="text-2xl font-bold text-gray-700 mt-2">{winner.score} 分</div>
+                                </div>
+                                <button onClick={startGame} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg">再玩一次</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <div className="text-2xl font-black text-gray-700">{player.score}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+            );
+        };
 
-        {showRules && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-            <h4 className="font-bold mb-2">遊戲規則：</h4>
-            <ul className="list-disc list-inside space-y-1">
-              <li>擲 3 顆 1-9 數字骰子。</li>
-              <li>任選其中兩顆相乘。</li>
-              <li>乘積即為可佔領的土地。</li>
-              <li>一塊地得 1 分。</li>
-              <li>與自己領土<strong>相連</strong>的地，分數加倍。</li>
-              <li>若無地可佔，請按「跳過回合」。</li>
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* 中間：棋盤 */}
-      <div className="flex-1 flex flex-col items-center justify-center order-1 md:order-2 relative">
-        
-        {/* 錯誤/提示訊息覆蓋層 */}
-        {feedback.show && (
-          <div className="absolute top-4 z-10 animate-bounce">
-             <div className={`px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 ${feedback.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
-               {feedback.type === 'error' ? <AlertCircle size={20}/> : <Info size={20}/>}
-               {feedback.message}
-             </div>
-          </div>
-        )}
-
-        <div className="bg-white p-2 md:p-6 rounded-xl shadow-xl border-4 border-gray-800">
-           <div className="grid grid-cols-6 gap-1 md:gap-2 bg-gray-300 p-1 md:p-2 rounded">
-             {grid.map((cell) => {
-               const owner = players.find(p => p.id === cell.owner);
-               const isOccupied = cell.owner !== null;
-               
-               return (
-                 <button
-                   key={cell.id}
-                   // 只有非 AI 玩家的回合且已擲骰才能點擊
-                   disabled={isCurrentPlayerAI || !hasRolled || isOccupied}
-                   onClick={() => handleCellClick(cell.id)}
-                   className={`
-                     w-12 h-12 md:w-20 md:h-20 flex items-center justify-center text-lg md:text-2xl font-black rounded transition-all duration-200
-                     ${cell.owner === null ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' : `${owner?.color} text-white shadow-inner`}
-                     ${(isCurrentPlayerAI || !hasRolled) && cell.owner === null ? 'opacity-50 cursor-not-allowed' : ''}
-                     ${!isCurrentPlayerAI && hasRolled && !isOccupied ? 'cursor-pointer hover:scale-105 hover:shadow-md active:scale-95' : ''}
-                   `}
-                 >
-                   {cell.value}
-                 </button>
-               );
-             })}
-           </div>
-        </div>
-      </div>
-
-      {/* 右側/下方：控制區 */}
-      <div className="w-full md:w-1/4 flex flex-col gap-4 order-3">
-        <div className={`bg-white rounded-xl shadow-lg p-6 border-t-4 ${players[currentTurn]?.border}`}>
-          <div className="text-center mb-4">
-            <span className="text-gray-500 text-sm uppercase tracking-wider">當前回合</span>
-            <h2 className={`text-2xl font-bold ${players[currentTurn]?.text}`}>
-              {players[currentTurn]?.name}
-            </h2>
-          </div>
-
-          <div className="flex justify-center gap-3 mb-6">
-            {diceValues.map((val, i) => (
-              <DiceDisplay key={i} value={val} />
-            ))}
-          </div>
-
-          {!hasRolled && !isCurrentPlayerAI ? (
-            <button
-              onClick={rollDice}
-              disabled={isRolling}
-              className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${isRolling ? 'bg-gray-400' : 'bg-gray-800 hover:bg-gray-900'}`}
-            >
-              {isRolling ? '擲骰中...' : (
-                <>
-                  <Dice5 /> 擲骰子
-                </>
-              )}
-            </button>
-          ) : isCurrentPlayerAI ? (
-             <div className="w-full py-4 bg-gray-200 text-gray-600 rounded-xl text-center font-bold text-lg animate-pulse">
-               電腦 AI 思考中...
-             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="text-center text-gray-600 font-bold mb-2">
-                 請點選計算出的乘積格子
-              </div>
-              
-              {/* 當沒有步數時才顯示跳過，避免卡關，但不顯示原因 */}
-              {possibleMoves.length === 0 && (
-                <div className="bg-red-50 text-red-600 p-2 rounded text-center text-sm mb-2">
-                  似乎沒有可以佔領的格子囉...
-                </div>
-              )}
-
-              <button
-                onClick={handleSkipRequest}
-                className="w-full py-3 bg-red-100 text-red-600 hover:bg-red-200 rounded-xl font-bold flex items-center justify-center gap-2"
-              >
-                <XCircle size={20} /> 跳過回合
-              </button>
-            </div>
-          )}
-        </div>
-
-        <button 
-          onClick={handleResetRequest} // 呼叫確認視窗
-          className="bg-white text-gray-500 hover:text-red-500 p-4 rounded-xl shadow hover:shadow-md transition-all flex items-center justify-center gap-2"
-        >
-          <RotateCcw size={18} /> 重置遊戲
-        </button>
-      </div>
-
-      {/* 跳過確認 Modal */}
-      {showSkipConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center animate-fade-in-up border-4 border-yellow-400">
-            <div className="flex justify-center mb-4">
-               <HelpCircle size={64} className="text-yellow-500" />
-            </div>
-            <h3 className="text-2xl font-black text-gray-800 mb-4">確定要跳過嗎？</h3>
-            <p className="text-gray-600 mb-8 font-medium">
-              盤面上還有可以佔領的答案喔！<br/>
-              再仔細算算看？
-            </p>
-            <div className="flex gap-3 justify-center">
-               <button
-                 onClick={() => setShowSkipConfirm(false)}
-                 className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-colors"
-               >
-                 我再想想
-               </button>
-               <button
-                 onClick={confirmSkip}
-                 className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg transition-transform active:scale-95"
-               >
-                 忍痛跳過
-               </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* 重置確認 Modal */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center animate-fade-in-up border-4 border-red-400">
-            <div className="flex justify-center mb-4">
-               <AlertCircle size={64} className="text-red-500" />
-            </div>
-            <h3 className="text-2xl font-black text-gray-800 mb-4">確定要重置遊戲嗎？</h3>
-            <p className="text-gray-600 mb-8 font-medium">
-              遊戲將會回到設定畫面，目前的進度將會遺失。
-            </p>
-            <div className="flex gap-3 justify-center">
-               <button
-                 onClick={() => setShowResetConfirm(false)}
-                 className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-colors"
-               >
-                 取消
-               </button>
-               <button
-                 onClick={confirmReset}
-                 className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg transition-transform active:scale-95"
-               >
-                 確認重置
-               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 遊戲結束 Modal */}
-      {gameStage === 'finished' && winner && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center animate-fade-in-up">
-            <div className="flex justify-center mb-4">
-               <Trophy size={64} className="text-yellow-500" />
-            </div>
-            <h2 className="text-3xl font-black text-gray-800 mb-2">遊戲結束!</h2>
-            <p className="text-gray-500 mb-6">所有的土地都被佔領了</p>
-            
-            <div className="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-200 mb-6">
-              <span className="text-sm text-yellow-600 font-bold uppercase">獲勝者</span>
-              <div className={`text-3xl font-black ${winner.text} mt-1`}>
-                {winner.name}
-              </div>
-              <div className="text-2xl font-bold text-gray-700 mt-2">
-                {winner.score} 分
-              </div>
-            </div>
-
-            <button
-              onClick={startGame}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg"
-            >
-              再玩一次
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default MathTerritoryGame;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MathTerritoryGame />);
+    </script>
+</body>
+</html>
