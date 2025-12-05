@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單字尋寶 (Word Search) 遊戲</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* 自訂樣式 */
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            touch-action: none; /* 禁用觸控滑動頁面，優化遊戲體驗 */
+        }
+        .grid-cell {
+            width: 45px; /* 增加大小以利觸控 */
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .grid-cell.selecting {
+            background-color: #60a5fa; /* 藍色 */
+            color: white;
+        }
+        .grid-cell.found {
+            background-color: #4ade80; /* 綠色 */
+            color: white;
+        }
+        .grid-cell.hint {
+            animation: hint-pulse 1.5s infinite;
+        }
+        @keyframes hint-pulse {
+            0% { background-color: #facc15; } /* 黃色 */
+            50% { background-color: #fde047; }
+            100% { background-color: #facc15; }
+        }
+        /* 響應式調整格子大小 */
+        @media (max-width: 768px) {
+            .grid-cell {
+                width: 35px; /* 為平板調整 */
+                height: 35px;
+                font-size: 16px;
+            }
+        }
+        @media (max-width: 480px) {
+            .grid-cell {
+                width: 28px; /* 為手機調整 */
+                height: 28px;
+                font-size: 14px; /* 稍微加大字體 */
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <main class="w-full flex-grow flex items-center justify-center p-4">
+        <div id="app-container" class="w-full max-w-7xl mx-auto">
+
+            <!-- 開始畫面 -->
+            <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-lg">
+                <h1 class="text-4xl md:text-5xl font-bold text-blue-600 mb-4">單字尋寶遊戲</h1>
+                <p class="text-slate-600 mb-8">請選擇遊戲設定或建立自訂遊戲</p>
+
+                <div class="flex justify-center mb-8 border-b">
+                    <button id="tab-standard" class="px-6 py-2 text-lg font-semibold text-blue-600 border-b-2 border-blue-600">標準模式</button>
+                    <button id="tab-custom" class="px-6 py-2 text-lg font-semibold text-slate-500">老師自訂</button>
+                </div>
+
+                <!-- 標準設定 -->
+                <div id="standard-settings">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                        <!-- 主題選擇 -->
+                        <div>
+                            <label for="theme-select" class="block text-lg font-medium text-slate-700 mb-2">1. 選擇主題</label>
+                            <select id="theme-select" class="w-full p-3 border border-slate-300 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="animals">動物</option>
+                                <option value="fruits">水果</option>
+                                <option value="sports">運動</option>
+                            </select>
+                        </div>
+                        <!-- 難易度選擇 -->
+                        <div>
+                            <label for="difficulty-select" class="block text-lg font-medium text-slate-700 mb-2">2. 選擇難易度</label>
+                            <select id="difficulty-select" class="w-full p-3 border border-slate-300 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="easy">簡單</option>
+                                <option value="normal">普通</option>
+                                <option value="hard">困難</option>
+                            </select>
+                        </div>
+                        <!-- 模式選擇 -->
+                        <div>
+                            <label for="mode-select" class="block text-lg font-medium text-slate-700 mb-2">3. 選擇模式</label>
+                            <select id="mode-select" class="w-full p-3 border border-slate-300 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="challenge">挑戰模式 (計時)</option>
+                                <option value="practice">練習模式 (不計時)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="start-game-btn" class="mt-10 bg-blue-600 text-white font-bold py-4 px-12 rounded-full text-xl hover:bg-blue-700 transition-transform transform hover:scale-105">開始遊戲</button>
+                </div>
+
+                <!-- 老師自訂 -->
+                <div id="custom-settings" class="hidden">
+                     <p class="text-slate-600 mb-4">請輸入主題和單字列表（以逗號分隔），然後產生分享連結給學生。</p>
+                    <div class="max-w-2xl mx-auto text-left">
+                        <div class="mb-4">
+                            <label for="custom-theme" class="block text-lg font-medium text-slate-700 mb-2">主題名稱</label>
+                            <input type="text" id="custom-theme" placeholder="例如：第六課單字" class="w-full p-3 border border-slate-300 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="mb-6">
+                            <label for="custom-words" class="block text-lg font-medium text-slate-700 mb-2">單字列表 (請用英文逗號 , 分隔)</label>
+                            <textarea id="custom-words" rows="5" placeholder="例如：apple,banana,orange,grape,..." class="w-full p-3 border border-slate-300 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                    </div>
+                     <button id="generate-link-btn" class="bg-green-600 text-white font-bold py-4 px-12 rounded-full text-xl hover:bg-green-700 transition-transform transform hover:scale-105">產生遊戲連結</button>
+                     <div id="link-container" class="mt-6 hidden">
+                         <p class="font-semibold text-slate-700">連結已產生！請複製並分享給學生：</p>
+                         <input type="text" id="generated-link" readonly class="w-full max-w-xl mx-auto mt-2 p-2 bg-slate-100 border border-slate-300 rounded-lg text-center">
+                         <button id="copy-link-btn" class="mt-2 bg-slate-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">複製連結</button>
+                     </div>
+                </div>
+            </div>
+
+            <!-- 遊戲畫面 -->
+            <div id="game-screen" class="hidden w-full">
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- 左側：遊戲資訊 -->
+                    <div class="w-full lg:w-1/4 bg-white p-6 rounded-2xl shadow-lg order-2 lg:order-1">
+                        <h2 id="game-theme" class="text-2xl font-bold text-blue-600 mb-4 text-center"></h2>
+                        <div class="flex justify-between items-center mb-4 text-lg">
+                            <span class="font-semibold">分數:</span>
+                            <span id="score" class="font-bold text-2xl text-green-600">0</span>
+                        </div>
+                        <div id="timer-display" class="flex justify-between items-center mb-4 text-lg">
+                            <span class="font-semibold">時間:</span>
+                            <span id="timer" class="font-bold text-2xl text-slate-700">00:00</span>
+                        </div>
+                        <hr class="my-4">
+                        <h3 class="text-xl font-bold mb-3 text-center">待尋找單字</h3>
+                        <ul id="word-list" class="space-y-2 text-lg">
+                            <!-- 單字會由 JS 動態填入 -->
+                        </ul>
+                        <div class="mt-6 text-center">
+                            <button id="hint-btn" class="bg-yellow-500 text-white font-bold py-2 px-6 rounded-full hover:bg-yellow-600 transition">提示 <span id="hints-left" class="bg-yellow-700 rounded-full px-2 ml-1">3</span></button>
+                        </div>
+                    </div>
+
+                    <!-- 右側：遊戲格子 -->
+                    <div class="w-full lg:w-3/4 bg-white p-4 md:p-6 rounded-2xl shadow-lg order-1 lg:order-2 flex justify-center items-center">
+                        <div id="grid-container" class="grid" style="grid-template-columns: repeat(10, 1fr);">
+                            <!-- 格子會由 JS 動態填入 -->
+                        </div>
+                    </div>
+                </div>
+                 <div class="text-center mt-6">
+                    <button id="back-to-menu-btn" class="bg-slate-500 text-white font-bold py-3 px-8 rounded-full hover:bg-slate-600 transition">返回主選單</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 彈出視窗 (Modal) -->
+        <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div id="modal-content" class="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full transform transition-all scale-95 opacity-0">
+                <!-- 內容會由 JS 動態填入 -->
+            </div>
+        </div>
+    </main>
+    
+    <footer class="w-full text-center py-4 bg-slate-100 border-t">
+        <p class="text-sm text-slate-500">© 2025 Jennifer Peng (由 Gemini 智慧助理協助製作)</p>
+    </footer>
+
+
+    <script>
+    // --- DOM 元素 ---
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+
+    // 設定
+    const themeSelect = document.getElementById('theme-select');
+    const difficultySelect = document.getElementById('difficulty-select');
+    const modeSelect = document.getElementById('mode-select');
+    
+    // 遊戲畫面元素
+    const gameTheme = document.getElementById('game-theme');
+    const scoreEl = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer-display');
+    const timerEl = document.getElementById('timer');
+    const wordListEl = document.getElementById('word-list');
+    const gridContainer = document.getElementById('grid-container');
+    const hintBtn = document.getElementById('hint-btn');
+    const hintsLeftEl = document.getElementById('hints-left');
+
+    // 彈出視窗
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modal-content');
+    
+    // 自訂分頁
+    const tabStandard = document.getElementById('tab-standard');
+    const tabCustom = document.getElementById('tab-custom');
+    const standardSettings = document.getElementById('standard-settings');
+    const customSettings = document.getElementById('custom-settings');
+    const customThemeInput = document.getElementById('custom-theme');
+    const customWordsInput = document.getElementById('custom-words');
+    const generateLinkBtn = document.getElementById('generate-link-btn');
+    const linkContainer = document.getElementById('link-container');
+    const generatedLinkInput = document.getElementById('generated-link');
+    const copyLinkBtn = document.getElementById('copy-link-btn');
+
+
+    // --- 遊戲資料 ---
+    const wordData = {
+        animals: {
+            name: "動物",
+            words: [
+                { word: 'LION', def: '獅子', emoji: '🦁' },
+                { word: 'TIGER', def: '老虎', emoji: '🐯' },
+                { word: 'ELEPHANT', def: '大象', emoji: '🐘' },
+                { word: 'MONKEY', def: '猴子', emoji: '🐒' },
+                { word: 'GIRAFFE', def: '長頸鹿', emoji: '🦒' },
+                { word: 'ZEBRA', def: '斑馬', emoji: '🦓' },
+                { word: 'SNAKE', def: '蛇', emoji: '🐍' },
+                { word: 'BEAR', def: '熊', emoji: '🐻' },
+                { word: 'WOLF', def: '狼', emoji: '🐺' },
+                { word: 'RABBIT', def: '兔子', emoji: '🐰' },
+                { word: 'FOX', def: '狐狸', emoji: '🦊' },
+                { word: 'DEER', def: '鹿', emoji: '🦌' },
+                { word: 'EAGLE', def: '老鷹', emoji: '🦅' },
+                { word: 'OWL', def: '貓頭鷹', emoji: '🦉' },
+                { word: 'PANDA', def: '熊貓', emoji: '🐼' },
+            ]
+        },
+        fruits: {
+            name: "水果",
+            words: [
+                { word: 'APPLE', def: '蘋果', emoji: '🍎' },
+                { word: 'BANANA', def: '香蕉', emoji: '🍌' },
+                { word: 'ORANGE', def: '橘子', emoji: '🍊' },
+                { word: 'GRAPE', def: '葡萄', emoji: '🍇' },
+                { word: 'STRAWBERRY', def: '草莓', emoji: '🍓' },
+                { word: 'PINEAPPLE', def: '鳳梨', emoji: '🍍' },
+                { word: 'WATERMELON', def: '西瓜', emoji: '🍉' },
+                { word: 'MANGO', def: '芒果', emoji: '🥭' },
+                { word: 'PEACH', def: '桃子', emoji: '🍑' },
+                { word: 'CHERRY', def: '櫻桃', emoji: '🍒' },
+                { word: 'LEMON', def: '檸檬', emoji: '🍋' },
+                { word: 'KIWI', def: '奇異果', emoji: '🥝' },
+                { word: 'BLUEBERRY', def: '藍莓', emoji: '🫐' },
+                { word: 'AVOCADO', def: '酪梨', emoji: '🥑' },
+                { word: 'COCONUT', def: '椰子', emoji: '🥥' },
+            ]
+        },
+        sports: {
+            name: "運動",
+            words: [
+                { word: 'SOCCER', def: '足球', emoji: '⚽' },
+                { word: 'BASKETBALL', def: '籃球', emoji: '🏀' },
+                { word: 'BASEBALL', def: '棒球', emoji: '⚾' },
+                { word: 'TENNIS', def: '網球', emoji: '🎾' },
+                { word: 'VOLLEYBALL', def: '排球', emoji: '🏐' },
+                { word: 'SWIMMING', def: '游泳', emoji: '🏊' },
+                { word: 'RUNNING', def: '跑步', emoji: '🏃' },
+                { word: 'GOLF', def: '高爾夫', emoji: '⛳' },
+                { word: 'BADMINTON', def: '羽毛球', emoji: '🏸' },
+                { word: 'TABLETENNIS', def: '桌球', emoji: '🏓' },
+                { word: 'BOXING', def: '拳擊', emoji: '🥊' },
+                { word: 'CYCLING', def: '自行車', emoji: '🚴' },
+                { word: 'SKIING', def: '滑雪', emoji: '⛷️' },
+                { word: 'FISHING', def: '釣魚', emoji: '🎣' },
+                { word: 'YOGA', def: '瑜珈', emoji: '🧘' },
+            ]
+        }
+    };
+
+    const difficultySettings = {
+        easy: { gridSize: 10, wordCount: 8 },
+        normal: { gridSize: 15, wordCount: 12 },
+        hard: { gridSize: 20, wordCount: 16 },
+    };
+
+    // --- 遊戲狀態 ---
+    let gameState = {
+        grid: [],
+        words: [],
+        foundWords: [],
+        score: 0,
+        isTimerOn: false,
+        timerInterval: null,
+        seconds: 0,
+        isMouseDown: false,
+        selection: [],
+        hintsLeft: 3
+    };
+
+    // --- 遊戲邏輯 ---
+
+    /** 根據設定初始化並開始遊戲 */
+    function initGame(settings) {
+        startScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+
+        // 1. 重設遊戲狀態
+        resetGameState();
+        gameState.isTimerOn = settings.isTimerOn;
+
+        // 2. 準備單字
+        const selectedWords = getRandomWords(wordData[settings.theme].words, settings.wordCount);
+        gameState.words = selectedWords.map(w => ({...w, placed: false}));
+        
+        // 3. 建立並填充遊戲格子
+        createGrid(settings.gridSize);
+        placeWords(gameState.words, gameState.grid);
+        fillEmptyCells(gameState.grid);
+
+        // 4. 渲染遊戲畫面
+        renderGame(settings.theme);
+        
+        // 5. 啟動計時器
+        if (gameState.isTimerOn) {
+            timerDisplay.classList.remove('hidden');
+            startTimer();
+        } else {
+            timerDisplay.classList.add('hidden');
+        }
+    }
+    
+    /** 重設遊戲狀態 */
+    function resetGameState() {
+        gameState.grid = [];
+        gameState.words = [];
+        gameState.foundWords = [];
+        gameState.score = 0;
+        gameState.seconds = 0;
+        gameState.isMouseDown = false;
+        gameState.selection = [];
+        gameState.hintsLeft = 3;
+        if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+        gameState.timerInterval = null;
+    }
+
+    /** 從單字庫中隨機選取指定數量的單字 */
+    function getRandomWords(wordPool, count) {
+        return [...wordPool].sort(() => 0.5 - Math.random()).slice(0, count);
+    }
+    
+    /** 建立指定大小的空格子 */
+    function createGrid(size) {
+        gameState.grid = Array.from({ length: size }, () => Array(size).fill(null));
+    }
+
+    /** 將單字放入格子中 */
+    function placeWords(words, grid) {
+        const size = grid.length;
+        words.forEach(wordObj => {
+            let placed = false;
+            let attempts = 0;
+            while (!placed && attempts < 100) {
+                const direction = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+                const word = wordObj.word;
+                let row, col;
+
+                if (direction === 'horizontal') {
+                    row = Math.floor(Math.random() * size);
+                    col = Math.floor(Math.random() * (size - word.length + 1));
+                } else { // vertical
+                    row = Math.floor(Math.random() * (size - word.length + 1));
+                    col = Math.floor(Math.random() * size);
+                }
+
+                if (canPlaceWord(word, row, col, direction, grid)) {
+                    for (let i = 0; i < word.length; i++) {
+                        if (direction === 'horizontal') {
+                            grid[row][col + i] = word[i];
+                        } else {
+                            grid[row + i][col] = word[i];
+                        }
+                    }
+                    wordObj.placed = { row, col, direction };
+                    placed = true;
+                }
+                attempts++;
+            }
+        });
+        // 過濾掉沒成功放置的單字
+        gameState.words = gameState.words.filter(w => w.placed);
+    }
+
+    /** 檢查單字是否可以被放置在指定位置 */
+    function canPlaceWord(word, row, col, direction, grid) {
+        for (let i = 0; i < word.length; i++) {
+            let r = row, c = col;
+            if (direction === 'horizontal') {
+                c += i;
+            } else {
+                r += i;
+            }
+            if (grid[r][c] !== null && grid[r][c] !== word[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** 用隨機字母填充空格 */
+    function fillEmptyCells(grid) {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (let r = 0; r < grid.length; r++) {
+            for (let c = 0; c < grid.length; c++) {
+                if (grid[r][c] === null) {
+                    grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)];
+                }
+            }
+        }
+    }
+    
+    /** 渲染整個遊戲畫面 */
+    function renderGame(themeKey) {
+        // 主題
+        gameTheme.textContent = wordData[themeKey]?.name || '自訂主題';
+        
+        // 分數
+        scoreEl.textContent = gameState.score;
+        hintsLeftEl.textContent = gameState.hintsLeft;
+        
+        // 單字列表
+        wordListEl.innerHTML = '';
+        gameState.words.forEach(wordObj => {
+            const li = document.createElement('li');
+            li.textContent = wordObj.word;
+            li.id = `word-${wordObj.word}`;
+            li.className = 'transition-all duration-300';
+            wordListEl.appendChild(li);
+        });
+
+        // 遊戲格子
+        const size = gameState.grid.length;
+        gridContainer.innerHTML = '';
+        gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.textContent = gameState.grid[r][c];
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                gridContainer.appendChild(cell);
+            }
+        }
+    }
+
+    /** 開始計時器 */
+    function startTimer() {
+        gameState.timerInterval = setInterval(() => {
+            gameState.seconds++;
+            const minutes = Math.floor(gameState.seconds / 60).toString().padStart(2, '0');
+            const seconds = (gameState.seconds % 60).toString().padStart(2, '0');
+            timerEl.textContent = `${minutes}:${seconds}`;
+        }, 1000);
+    }
+
+    /** 檢查選中的單字 */
+    function checkSelection() {
+        // 如果選取長度小於2 (例如只是單點)，就清除樣式並返回
+        if (gameState.selection.length < 2) {
+            gameState.selection.forEach(cell => cell.classList.remove('selecting'));
+            gameState.selection = [];
+            return;
+        }
+        
+        const selectedString = gameState.selection.map(cell => cell.textContent).join('');
+        const reversedString = selectedString.split('').reverse().join('');
+
+        const unfoundWords = gameState.words.filter(w => !gameState.foundWords.includes(w.word));
+        
+        const foundWordObj = unfoundWords.find(w => w.word === selectedString || w.word === reversedString);
+        
+        if (foundWordObj) {
+            // 找到單字
+            gameState.foundWords.push(foundWordObj.word);
+            gameState.score += 100;
+            scoreEl.textContent = gameState.score;
+
+            // 更新樣式
+            gameState.selection.forEach(cell => cell.classList.add('found'));
+            document.getElementById(`word-${foundWordObj.word}`).style.textDecoration = 'line-through';
+            document.getElementById(`word-${foundWordObj.word}`).style.color = '#94a3b8';
+            
+            // 顯示回饋視窗
+            showWordFeedbackModal(foundWordObj);
+
+            // 檢查遊戲是否結束
+            if (gameState.foundWords.length === gameState.words.length) {
+                setTimeout(showGameOverModal, 1500);
+            }
+
+        } else {
+            // 未找到
+            gameState.selection.forEach(cell => cell.classList.remove('selecting'));
+        }
+        gameState.selection = [];
+    }
+
+    // --- 彈出視窗相關 ---
+    
+    function showWordFeedbackModal(wordObj) {
+        modalContent.innerHTML = `
+            <h2 class="text-3xl font-bold text-green-600 mb-4">找到了！</h2>
+            <div class="text-8xl mb-4">${wordObj.emoji || '✔️'}</div>
+            <p class="text-5xl font-bold mb-2">${wordObj.word}</p>
+            <p class="text-2xl text-slate-600 mb-6">${wordObj.def}</p>
+            <button id="modal-close-btn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-full hover:bg-blue-700 transition">繼續</button>
+        `;
+        showModal();
+        document.getElementById('modal-close-btn').onclick = hideModal;
+    }
+    
+    function showGameOverModal() {
+        if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+        
+        let timeInfo = gameState.isTimerOn ? `<p class="text-lg">花費時間：<span class="font-bold">${timerEl.textContent}</span></p>` : '';
+
+        modalContent.innerHTML = `
+            <h2 class="text-3xl font-bold text-blue-600 mb-4">恭喜完成！</h2>
+            <p class="text-lg">最終分數：<span class="font-bold text-2xl text-green-600">${gameState.score}</span></p>
+            ${timeInfo}
+            <h3 class="font-bold text-xl mt-6 mb-2">單字回顧</h3>
+            <ul class="text-left max-h-40 overflow-y-auto bg-slate-50 p-2 rounded-lg">
+                ${gameState.words.map(w => `<li class="p-1">${w.emoji} ${w.word} - ${w.def}</li>`).join('')}
+            </ul>
+            <button id="modal-play-again-btn" class="mt-6 bg-blue-600 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-700 transition">返回主選單</button>
+        `;
+        showModal();
+        document.getElementById('modal-play-again-btn').onclick = () => {
+            hideModal();
+            gameScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        };
+    }
+    
+    function showConfirmModal(message, onConfirm) {
+        modalContent.innerHTML = `
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">請確認</h2>
+            <p class="text-lg text-slate-600 mb-8">${message}</p>
+            <div class="flex justify-center gap-4">
+                <button id="modal-cancel-btn" class="bg-slate-300 text-slate-800 font-bold py-3 px-8 rounded-full hover:bg-slate-400 transition">取消</button>
+                <button id="modal-confirm-btn" class="bg-red-500 text-white font-bold py-3 px-8 rounded-full hover:bg-red-600 transition">確定</button>
+            </div>
+        `;
+        showModal();
+        document.getElementById('modal-confirm-btn').onclick = () => {
+            hideModal();
+            if (onConfirm) onConfirm();
+        };
+        document.getElementById('modal-cancel-btn').onclick = hideModal;
+    }
+
+    function showModal() {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+    
+    function hideModal() {
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // --- 事件監聽 ---
+    
+    startGameBtn.addEventListener('click', () => {
+        const settings = {
+            theme: themeSelect.value,
+            ...difficultySettings[difficultySelect.value],
+            isTimerOn: modeSelect.value === 'challenge',
+        };
+        initGame(settings);
+    });
+
+    backToMenuBtn.addEventListener('click', () => {
+        showConfirmModal('您確定要離開目前的遊戲嗎？進度將不會儲存。', () => {
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            gameScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+    });
+
+    // 格子點擊拖曳邏輯
+    gridContainer.addEventListener('mousedown', e => {
+        if (e.target.classList.contains('grid-cell')) {
+            gameState.isMouseDown = true;
+            gameState.selection = [e.target];
+            e.target.classList.add('selecting');
+        }
+    });
+    
+    gridContainer.addEventListener('mousemove', e => {
+        if (gameState.isMouseDown && e.target.classList.contains('grid-cell')) {
+            if (!gameState.selection.includes(e.target)) {
+                 const lastCell = gameState.selection[gameState.selection.length - 1];
+                const currentRow = parseInt(e.target.dataset.row);
+                const currentCol = parseInt(e.target.dataset.col);
+                const lastRow = parseInt(lastCell.dataset.row);
+                const lastCol = parseInt(lastCell.dataset.col);
+
+                if (currentRow === lastRow || currentCol === lastCol) { // 僅限直線
+                    gameState.selection.push(e.target);
+                    e.target.classList.add('selecting');
+                }
+            }
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (gameState.isMouseDown) {
+            gameState.isMouseDown = false;
+            checkSelection();
+        }
+    });
+    
+    // 觸控事件監聽 (為平板與手機優化)
+    gridContainer.addEventListener('touchstart', e => {
+        if (e.target.classList.contains('grid-cell')) {
+            e.preventDefault(); // 防止滑動時頁面滾動
+            gameState.isMouseDown = true;
+            gameState.selection = [e.target];
+            e.target.classList.add('selecting');
+        }
+    }, { passive: false });
+
+    gridContainer.addEventListener('touchmove', e => {
+        if (gameState.isMouseDown) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('grid-cell') && !gameState.selection.includes(element)) {
+                const lastCell = gameState.selection[gameState.selection.length - 1];
+                const currentRow = parseInt(element.dataset.row);
+                const currentCol = parseInt(element.dataset.col);
+                const lastRow = parseInt(lastCell.dataset.row);
+                const lastCol = parseInt(lastCell.dataset.col);
+
+                if (currentRow === lastRow || currentCol === lastCol) { // 僅限直線
+                    gameState.selection.push(element);
+                    element.classList.add('selecting');
+                }
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+        if (gameState.isMouseDown) {
+            gameState.isMouseDown = false;
+            checkSelection();
+        }
+    });
+
+    // 提示按鈕
+    hintBtn.addEventListener('click', () => {
+        if (gameState.hintsLeft > 0) {
+            const unfoundWord = gameState.words.find(w => !gameState.foundWords.includes(w.word));
+            if (unfoundWord) {
+                gameState.hintsLeft--;
+                gameState.score -= 25;
+                scoreEl.textContent = gameState.score;
+                hintsLeftEl.textContent = gameState.hintsLeft;
+                
+                const { row, col } = unfoundWord.placed;
+                const firstLetterCell = document.querySelector(`.grid-cell[data-row='${row}'][data-col='${col}']`);
+                firstLetterCell.classList.add('hint');
+                setTimeout(() => firstLetterCell.classList.remove('hint'), 3000);
+            }
+        }
+        if (gameState.hintsLeft === 0) {
+            hintBtn.disabled = true;
+            hintBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    });
+
+    // 自訂遊戲分頁切換
+    tabStandard.addEventListener('click', () => {
+        standardSettings.classList.remove('hidden');
+        customSettings.classList.add('hidden');
+        tabStandard.classList.add('text-blue-600', 'border-blue-600');
+        tabStandard.classList.remove('text-slate-500');
+        tabCustom.classList.remove('text-blue-600', 'border-blue-600');
+        tabCustom.classList.add('text-slate-500');
+    });
+
+    tabCustom.addEventListener('click', () => {
+        customSettings.classList.remove('hidden');
+        standardSettings.classList.add('hidden');
+        tabCustom.classList.add('text-blue-600', 'border-blue-600');
+        tabCustom.classList.remove('text-slate-500');
+        tabStandard.classList.remove('text-blue-600', 'border-blue-600');
+        tabStandard.classList.add('text-slate-500');
+    });
+    
+    // 產生分享連結
+    generateLinkBtn.addEventListener('click', () => {
+        const theme = customThemeInput.value.trim() || '自訂遊戲';
+        const words = customWordsInput.value.split(',')
+            .map(w => w.trim().toUpperCase())
+            .filter(w => w.length > 1 && w.length <= 12); // 過濾不合適的單字
+
+        if (words.length < 3) {
+            alert('請至少輸入3個有效的單字！');
+            return;
+        }
+
+        const customGameData = {
+            theme: { name: theme },
+            words: words.map(w => ({ word: w, def: '自訂單字', emoji: '🌟' }))
+        };
+
+        const encodedData = btoa(JSON.stringify(customGameData));
+        const url = `${window.location.origin}${window.location.pathname}#${encodedData}`;
+        
+        generatedLinkInput.value = url;
+        linkContainer.classList.remove('hidden');
+    });
+
+    copyLinkBtn.addEventListener('click', () => {
+        generatedLinkInput.select();
+        document.execCommand('copy');
+        copyLinkBtn.textContent = '已複製!';
+        setTimeout(() => { copyLinkBtn.textContent = '複製連結'; }, 2000);
+    });
+
+    // 頁面載入時檢查是否有自訂遊戲資料
+    function checkUrlForCustomGame() {
+        if (window.location.hash) {
+            try {
+                const encodedData = window.location.hash.substring(1);
+                const decodedData = JSON.parse(atob(encodedData));
+                
+                if (decodedData.words && decodedData.words.length > 0) {
+                    // 將自訂資料暫存
+                    wordData.custom = decodedData;
+                    
+                    // 根據單字數量自動決定難度
+                    const wordCount = decodedData.words.length;
+                    let difficultyKey = 'easy';
+                    if (wordCount > 12) difficultyKey = 'hard';
+                    else if (wordCount > 8) difficultyKey = 'normal';
+
+                    const settings = {
+                        theme: 'custom',
+                        ...difficultySettings[difficultyKey],
+                        isTimerOn: true, // 自訂遊戲預設開啟計時
+                    };
+                    
+                    // 強制覆寫單字數量
+                    settings.wordCount = wordCount;
+
+                    // 清除 hash 避免重新整理時再次載入
+                    history.pushState("", document.title, window.location.pathname + window.location.search);
+                    initGame(settings);
+                }
+            } catch (error) {
+                console.error("無法解析自訂遊戲連結:", error);
+                // 解析失敗，正常顯示開始畫面
+            }
+        }
+    }
+    
+    // 頁面載入完成後執行
+    window.onload = checkUrlForCustomGame;
+
+    </script>
+</body>
+</html>
+
