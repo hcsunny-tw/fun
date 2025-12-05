@@ -5,7 +5,6 @@ const MathTerritoryGame = () => {
   // 遊戲狀態
   const [gameStage, setGameStage] = useState('setup'); // setup, playing, finished
   const [playerCount, setPlayerCount] = useState(2); // Selected number of human players (1, 2, 3, or 4)
-  const [aiDifficulty, setAiDifficulty] = useState('medium'); // [新增] AI 難度狀態: 'easy', 'medium', 'hard'
   const [grid, setGrid] = useState([]);
   const [players, setPlayers] = useState([]);
   const [currentTurn, setCurrentTurn] = useState(0);
@@ -28,13 +27,6 @@ const MathTerritoryGame = () => {
     { id: 1, name: '玩家 2', color: 'bg-blue-500', lightColor: 'bg-blue-100', border: 'border-blue-500', text: 'text-blue-600', isAI: false },
     { id: 2, name: '玩家 3', color: 'bg-green-500', lightColor: 'bg-green-100', border: 'border-green-500', text: 'text-green-600', isAI: false },
     { id: 3, name: '玩家 4', color: 'bg-yellow-500', lightColor: 'bg-yellow-100', border: 'border-yellow-500', text: 'text-yellow-600', isAI: false },
-  ];
-
-  // [新增] AI 難度設定
-  const DIFFICULTY_CONFIG = [
-    { key: 'easy', label: '簡單 👶', color: 'bg-blue-500', activeBorder: 'border-blue-700', desc: 'AI 優先選擇不連線的土地，得分不積極' }, 
-    { key: 'medium', label: '普通 🧑', color: 'bg-green-500', activeBorder: 'border-green-700', desc: 'AI 有時會忽略連線地，讓玩家有更多獲勝機會' }, 
-    { key: 'hard', label: '困難 🧠', color: 'bg-red-500', activeBorder: 'border-red-700', desc: 'AI 永遠追求連線和得分最大化，最難挑戰' }, 
   ];
   
   // =========================================================================
@@ -265,8 +257,6 @@ const MathTerritoryGame = () => {
   const confirmReset = () => {
     setShowResetConfirm(false);
     setGameStage('setup');
-    // 如果想要每次重置都預設回 2 人，可取消下行註解
-    // setPlayerCount(2); 
   };
 
   const nextTurn = () => {
@@ -328,7 +318,7 @@ const MathTerritoryGame = () => {
   };
   
   // =========================================================================
-  // 電腦 AI 邏輯 (支援多種難度)
+  // 電腦 AI 邏輯
   // =========================================================================
   const handleAIMove = (aiPlayer) => {
     // 1. 模擬擲骰動畫
@@ -355,49 +345,25 @@ const MathTerritoryGame = () => {
         const moves = [];
         grid.forEach(cell => {
           if (cell.owner === null && uniqueProducts.includes(cell.value)) {
-            // 先計算這個位置的潛在分數
-            const neighbors = getNeighbors(cell.id);
-            const isConnected = neighbors.some(nIndex => grid[nIndex] && grid[nIndex].owner === aiPlayer.id);
-            const score = isConnected ? 2 : 1;
-            
-            moves.push({ id: cell.id, value: cell.value, score: score });
+            moves.push({ id: cell.id, value: cell.value });
           }
         });
 
         let bestMoveId = null;
+        let maxScore = 0;
+        
+        const currentGrid = grid; 
 
-        if (moves.length > 0) {
-            if (aiDifficulty === 'easy') {
-                // 簡單 (Easy): 優先選擇非連線地 (1 分)
-                const nonConnectingMoves = moves.filter(m => m.score === 1);
-
-                if (nonConnectingMoves.length > 0) {
-                    // 隨機選擇非連線地 (1 分)
-                    bestMoveId = nonConnectingMoves[Math.floor(Math.random() * nonConnectingMoves.length)].id;
-                } else {
-                    // 逼不得已才選連線地 (2 分)
-                    bestMoveId = moves[Math.floor(Math.random() * moves.length)].id;
-                }
-
-            } else if (aiDifficulty === 'medium') {
-                // 普通 (Medium): 平衡策略 - 只有 50% 機率追求連線地 (2 分)
-                const connectingMoves = moves.filter(m => m.score === 2);
-                
-                if (connectingMoves.length > 0 && Math.random() < 0.5) {
-                    // 50% 機率：選擇一個連線地 (2 分)
-                    bestMoveId = connectingMoves[Math.floor(Math.random() * connectingMoves.length)].id;
-                } else {
-                    // 另外 50% 機率 或 盤面無連線地：隨機從所有可行移動中選擇
-                    bestMoveId = moves[Math.floor(Math.random() * moves.length)].id;
-                }
-
-            } else if (aiDifficulty === 'hard') {
-                // 困難 (Hard): 永遠追求得分最大化 (2 分)
-                const topScore = moves.reduce((max, move) => Math.max(max, move.score), 0);
-                const bestMoves = moves.filter(move => move.score === topScore);
-
-                // 在得分最高的移動中隨機選擇一個
-                bestMoveId = bestMoves[Math.floor(Math.random() * bestMoves.length)].id;
+        for (const move of moves) {
+            const neighbors = getNeighbors(move.id);
+            // 檢查是否能相連 (2 分)
+            const isConnected = neighbors.some(nIndex => currentGrid[nIndex].owner === aiPlayer.id);
+            const score = isConnected ? 2 : 1;
+            
+            // 策略：選擇能拿最高分數 (2分) 的格子，若平手則隨意
+            if (score > maxScore) {
+                maxScore = score;
+                bestMoveId = move.id;
             }
         }
         
@@ -500,31 +466,6 @@ const MathTerritoryGame = () => {
               ))}
             </div>
           </div>
-          
-          {/* [新增] AI 難度選擇區塊 */}
-          {playerCount === 1 && (
-            <div className="mb-8 animate-fade-in-up border border-gray-200 rounded-xl p-4 bg-gray-50">
-                <label className="block text-gray-700 text-lg font-bold mb-4">🤖 選擇電腦 AI 難度</label>
-                <div className="grid grid-cols-3 gap-2">
-                    {DIFFICULTY_CONFIG.map(d => (
-                        <button
-                            key={d.key}
-                            onClick={() => setAiDifficulty(d.key)}
-                            className={`py-3 rounded-xl font-bold transition-all duration-200 border-b-4 shadow-md ${
-                                aiDifficulty === d.key
-                                ? `${d.color} text-white ${d.activeBorder} scale-105`
-                                : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200'
-                            }`}
-                        >
-                            {d.label}
-                        </button>
-                    ))}
-                </div>
-                <p className="mt-3 text-sm text-gray-500 font-medium">
-                    {DIFFICULTY_CONFIG.find(d => d.key === aiDifficulty)?.desc}
-                </p>
-            </div>
-          )}
 
           <button
             onClick={startGame}
@@ -639,11 +580,6 @@ const MathTerritoryGame = () => {
             <h2 className={`text-2xl font-bold ${players[currentTurn]?.text}`}>
               {players[currentTurn]?.name}
             </h2>
-            {isCurrentPlayerAI && (
-               <span className="text-xs text-gray-400 block mt-1">
-                 (難度: {DIFFICULTY_CONFIG.find(d => d.key === aiDifficulty)?.label.split(' ')[0]})
-               </span>
-            )}
           </div>
 
           <div className="flex justify-center gap-3 mb-6">
