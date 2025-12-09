@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聲調跑酷 - 垂直注音版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            touch-action: none;
+            overflow: hidden;
+            background-color: #1a202c;
+            user-select: none;
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+        .btn-tone {
+            transition: all 0.1s;
+            user-select: none;
+            -webkit-user-select: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            border-bottom: 4px solid rgba(0,0,0,0.2);
+        }
+        .btn-tone:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+            box-shadow: none;
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .zhuyin-font {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        /* Icon Button Styles */
+        .icon-btn {
+            background-color: rgba(31, 41, 55, 0.9);
+            border: 2px solid #4B5563;
+            color: white;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            pointer-events: auto; /* Ensure clickable */
+            z-index: 60; /* Higher than overlays */
+        }
+        .icon-btn:hover {
+            background-color: rgba(55, 65, 81, 1);
+            transform: scale(1.1);
+            border-color: #60A5FA;
+        }
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center text-white relative bg-gray-900">
+
+    <!-- Game Container -->
+    <div id="game-container" class="relative w-full max-w-5xl aspect-video bg-gray-800 shadow-2xl overflow-hidden border-4 border-gray-700 rounded-xl">
+        
+        <!-- Canvas -->
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+        <!-- UI Overlay: Top Bar (Score & Controls) -->
+        <div class="absolute top-4 left-4 right-4 flex justify-between items-start z-50 select-none pointer-events-none">
+            <!-- Score & Lives -->
+            <div class="flex flex-col gap-2 pointer-events-auto">
+                <div class="flex items-center text-yellow-400 text-2xl font-bold drop-shadow-md bg-gray-900/50 px-3 py-1 rounded-lg">
+                    <span>🏆 答對題數: </span>
+                    <span id="scoreDisplay" class="ml-2">0</span>
+                </div>
+                <div class="flex items-center text-red-500 text-2xl font-bold drop-shadow-md bg-gray-900/50 px-3 py-1 rounded-lg">
+                    <span>❤️ 生命: </span>
+                    <span id="livesDisplay" class="ml-2">3</span>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex gap-3 pointer-events-auto" id="gameControls">
+                <button id="pauseBtn" class="icon-btn" title="暫停 (P)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                </button>
+                <button id="resetBtn" class="icon-btn" title="重新開始">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- UI Overlay: Pause Screen (Z-40) -->
+        <div id="pauseScreen" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-40 text-center">
+            <h2 class="text-6xl text-white font-black mb-8 tracking-widest">暫停中</h2>
+            <button id="resumeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-lg transform transition hover:scale-105">
+                繼續遊戲 ▶
+            </button>
+        </div>
+
+        <!-- UI Overlay: Main Menu -->
+        <div id="startScreen" class="absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-center z-50 p-4 text-center">
+            <h1 class="text-5xl md:text-7xl font-black mb-2 text-blue-400 tracking-wider zhuyin-font">聲調跑酷</h1>
+            <h2 class="text-2xl text-gray-400 mb-6 font-bold">注音挑戰 (emoji版)</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-left bg-gray-800 p-6 rounded-xl border border-gray-600 max-w-2xl w-full shadow-xl">
+                <div>
+                    <h3 class="text-yellow-400 font-bold mb-3 text-lg">🎮 玩法說明</h3>
+                    <p class="text-gray-300 mb-2">1. 障礙物進入<span class="text-blue-400 font-bold">地板上的藍框</span>時。</p>
+                    <p class="text-gray-300 mb-2">2. 看著圖案(emoji)與注音。</p>
+                    <p class="text-gray-300 mb-2">3. 判斷<span class="text-white font-bold">灰色方塊</span>上缺少的聲調並按下按鈕！</p>
+                </div>
+                <div>
+                    <h3 class="text-pink-400 font-bold mb-3 text-lg">👇 操作方式</h3>
+                    <ul class="text-base space-y-2 mt-2">
+                        <li class="flex items-center"><span class="w-4 h-4 bg-blue-500 rounded-full mr-2"></span> 一聲 (無符號)：平路</li>
+                        <li class="flex items-center"><span class="w-4 h-4 bg-green-500 rounded-full mr-2"></span> 二聲 ( ˊ )：上坡</li>
+                        <li class="flex items-center"><span class="w-4 h-4 bg-purple-500 rounded-full mr-2"></span> 三聲 ( ˇ )：坑洞</li>
+                        <li class="flex items-center"><span class="w-4 h-4 bg-red-500 rounded-full mr-2"></span> 四聲 ( ˋ )：落石</li>
+                        <li class="flex items-center"><span class="w-4 h-4 bg-gray-500 rounded-full mr-2"></span> 輕聲 ( ˙ )：雲朵</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button id="startBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-black py-4 px-16 rounded-full text-3xl shadow-lg transform transition hover:scale-105 active:scale-95">
+                開始遊戲
+            </button>
+        </div>
+
+        <!-- UI Overlay: Game Over -->
+        <div id="gameOverScreen" class="hidden absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-50 p-6 text-center">
+            <h2 class="text-6xl text-red-500 font-black mb-4 zhuyin-font">遊戲結束</h2>
+            <div class="text-4xl text-yellow-400 font-bold mb-10">總共答對: <span id="finalScore">0</span> 題</div>
+            <button id="restartBtn" class="bg-white text-gray-900 font-bold py-4 px-12 rounded-full text-2xl hover:bg-gray-200 transition transform hover:scale-105">
+                再玩一次
+            </button>
+        </div>
+
+        <!-- Feedback Text (Popups) -->
+        <div id="feedbackContainer" class="absolute top-1/3 left-1/2 transform -translate-x-1/2 pointer-events-none z-30 w-full flex justify-center"></div>
+    </div>
+
+    <!-- Controls Container (Hidden by default) -->
+    <div id="controls-area" class="w-full max-w-5xl mt-4 px-2 hidden">
+        <div class="grid grid-cols-5 gap-3 md:gap-6 h-24 md:h-32">
+            <!-- Tone 1 -->
+            <button class="btn-tone bg-blue-500 hover:bg-blue-400 rounded-xl flex flex-col items-center justify-center text-white relative" onclick="handleInput(1)">
+                <span class="text-3xl md:text-5xl font-black mb-1 opacity-50">-</span>
+                <span class="text-sm md:text-lg opacity-90 font-bold">一聲</span>
+            </button>
+            
+            <!-- Tone 2 -->
+            <button class="btn-tone bg-green-500 hover:bg-green-400 rounded-xl flex flex-col items-center justify-center text-white" onclick="handleInput(2)">
+                <span class="text-3xl md:text-5xl font-black mb-1">ˊ</span>
+                <span class="text-sm md:text-lg opacity-90 font-bold">二聲</span>
+            </button>
+            
+            <!-- Tone 3 -->
+            <button class="btn-tone bg-purple-500 hover:bg-purple-400 rounded-xl flex flex-col items-center justify-center text-white" onclick="handleInput(3)">
+                <span class="text-3xl md:text-5xl font-black mb-1">ˇ</span>
+                <span class="text-sm md:text-lg opacity-90 font-bold">三聲</span>
+            </button>
+            
+            <!-- Tone 4 -->
+            <button class="btn-tone bg-red-500 hover:bg-red-400 rounded-xl flex flex-col items-center justify-center text-white" onclick="handleInput(4)">
+                <span class="text-3xl md:text-5xl font-black mb-1">ˋ</span>
+                <span class="text-sm md:text-lg opacity-90 font-bold">四聲</span>
+            </button>
+            
+            <!-- Tone 5 -->
+            <button class="btn-tone bg-gray-600 hover:bg-gray-500 border-2 border-gray-400 rounded-xl flex flex-col items-center justify-center text-white" onclick="handleInput(5)">
+                <span class="text-3xl md:text-5xl font-black mb-1">˙</span>
+                <span class="text-sm md:text-lg opacity-90 font-bold">輕聲</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Sound Manager (Web Audio API) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'jump') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'success') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'damage') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        // --- Game Assets (Emojis: Fruit, Animals, Daily) ---
+        const puzzleBank = [
+            // Tone 1 (一聲)
+            { text: ["ㄒㄧ", "ㄍㄨㄚ"], targetIndex: 1, answer: 1, emoji: "🍉" }, 
+            { text: ["ㄒㄧㄤ", "ㄐㄧㄠ"], targetIndex: 0, answer: 1, emoji: "🍌" }, 
+            { text: ["ㄇㄠ", "ㄇㄧ"], targetIndex: 0, answer: 1, emoji: "🐱" }, 
+            { text: ["ㄕㄨ", "ㄅㄠ"], targetIndex: 0, answer: 1, emoji: "🎒" }, 
+            { text: ["ㄅㄟ", "ㄗ˙"], targetIndex: 0, answer: 1, emoji: "🥤" }, 
+            { text: ["ㄈㄟ", "ㄐㄧ"], targetIndex: 1, answer: 1, emoji: "✈️" }, 
+            { text: ["ㄓㄨ", "ㄖㄡˋ"], targetIndex: 0, answer: 1, emoji: "🐷" }, 
+            { text: ["ㄔ", "ㄈㄢˋ"], targetIndex: 0, answer: 1, emoji: "🍚" }, 
+            { text: ["ㄧ", "ㄕㄥ"], targetIndex: 0, answer: 1, emoji: "👨‍⚕️" }, 
+            { text: ["ㄕㄥ", "ㄖˋ"], targetIndex: 0, answer: 1, emoji: "🎂" }, 
+
+            // Tone 2 (二聲)
+            { text: ["ㄆㄨˊ", "ㄊㄠˊ"], targetIndex: 0, answer: 2, emoji: "🍇" }, 
+            { text: ["ㄐㄩˊ", "ㄗ˙"], targetIndex: 0, answer: 2, emoji: "🍊" }, 
+            { text: ["ㄇㄟˊ", "ㄧㄡˇ"], targetIndex: 0, answer: 2, emoji: "🈚" }, 
+            { text: ["ㄏㄡˊ", "ㄗ˙"], targetIndex: 0, answer: 2, emoji: "🐵" }, 
+            { text: ["ㄒㄧㄝˊ", "ㄗ˙"], targetIndex: 0, answer: 2, emoji: "👞" }, 
+            { text: ["ㄧㄚˊ", "ㄕㄨㄚ"], targetIndex: 0, answer: 2, emoji: "🪥" }, 
+            { text: ["ㄋㄧㄡˊ", "ㄋㄞˇ"], targetIndex: 0, answer: 2, emoji: "🥛" }, 
+            { text: ["ㄈㄤˊ", "ㄗ˙"], targetIndex: 0, answer: 2, emoji: "🏠" }, 
+            { text: ["ㄩˊ", "ㄊㄤ"], targetIndex: 0, answer: 2, emoji: "🐟" }, 
+            { text: ["ㄆㄧㄥˊ", "ㄍㄨㄛˇ"], targetIndex: 0, answer: 2, emoji: "🍎" }, 
+
+            // Tone 3 (三聲)
+            { text: ["ㄒㄧㄠˇ", "ㄍㄡˇ"], targetIndex: 1, answer: 3, emoji: "🐶" }, 
+            { text: ["ㄌㄠˇ", "ㄕㄨˇ"], targetIndex: 0, answer: 3, emoji: "🐭" }, 
+            { text: ["ㄩˇ", "ㄙㄢˇ"], targetIndex: 0, answer: 3, emoji: "☂️" }, 
+            { text: ["ㄕㄨㄟˇ", "ㄐㄧㄠˇ"], targetIndex: 0, answer: 3, emoji: "🥟" }, 
+            { text: ["ㄕㄡˇ", "ㄅㄧㄠˇ"], targetIndex: 0, answer: 3, emoji: "⌚" }, 
+            { text: ["ㄒㄧˇ", "ㄗㄠˇ"], targetIndex: 0, answer: 3, emoji: "🛁" }, 
+            { text: ["ㄇㄚˇ", "ㄧˇ"], targetIndex: 0, answer: 3, emoji: "🐜" }, 
+            { text: ["ㄅㄧˇ", "ㄐㄧˋ"], targetIndex: 0, answer: 3, emoji: "📝" }, 
+            { text: ["ㄋㄧㄠˇ", "ㄌㄟˋ"], targetIndex: 0, answer: 3, emoji: "🐦" }, 
+            { text: ["ㄊㄡˊ", "ㄈㄚˇ"], targetIndex: 1, answer: 3, emoji: "💇" }, 
+
+            // Tone 4 (四聲)
+            { text: ["ㄊㄨˋ", "ㄗ˙"], targetIndex: 0, answer: 4, emoji: "🐰" }, 
+            { text: ["ㄉㄚˋ", "ㄒㄧㄤˋ"], targetIndex: 1, answer: 4, emoji: "🐘" }, 
+            { text: ["ㄎㄨˋ", "ㄗ˙"], targetIndex: 0, answer: 4, emoji: "👖" }, 
+            { text: ["ㄨㄚˋ", "ㄗ˙"], targetIndex: 0, answer: 4, emoji: "🧦" }, 
+            { text: ["ㄇㄧㄢˋ", "ㄅㄠ"], targetIndex: 0, answer: 4, emoji: "🍞" }, 
+            { text: ["ㄉㄢˋ", "ㄍㄠ"], targetIndex: 0, answer: 4, emoji: "🍰" }, 
+            { text: ["ㄏㄢˋ", "ㄅㄠˇ"], targetIndex: 0, answer: 4, emoji: "🍔" }, 
+            { text: ["ㄎㄨㄞˋ", "ㄌㄜˋ"], targetIndex: 0, answer: 4, emoji: "😄" }, 
+            { text: ["ㄕㄨˋ", "ㄇㄨˋ"], targetIndex: 0, answer: 4, emoji: "🌳" }, 
+            { text: ["ㄉㄧㄢˋ", "ㄋㄠˇ"], targetIndex: 0, answer: 4, emoji: "💻" }, 
+
+            // Tone 5 (輕聲)
+            { text: ["ㄓㄨㄛ", "ㄗ˙"], targetIndex: 1, answer: 5, emoji: "🪵" }, 
+            { text: ["ㄧˇ", "ㄗ˙"], targetIndex: 1, answer: 5, emoji: "🪑" }, 
+            { text: ["ㄅㄠ", "ㄗ˙"], targetIndex: 1, answer: 5, emoji: "🥟" }, 
+            { text: ["ㄑㄩㄣˊ", "ㄗ˙"], targetIndex: 1, answer: 5, emoji: "👗" }, 
+            { text: ["ㄕ", "ㄗ˙"], targetIndex: 1, answer: 5, emoji: "🦁" }, 
+            { text: ["ㄧㄚ", "ㄗ˙"], targetIndex: 1, answer: 5, emoji: "🦆" }, 
+            { text: ["ㄏㄡˊ", "ㄗ˙"], targetIndex: 1, answer: 5, emoji: "🐒" }, 
+            { text: ["ㄅㄚˋ", "ㄅㄚ˙"], targetIndex: 1, answer: 5, emoji: "👨" }, 
+            { text: ["ㄇㄚ", "ㄇㄚ˙"], targetIndex: 1, answer: 5, emoji: "👩" }, 
+        ];
+
+        // --- Game Constants ---
+        const GAME_WIDTH = 1280;
+        const GAME_HEIGHT = 720;
+        // Hit Zone range relative to player position or absolute canvas X
+        // The zone should be comfortably ahead of the player (x=150)
+        // Let's set the zone from x=200 to x=600
+        const HIT_ZONE_START = 200;
+        const HIT_ZONE_END = 600;
+
+        // --- Game Engine Setup ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const controls = document.getElementById('controls-area');
+        
+        function resize() {
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- Game State ---
+        let gameState = 'START'; 
+        let score = 0;
+        let lives = 3;
+        let gameSpeed = 3; 
+        let frameCount = 0;
+        let spawnTimer = 0;
+        let animationId = null; 
+        let isZoneActive = false; // Track if obstacle is in zone
+        
+        const TONE_COLORS = {
+            1: '#3B82F6', // Blue
+            2: '#10B981', // Green
+            3: '#A855F7', // Purple
+            4: '#EF4444', // Red
+            5: '#9CA3AF'  // Grey/Cloud
+        };
+        
+        const NEUTRAL_COLOR = '#4B5563'; 
+
+        // --- Helper: Zhuyin Parser & Renderer ---
+        const toneMarks = ['ˊ', 'ˇ', 'ˋ', '˙'];
+        
+        function parseZhuyin(str) {
+            let tone = '';
+            let body = str;
+            let lastChar = str.slice(-1);
+            let firstChar = str.slice(0, 1);
+            
+            if (toneMarks.includes(lastChar)) {
+                tone = lastChar;
+                body = str.slice(0, -1);
+            } else if (toneMarks.includes(firstChar)) {
+                tone = firstChar;
+                body = str.slice(1);
+            }
+            
+            const chars = body.split('');
+            return { chars, tone };
+        }
+
+        function drawVerticalZhuyinBlock(ctx, textStr, x, y, isTarget, isPassed, toneAnswer) {
+            const parsed = parseZhuyin(textStr);
+            const chars = parsed.chars;
+            let tone = parsed.tone;
+            
+            const fontSize = 50;
+            const lineHeight = 45;
+            ctx.font = `bold ${fontSize}px "Noto Sans TC"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const totalHeight = chars.length * lineHeight;
+            let startY = y - (totalHeight / 2) + (lineHeight / 2);
+
+            chars.forEach((char, index) => {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText(char, x, startY + (index * lineHeight));
+            });
+
+            const toneX = x + 40; 
+            const toneY = startY + ((chars.length - 1) * lineHeight / 2); 
+
+            if (isTarget && !isPassed) {
+                // HIDE ANSWER mode
+                ctx.fillStyle = '#FCD34D'; // Amber-300
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(toneX - 15, toneY - 25, 50, 50);
+                
+                ctx.font = `bold 30px "Noto Sans TC"`;
+                ctx.fillText("?", toneX + 10, toneY);
+
+            } else {
+                // Show Answer mode
+                ctx.fillStyle = '#FCD34D';
+                ctx.font = `bold ${fontSize}px "Noto Sans TC"`;
+
+                if (tone === '˙') {
+                    ctx.fillText(tone, toneX, startY); 
+                } else if (tone) {
+                    ctx.fillText(tone, toneX, toneY);
+                }
+            }
+        }
+
+        // --- Classes ---
+
+        class Player {
+            constructor() {
+                this.width = 60;
+                this.height = 100;
+                this.x = 150;
+                this.y = GAME_HEIGHT - 200; 
+                this.baseY = GAME_HEIGHT - 200;
+                this.vy = 0;
+                this.vx = 0;
+                this.gravity = 0.8;
+                this.isGrounded = true;
+                this.color = '#FFFFFF';
+                this.actionState = 'RUN'; 
+                this.actionTimer = 0;
+                this.trail = [];
+            }
+
+            update() {
+                this.y += this.vy;
+                this.x += this.vx;
+
+                if (this.x > 150) this.x -= 2;
+                if (this.x < 150) this.x += 2;
+
+                if (this.y < this.baseY) {
+                    this.vy += this.gravity;
+                    this.isGrounded = false;
+                } else if (this.y >= this.baseY) {
+                    this.y = this.baseY;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                    if (this.actionState === 'JUMP') this.actionState = 'RUN';
+                }
+
+                if (this.actionTimer > 0) {
+                    this.actionTimer--;
+                    if (this.actionTimer === 0) {
+                        this.actionState = 'RUN';
+                        this.baseY = GAME_HEIGHT - 200;
+                        this.height = 100;
+                    }
+                }
+
+                if (frameCount % 5 === 0) {
+                    this.trail.push({x: this.x, y: this.y, alpha: 0.5});
+                }
+                this.trail.forEach(t => t.x -= gameSpeed);
+                this.trail = this.trail.filter(t => t.x > -50);
+            }
+
+            draw() {
+                this.trail.forEach(t => {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${t.alpha})`;
+                    ctx.fillRect(t.x, t.y, this.width, this.height);
+                    t.alpha -= 0.05;
+                });
+
+                ctx.fillStyle = this.color;
+                if (this.actionState === 'SLIDE') {
+                    ctx.fillRect(this.x, this.y + 50, this.width, 50);
+                } else if (this.actionState === 'FLY') {
+                    ctx.fillRect(this.x, this.y, this.width + 20, this.height - 40);
+                } else {
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+
+                ctx.fillStyle = '#000';
+                if (this.actionState === 'SLIDE') {
+                    ctx.fillRect(this.x + 40, this.y + 60, 10, 10);
+                } else {
+                    ctx.fillRect(this.x + 40, this.y + 20, 10, 10);
+                }
+
+                ctx.fillStyle = '#D1D5DB';
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + 30);
+                ctx.lineTo(this.x - 40 - (gameSpeed * 2), this.y + 30);
+                ctx.lineTo(this.x, this.y + 50);
+                ctx.fill();
+            }
+
+            performAction(tone) {
+                if (tone === 1) {
+                    this.actionState = 'FLY';
+                    this.vy = 0;
+                    this.baseY = GAME_HEIGHT - 350; 
+                    this.y = this.baseY; 
+                    this.actionTimer = 60;
+                } else if (tone === 2) {
+                    this.actionState = 'JUMP';
+                    this.vy = -18; 
+                    this.actionTimer = 40;
+                } else if (tone === 3) {
+                    this.actionState = 'JUMP';
+                    this.vy = -12; 
+                    this.actionTimer = 40;
+                } else if (tone === 4) {
+                    this.actionState = 'SLIDE';
+                    this.height = 50; 
+                    this.vy = 10; 
+                    this.actionTimer = 60;
+                } else if (tone === 5) {
+                    if (!this.isGrounded) {
+                         this.vy = -15; 
+                    } else {
+                         this.vy = -12;
+                    }
+                }
+            }
+        }
+
+        class Obstacle {
+            constructor() {
+                this.x = GAME_WIDTH + 100;
+                this.y = GAME_HEIGHT - 200;
+                this.width = 100;
+                this.height = 100;
+                this.markedForDeletion = false;
+                this.passed = false;
+                
+                const puzzle = puzzleBank[Math.floor(Math.random() * puzzleBank.length)];
+                this.puzzleTextArray = puzzle.text;
+                this.targetIndex = puzzle.targetIndex;
+                this.tone = puzzle.answer;
+                this.emoji = puzzle.emoji || ""; 
+                
+                this.finalColor = TONE_COLORS[this.tone]; 
+                this.mysteryColor = NEUTRAL_COLOR;
+
+                // Setup Geometry...
+                if (this.tone === 1) { // Sky
+                    this.type = 'SKY';
+                    this.realY = GAME_HEIGHT - 350;
+                    this.realWidth = 350;
+                    this.realHeight = 20;
+                } else if (this.tone === 2) { // Wall
+                    this.type = 'WALL';
+                    this.realY = GAME_HEIGHT - 300;
+                    this.realWidth = 150;
+                    this.realHeight = 300;
+                } else if (this.tone === 3) { // Pit
+                    this.type = 'PIT';
+                    this.realY = GAME_HEIGHT - 100;
+                    this.realWidth = 200;
+                    this.realHeight = 50;
+                } else if (this.tone === 4) { // Ceiling
+                    this.type = 'CEILING';
+                    this.realY = GAME_HEIGHT - 280;
+                    this.realWidth = 150;
+                    this.realHeight = 280;
+                } else { // Cloud
+                    this.type = 'CLOUD';
+                    this.realY = GAME_HEIGHT - 250;
+                    this.realWidth = 200;
+                    this.realHeight = 40;
+                }
+
+                this.mysteryY = GAME_HEIGHT - 300;
+                this.mysteryWidth = 200;
+                this.mysteryHeight = 200;
+
+                this.y = this.mysteryY; 
+                this.width = this.mysteryWidth;
+                this.height = this.mysteryHeight;
+            }
+
+            update() {
+                this.x -= gameSpeed;
+                if (this.x + this.width < -100) this.markedForDeletion = true;
+                
+                if (this.passed) {
+                     this.y = this.realY;
+                     this.width = this.realWidth;
+                     this.height = this.realHeight;
+                } else {
+                     this.y = this.mysteryY;
+                     this.width = this.mysteryWidth;
+                     this.height = this.mysteryHeight;
+                }
+            }
+
+            draw() {
+                if (!this.passed) {
+                    ctx.fillStyle = this.mysteryColor;
+                    ctx.beginPath();
+                    ctx.rect(this.x, this.y, this.width, this.height);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#9CA3AF';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(this.x, this.y, this.width, this.height);
+                } 
+                else {
+                    ctx.fillStyle = this.finalColor;
+                    
+                    if (this.type === 'PIT') {
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, GAME_HEIGHT - 200);
+                        ctx.lineTo(this.x + this.width / 2, GAME_HEIGHT - 50);
+                        ctx.lineTo(this.x + this.width, GAME_HEIGHT - 200);
+                        ctx.fill();
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 5;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x + 10, GAME_HEIGHT - 190);
+                        ctx.lineTo(this.x + this.width/2, GAME_HEIGHT - 60);
+                        ctx.lineTo(this.x + this.width - 10, GAME_HEIGHT - 190);
+                        ctx.stroke();
+                    } else if (this.type === 'SKY') {
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                        ctx.fillRect(this.x + 20, this.y + 20, 20, 500);
+                        ctx.fillRect(this.x + this.width - 40, this.y + 20, 20, 500);
+                    } else if (this.type === 'WALL') {
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, GAME_HEIGHT - 200);
+                        ctx.lineTo(this.x + this.width, GAME_HEIGHT - 400); 
+                        ctx.lineTo(this.x + this.width, GAME_HEIGHT - 200);
+                        ctx.fill();
+                    } else if (this.type === 'CEILING') {
+                        ctx.fillRect(this.x, 0, this.width, this.y);
+                        ctx.beginPath();
+                        for(let i=0; i<this.width; i+=30) {
+                            ctx.moveTo(this.x + i, this.y);
+                            ctx.lineTo(this.x + i + 15, this.y + 20);
+                            ctx.lineTo(this.x + i + 30, this.y);
+                        }
+                        ctx.fill();
+                    } else if (this.type === 'CLOUD') {
+                        ctx.beginPath();
+                        ctx.roundRect(this.x, this.y, this.width, this.height, 20);
+                        ctx.fill();
+                    }
+                }
+
+                let textY = this.y + (this.height / 2);
+                let textXCenter = this.x + (this.width / 2);
+
+                if (this.passed) {
+                    if (this.type === 'PIT') textY = GAME_HEIGHT - 280; 
+                    if (this.type === 'WALL') textY = GAME_HEIGHT - 450; 
+                    if (this.type === 'CEILING') textY = this.y + 100;
+                    if (this.type === 'SKY') textY = this.y - 60;
+                    if (this.type === 'CLOUD') textY = this.y - 60;
+                }
+
+                const charSpacing = 100; 
+                const totalTextWidth = (this.puzzleTextArray.length - 1) * charSpacing;
+                let startX = textXCenter - (totalTextWidth / 2);
+                
+                let emojiY = textY - 140; 
+                
+                if (this.emoji) {
+                    ctx.font = '60px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.emoji, textXCenter, emojiY);
+                }
+
+                this.puzzleTextArray.forEach((txt, idx) => {
+                    const isTarget = (idx === this.targetIndex);
+                    drawVerticalZhuyinBlock(
+                        ctx, 
+                        txt, 
+                        startX + (idx * charSpacing), 
+                        textY, 
+                        isTarget, 
+                        this.passed, 
+                        this.tone
+                    );
+                });
+            }
+        }
+
+        // --- Global Objects ---
+        let player = new Player();
+        let obstacles = [];
+        let particles = [];
+        let backgroundX = 0;
+
+        // --- Visual Indicators ---
+        function drawActionZone(isActive) {
+            // Zone Range: HIT_ZONE_START to HIT_ZONE_END
+            const zoneStart = HIT_ZONE_START;
+            const zoneWidth = HIT_ZONE_END - HIT_ZONE_START;
+            const groundY = GAME_HEIGHT - 200;
+
+            // Determine style based on active state
+            const strokeColor = isActive ? '#FBBF24' : 'rgba(59, 130, 246, 0.5)'; // Yellow or Blue
+            const fillColor = isActive ? 'rgba(251, 191, 36, 0.2)' : 'rgba(59, 130, 246, 0.1)';
+            const lineWidth = isActive ? 8 : 4;
+            const text = isActive ? "LOCK ON! (按下按鈕)" : "判定區 (在此輸入)";
+            const textColor = isActive ? '#FBBF24' : 'rgba(59, 130, 246, 0.8)';
+
+            ctx.save();
+            ctx.strokeStyle = strokeColor; 
+            ctx.lineWidth = lineWidth;
+            ctx.setLineDash([10, 10]);
+            
+            // Perspective ground rect
+            ctx.beginPath();
+            ctx.moveTo(zoneStart, groundY);
+            ctx.lineTo(zoneStart + zoneWidth, groundY);
+            ctx.lineTo(zoneStart + zoneWidth - 50, groundY + 100);
+            ctx.lineTo(zoneStart - 50, groundY + 100);
+            ctx.closePath();
+            ctx.stroke();
+            
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+
+            // Label
+            ctx.fillStyle = textColor;
+            ctx.font = 'bold 24px "Noto Sans TC"';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, zoneStart + (zoneWidth/2), groundY + 80);
+            
+            ctx.restore();
+        }
+
+        // --- Input Handling ---
+        function handleInput(toneInput) {
+            if (gameState !== 'PLAYING') return;
+
+            initAudio(); 
+
+            // Logic matches visual zone exactly: 
+            const target = obstacles.find(obs => 
+                obs.x >= HIT_ZONE_START - obs.width && // Enter zone (left edge inside)
+                obs.x <= HIT_ZONE_END && // Still in zone
+                !obs.passed
+            );
+
+            if (target) {
+                if (target.tone === toneInput) {
+                    score += 1;
+                    target.passed = true; 
+                    player.performAction(toneInput);
+                    spawnParticles(player.x + 50, player.y + 50, TONE_COLORS[toneInput]);
+                    playTone('success');
+                    playTone('jump');
+                } else {
+                    playTone('damage');
+                }
+            } else {
+                if (toneInput === 5) {
+                    player.performAction(5);
+                    playTone('jump');
+                }
+            }
+            updateUI();
+        }
+
+        window.addEventListener('keydown', e => {
+            if (e.key === 'p' || e.key === 'P') togglePause();
+            
+            if (e.key === '1') handleInput(1);
+            if (e.key === '2') handleInput(2);
+            if (e.key === '3') handleInput(3);
+            if (e.key === '4') handleInput(4);
+            if (e.key === ' ' || e.key === '5') handleInput(5);
+        });
+
+        // --- UI & Controls ---
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                document.getElementById('pauseScreen').classList.remove('hidden');
+                cancelAnimationFrame(animationId);
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                document.getElementById('pauseScreen').classList.add('hidden');
+                gameLoop();
+            }
+        }
+
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
+        document.getElementById('resumeBtn').addEventListener('click', togglePause);
+        
+        // Removed confirm(), simple reset now
+        document.getElementById('resetBtn').addEventListener('click', () => {
+             startGame();
+        });
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+
+        // --- Logic Functions ---
+
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
+
+        function checkCollisions() {
+            const playerRect = {
+                x: player.x + 20, 
+                y: player.y + 10,
+                w: player.width - 40,
+                h: player.height - 20
+            };
+
+            obstacles.forEach(obs => {
+                if (obs.passed) return; 
+                
+                let collisionHappened = false;
+                
+                let obsRect = { x: obs.x + 10, y: obs.y, w: obs.width - 20, h: obs.height };
+                
+                if (
+                    playerRect.x < obsRect.x + obsRect.w &&
+                    playerRect.x + playerRect.w > obsRect.x &&
+                    playerRect.y < obsRect.y + obsRect.h &&
+                    playerRect.y + playerRect.h > obsRect.y
+                ) {
+                    collisionHappened = true;
+                }
+
+                if (collisionHappened) {
+                    takeDamage();
+                    obs.passed = true; 
+                    // Force reveal
+                    obs.y = obs.realY; 
+                    obs.width = obs.realWidth; 
+                    obs.height = obs.realHeight;
+                }
+            });
+        }
+
+        function takeDamage() {
+            lives--;
+            playTone('damage');
+            document.getElementById('game-container').classList.add('shake');
+            setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
+            
+            spawnParticles(player.x, player.y, '#FF0000');
+            
+            if (lives <= 0) {
+                endGame();
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('scoreDisplay').innerText = score;
+            document.getElementById('livesDisplay').innerText = lives;
+        }
+
+        // --- Render Functions ---
+
+        function drawBackground() {
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            ctx.fillStyle = '#FFF';
+            for(let i=0; i<30; i++) {
+                ctx.fillRect((backgroundX * 0.1 + i * 150) % GAME_WIDTH, (i * 97) % 400, 3, 3);
+            }
+
+            ctx.fillStyle = '#1F2937';
+            ctx.beginPath();
+            ctx.moveTo(0, GAME_HEIGHT);
+            for(let i=0; i<=GAME_WIDTH; i+=100) {
+                let h = 150 + Math.sin(i * 0.01 + backgroundX * 0.01) * 80;
+                ctx.lineTo(i, GAME_HEIGHT - h);
+            }
+            ctx.lineTo(GAME_WIDTH, GAME_HEIGHT);
+            ctx.fill();
+
+            ctx.fillStyle = '#374151';
+            ctx.fillRect(0, GAME_HEIGHT - 200, GAME_WIDTH, 200);
+            
+            // Draw Action Zone Indicator (Dynamic)
+            drawActionZone(isZoneActive);
+
+            ctx.strokeStyle = '#4B5563';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let gridOffset = backgroundX % 100;
+            for(let i=0; i<GAME_WIDTH + 100; i+=100) {
+                ctx.moveTo(i - gridOffset, GAME_HEIGHT - 200);
+                ctx.lineTo(i - 200 - gridOffset, GAME_HEIGHT);
+            }
+            ctx.stroke();
+
+            backgroundX += gameSpeed * 0.5;
+        }
+
+        function gameLoop() {
+            if (gameState !== 'PLAYING') return;
+
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            spawnTimer++;
+            if (spawnTimer > 1500) gameSpeed = 4;
+            if (spawnTimer > 3500) gameSpeed = 5;
+            if (spawnTimer > 6000) gameSpeed = 6;
+
+            // Spawn Obstacles
+            const lastObs = obstacles[obstacles.length - 1];
+            let minDistance = 600 + (gameSpeed * 30); 
+            
+            if (!lastObs || (GAME_WIDTH - lastObs.x > minDistance)) {
+                if (Math.random() < 0.9) { 
+                    obstacles.push(new Obstacle());
+                }
+            }
+
+            // Check if ANY obstacle is in the Hit Zone
+            isZoneActive = obstacles.some(obs => 
+                obs.x >= HIT_ZONE_START - obs.width && 
+                obs.x <= HIT_ZONE_END && 
+                !obs.passed
+            );
+
+            player.update();
+            obstacles.forEach(obs => obs.update());
+            obstacles = obstacles.filter(obs => !obs.markedForDeletion);
+            
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+            });
+            particles = particles.filter(p => p.life > 0);
+
+            checkCollisions();
+
+            drawBackground();
+            obstacles.forEach(obs => obs.draw());
+            player.draw();
+
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.fillRect(p.x, p.y, 8, 8);
+                ctx.globalAlpha = 1.0;
+            });
+
+            frameCount++;
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            initAudio(); 
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            gameState = 'PLAYING';
+            score = 0;
+            lives = 3;
+            gameSpeed = 3; 
+            obstacles = [];
+            player = new Player();
+            updateUI();
+            
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('pauseScreen').classList.add('hidden');
+            controls.classList.remove('hidden'); 
+            
+            gameLoop();
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER';
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            controls.classList.add('hidden'); 
+            if (animationId) cancelAnimationFrame(animationId);
+        }
+    </script>
+</body>
+</html>
