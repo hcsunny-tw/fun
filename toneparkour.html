@@ -400,7 +400,8 @@
                 ctx.font = `bold ${fontSize}px "Noto Sans TC"`;
 
                 if (tone === '˙') {
-                    ctx.fillText(tone, toneX, startY); 
+                    // Update: Draw dot at top center
+                    ctx.fillText(tone, x, startY - 55); 
                 } else if (tone) {
                     ctx.fillText(tone, toneX, toneY);
                 }
@@ -659,7 +660,8 @@
                 const totalTextWidth = (this.puzzleTextArray.length - 1) * charSpacing;
                 let startX = textXCenter - (totalTextWidth / 2);
                 
-                let emojiY = textY - 140; 
+                // Moved emoji higher to avoid overlap with top tone mark
+                let emojiY = textY - 170; 
                 
                 if (this.emoji) {
                     ctx.font = '60px Arial';
