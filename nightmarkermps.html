@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>夜市大冒險：有聲平板版</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Biz+UDPGothic:wght@700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0f0f1a;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .zhuyin-font {
+            font-family: 'Noto Serif TC', 'Biz UDPGothic', serif;
+            line-height: 1;
+        }
+
+        /* Neon Effects */
+        .neon-text-pink { text-shadow: 0 0 5px #ec4899, 0 0 10px #ec4899; }
+        .neon-text-blue { text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6; }
+        .neon-text-green { text-shadow: 0 0 5px #10b981, 0 0 10px #10b981; }
+        .neon-text-yellow { text-shadow: 0 0 5px #eab308, 0 0 10px #eab308; }
+
+        /* Background */
+        .night-market-bg {
+            background: radial-gradient(circle at 50% 0%, #2d1b4e 0%, #0f0f1a 60%);
+            position: relative;
+        }
+        .night-market-bg::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(236, 72, 153, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.1) 0%, transparent 20%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Animations */
+        .pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // --- SOUND ENGINE (Web Audio API) ---
+        // Simple synth to avoid loading external files
+        const useSound = () => {
+            const audioCtxRef = useRef(null);
+            const [isMuted, setIsMuted] = useState(false);
+
+            const initAudio = () => {
+                if (!audioCtxRef.current) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtxRef.current = new AudioContext();
+                }
+                if (audioCtxRef.current.state === 'suspended') {
+                    audioCtxRef.current.resume();
+                }
+            };
+
+            const playTone = (freq, type, duration, startTime = 0) => {
+                if (isMuted || !audioCtxRef.current) return;
+                const ctx = audioCtxRef.current;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+                
+                gain.gain.setValueAtTime(0.1, ctx.currentTime + startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(ctx.currentTime + startTime);
+                osc.stop(ctx.currentTime + startTime + duration);
+            };
+
+            const playSound = (effect) => {
+                initAudio(); // Ensure context is ready
+                if (isMuted) return;
+
+                switch (effect) {
+                    case 'correct': // Coin sound
+                        playTone(1046.50, 'sine', 0.1, 0); // C6
+                        playTone(1318.51, 'sine', 0.3, 0.1); // E6
+                        break;
+                    case 'wrong': // Buzz
+                        playTone(150, 'sawtooth', 0.3, 0);
+                        break;
+                    case 'pop': // Balloon pop
+                        playTone(400, 'square', 0.05, 0);
+                        break;
+                    case 'click': // UI Click
+                        playTone(800, 'sine', 0.05, 0);
+                        break;
+                    case 'win': // Small fanfare
+                        playTone(523.25, 'triangle', 0.1, 0); // C5
+                        playTone(659.25, 'triangle', 0.1, 0.1); // E5
+                        playTone(783.99, 'triangle', 0.1, 0.2); // G5
+                        playTone(1046.50, 'triangle', 0.4, 0.3); // C6
+                        break;
+                }
+            };
+
+            const toggleMute = () => setIsMuted(!isMuted);
+
+            return { playSound, isMuted, toggleMute };
+        };
+
+        // --- CORE COMPONENT: VERTICAL ZHUYIN BLOCK ---
+        const ZhuyinBlock = ({ charCode, size = "md", color = "white", active = false, isBlank = false, isQuestion = false }) => {
+            const sizeClasses = {
+                sm: { box: "w-8", font: "text-lg", tone: "text-xs", toneRight: "-right-2" },
+                md: { box: "w-12", font: "text-3xl", tone: "text-lg", toneRight: "-right-4" },
+                lg: { box: "w-16", font: "text-5xl", tone: "text-2xl", toneRight: "-right-6" },
+                xl: { box: "w-24", font: "text-7xl", tone: "text-4xl", toneRight: "-right-8" },
+            };
+            const s = sizeClasses[size];
+            const colorClasses = { white: "text-white", black: "text-black", yellow: "text-yellow-300", red: "text-red-400", green: "text-green-400" };
+            const c = colorClasses[color];
+
+            if (charCode === "＿" || isBlank) return <div className={`${s.box} flex items-center justify-center border-b-4 border-white/30 h-full mx-1`}></div>;
+            if (charCode === "?" || isQuestion) return <div className={`${s.box} flex items-center justify-center border-4 border-red-500 rounded-lg bg-red-900/30 text-red-400 animate-pulse h-full mx-1`}><span className={`${s.font} font-black`}>?</span></div>;
+
+            const tones = ['˙', 'ˊ', 'ˇ', 'ˋ'];
+            let tone = '';
+            let body = charCode;
+            for (let t of tones) { if (charCode.includes(t)) { tone = t; body = charCode.replace(t, ''); break; } }
+            const isLightTone = tone === '˙';
+            const isSideTone = ['ˊ', 'ˇ', 'ˋ'].includes(tone);
+
+            return (
+                <div className={`relative flex flex-col items-center justify-center mx-1 select-none ${c} zhuyin-font`}>
+                    <div className={`absolute -top-1/4 w-full text-center ${s.tone} font-bold`}>{isLightTone ? '˙' : ''}</div>
+                    <div className="flex flex-col items-center leading-none">{body.split('').map((char, i) => <span key={i} className={`${s.font} font-bold my-[-1px]`}>{char}</span>)}</div>
+                    {isSideTone && <div className={`absolute top-1/2 transform -translate-y-1/2 ${s.toneRight} ${s.tone} font-bold`}>{tone}</div>}
+                </div>
+            );
+        };
+
+        // --- DATA ---
+        const FOOD_ITEMS = [
+            { id: 1, name: "珍珠奶茶", zhuyinTitle: "＿ ㄓㄨ ㄋㄞˇ ㄔㄚˊ", char: "珍", zhuyin: ["ㄓ", "ㄣ", " "], emoji: "🧋" },
+            { id: 2, name: "珍珠奶茶", zhuyinTitle: "ㄓㄣ ＿ ㄋㄞˇ ㄔㄚˊ", char: "珠", zhuyin: ["ㄓ", "ㄨ", " "], emoji: "🧋" },
+            { id: 3, name: "雞腿", zhuyinTitle: "＿ ㄊㄨㄟˇ", char: "雞", zhuyin: ["ㄐ", "ㄧ", " "], emoji: "🍗" },
+            { id: 4, name: "雞腿", zhuyinTitle: "ㄐㄧ ＿", char: "腿", zhuyin: ["ㄊ", "ㄨㄟ", "ˇ"], emoji: "🍗" },
+            { id: 5, name: "臭豆腐", zhuyinTitle: "＿ ㄉㄡˋ ㄈㄨˇ", char: "臭", zhuyin: ["ㄔ", "ㄡ", "ˋ"], emoji: "🍲" },
+            { id: 6, name: "大腸包小腸", zhuyinTitle: "ㄉㄚˋ ＿ ㄅㄠ ㄒㄧㄠˇ ㄔㄤˊ", char: "腸", zhuyin: ["ㄔ", "ㄤ", "ˊ"], emoji: "🌭" },
+            { id: 7, name: "蚵仔煎", zhuyinTitle: "ㄜˊ ㄗˇ ＿", char: "煎", zhuyin: ["ㄐ", "ㄧ", "ㄢ", " "], emoji: "🍳" },
+            { id: 8, name: "滷肉飯", zhuyinTitle: "ㄌㄨˇ ㄖㄡˋ ＿", char: "飯", zhuyin: ["ㄈ", "ㄢ", "ˋ"], emoji: "🍚" },
+            { id: 9, name: "地瓜球", zhuyinTitle: "ㄉㄧˋ ㄍㄨㄚ ＿", char: "球", zhuyin: ["ㄑ", "ㄧ", "ㄡ", "ˊ"], emoji: "🍠" },
+            { id: 10, name: "章魚燒", zhuyinTitle: "＿ ㄩˊ ㄕㄠ", char: "章", zhuyin: ["ㄓ", "ㄤ", " "], emoji: "🐙" },
+            { id: 11, name: "木瓜牛奶", zhuyinTitle: "＿ ㄍㄨㄚ ㄋㄧㄡˊ ㄋㄞˇ", char: "木", zhuyin: ["ㄇ", "ㄨ", "ˋ"], emoji: "🥛" },
+            { id: 12, name: "鹽酥雞", zhuyinTitle: "＿ ㄙㄨ ㄐㄧ", char: "鹽", zhuyin: ["ㄧ", "ㄢ", "ˊ"], emoji: "🥡" },
+            { id: 13, name: "烤玉米", zhuyinTitle: "＿ ㄩˋ ㄇㄧˇ", char: "烤", zhuyin: ["ㄎ", "ㄠ", "ˇ"], emoji: "🌽" },
+            { id: 14, name: "豆花", zhuyinTitle: "ㄉㄡˋ ＿", char: "花", zhuyin: ["ㄏ", "ㄨ", "ㄚ", " "], emoji: "🍮" },
+            { id: 15, name: "壽司", zhuyinTitle: "＿ ㄙ", char: "壽", zhuyin: ["ㄕ", "ㄡ", "ˋ"], emoji: "🍣" },
+            { id: 16, name: "漢堡", zhuyinTitle: "ㄏㄢˋ ＿", char: "堡", zhuyin: ["ㄅ", "ㄠ", "ˇ"], emoji: "🍔" },
+            { id: 17, name: "薯條", zhuyinTitle: "＿ ㄊㄧㄠˊ", char: "薯", zhuyin: ["ㄕ", "ㄨ", "ˇ"], emoji: "🍟" },
+            { id: 18, name: "義大利麵", zhuyinTitle: "ㄧˋ ㄉㄚˋ ＿ ㄇㄧㄢˋ", char: "利", zhuyin: ["ㄌ", "ㄧ", "ˋ"], emoji: "🍝" },
+        ];
+
+        const SHOP_ITEMS = [
+            { name: "鞋子", zhuyin: "ㄒㄧㄝˊ ㄗ˙", emoji: "👟" },
+            { name: "帽子", zhuyin: "ㄇㄠˋ ㄗ˙", emoji: "🧢" },
+            { name: "裙子", zhuyin: "ㄑㄩㄣˊ ㄗ˙", emoji: "👗" },
+            { name: "衣服", zhuyin: "ㄧ ㄈㄨˊ", emoji: "👕" },
+            { name: "褲子", zhuyin: "ㄎㄨˋ ㄗ˙", emoji: "👖" },
+            { name: "襪子", zhuyin: "ㄨㄚˋ ㄗ˙", emoji: "🧦" },
+            { name: "眼鏡", zhuyin: "ㄧㄢˇ ㄐㄧㄥˋ", emoji: "👓" },
+            { name: "背包", zhuyin: "ㄅㄟ ㄅㄠ", emoji: "🎒" },
+            { name: "手錶", zhuyin: "ㄕㄡˇ ㄅㄧㄠˇ", emoji: "⌚" },
+            { name: "雨傘", zhuyin: "ㄩˇ ㄙㄢˇ", emoji: "☂️" },
+            { name: "戒指", zhuyin: "ㄐㄧㄝˋ ㄓˇ", emoji: "💍" },
+            { name: "口紅", zhuyin: "ㄎㄡˇ ㄏㄨㄥˊ", emoji: "💄" },
+        ];
+
+        const CONFUSION_MAP = { 'ˊ': ['ˇ'], 'ˇ': ['ˊ'], 'ㄡ': ['ㄛ'], 'ㄛ': ['ㄡ', 'ㄨㄛ'], 'ㄣ': ['ㄥ'], 'ㄥ': ['ㄣ', 'ㄨㄥ'], 'ㄢ': ['ㄤ'], 'ㄤ': ['ㄢ'], 'ㄗ': ['ㄓ'], 'ㄓ': ['ㄗ'], 'ㄘ': ['ㄔ'], 'ㄔ': ['ㄘ'], 'ㄙ': ['ㄕ'], 'ㄕ': ['ㄙ'], 'ㄖ': ['ㄌ'], 'ㄌ': ['ㄖ'], 'ㄧㄣ': ['ㄧㄥ'], 'ㄧㄥ': ['ㄧㄣ'], 'ㄋ': ['ㄌ'], 'ㄌ': ['ㄋ'] };
+        const INITIALS = "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ".split("");
+        const FINALS = "ㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ".split("");
+        const TONES = [" ", "ˊ", "ˇ", "ˋ", "˙"];
+        const isTone = (char) => TONES.includes(char);
+        
+        const createShuffledDeck = (length) => {
+            const array = Array.from({length}, (_, i) => i);
+            for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; }
+            return array;
+        };
+
+        // 1. FOOD STREET
+        const FoodGame = ({ onBack, playSound }) => {
+            const [score, setScore] = useState(0);
+            const [currentOrder, setCurrentOrder] = useState(null);
+            const [step, setStep] = useState(0);
+            const [options, setOptions] = useState([]);
+            const [questionDeck, setQuestionDeck] = useState([]);
+            const [feedback, setFeedback] = useState(null);
+            const [wrongSide, setWrongSide] = useState(null);
+
+            useEffect(() => { const newDeck = createShuffledDeck(FOOD_ITEMS.length); nextOrder(newDeck); }, []);
+
+            const nextOrder = (overrideDeck = null) => {
+                let currentDeck = overrideDeck || [...questionDeck];
+                if (currentDeck.length === 0) currentDeck = createShuffledDeck(FOOD_ITEMS.length);
+                const nextIndex = currentDeck.pop();
+                setQuestionDeck(currentDeck);
+                const item = FOOD_ITEMS[nextIndex];
+                setCurrentOrder(item);
+                setStep(0);
+                generateOptionsForStep(item, 0);
+            };
+
+            const generateOptionsForStep = (item, stepIndex) => {
+                const correctChar = item.zhuyin[stepIndex];
+                let distractor = "";
+                const useSmartDistractor = Math.random() < 0.6;
+                if (useSmartDistractor && CONFUSION_MAP[correctChar]) {
+                    const pool = CONFUSION_MAP[correctChar]; distractor = pool[Math.floor(Math.random() * pool.length)];
+                } else {
+                    if (isTone(correctChar)) { do { distractor = TONES[Math.floor(Math.random() * TONES.length)]; } while (distractor === correctChar); }
+                    else if (INITIALS.includes(correctChar)) { do { distractor = INITIALS[Math.floor(Math.random() * INITIALS.length)]; } while (distractor === correctChar); }
+                    else { do { distractor = FINALS[Math.floor(Math.random() * FINALS.length)]; } while (distractor === correctChar); }
+                }
+                setOptions(Math.random() > 0.5 ? [correctChar, distractor] : [distractor, correctChar]);
+            };
+
+            const handleOptionClick = (char, side) => {
+                if (feedback) return;
+                const correctChar = currentOrder.zhuyin[step];
+                if (char === correctChar) {
+                    playSound('correct');
+                    if (step + 1 >= currentOrder.zhuyin.length) {
+                        setStep(prev => prev + 1); setFeedback('correct'); setScore(prev => prev + 10);
+                        setTimeout(() => { setFeedback(null); nextOrder(); }, 800);
+                    } else {
+                        setStep(prev => prev + 1); generateOptionsForStep(currentOrder, step + 1);
+                    }
+                } else {
+                    playSound('wrong'); setWrongSide(side); setTimeout(() => setWrongSide(null), 500);
+                }
+            };
+
+            const AnswerBuilder = () => {
+                if (!currentOrder) return null;
+                const bodyChars = currentOrder.zhuyin.filter(c => !isTone(c));
+                const toneChar = currentOrder.zhuyin.find(c => isTone(c));
+                return (
+                    <div className="flex flex-col items-center mx-2 scale-125">
+                        {toneChar === '˙' && ( <div className="h-8 mb-1"> {currentOrder.zhuyin.indexOf(toneChar) < step ? <span className="text-4xl font-bold text-yellow-400 zhuyin-font">˙</span> : (currentOrder.zhuyin.indexOf(toneChar) === step ? <span className="text-4xl font-bold text-red-400 animate-pulse">?</span> : null) } </div> )}
+                        <div className="relative flex flex-col items-center">
+                            {bodyChars.map((c, i) => ( <div key={i} className={`w-16 h-16 flex items-center justify-center my-1 ${i < step ? 'bg-yellow-400 text-black rounded-lg' : (i === step ? 'border-4 border-red-500 bg-red-900/30 text-red-400 rounded-lg animate-pulse' : 'border-4 border-dashed border-gray-600 rounded-lg')}`}> <span className="text-5xl font-black zhuyin-font"> {i < step ? c : (i === step ? "?" : "")} </span> </div> ))}
+                            {toneChar && toneChar !== '˙' && ( <div className="absolute top-1/2 -right-16 transform -translate-y-1/2"> {currentOrder.zhuyin.indexOf(toneChar) < step ? <span className="text-6xl font-bold text-yellow-400 zhuyin-font">{toneChar}</span> : (currentOrder.zhuyin.indexOf(toneChar) === step ? <span className="text-6xl font-bold text-red-400 animate-pulse">?</span> : null) } </div> )}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex flex-col h-full night-market-bg">
+                    <div className="flex justify-between items-center p-4 md:px-8 z-10">
+                        <button onClick={() => { playSound('click'); onBack(); }} className="bg-white/10 hover:bg-white/20 backdrop-blur px-6 py-2 rounded-full text-lg border border-white/20">⬅ 回夜市</button>
+                        <div className="text-3xl font-black neon-text-yellow">💰 {score}</div>
+                    </div>
+                    <div className="flex-1 flex flex-row items-center justify-between px-8 md:px-20 pb-8 z-10 max-w-7xl mx-auto w-full gap-8">
+                        <div className="flex-1 flex justify-start"> {options.length > 0 && ( <button onClick={() => handleOptionClick(options[0], 'left')} className={`w-32 h-32 md:w-48 md:h-48 rounded-3xl border-b-8 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center shadow-2xl ${wrongSide === 'left' ? 'bg-red-500 shake' : 'bg-gradient-to-br from-yellow-300 to-yellow-500 hover:scale-105'}`}> {options[0] === " " ? <span className="text-3xl text-black font-bold">一聲</span> : <ZhuyinBlock charCode={options[0]} size="xl" color="black" />} </button> )} </div>
+                        <div className="flex-1 flex justify-center"> <div className="relative bg-gray-800/90 backdrop-blur-md p-8 rounded-[2rem] border-4 border-pink-500 w-full max-w-lg flex flex-col items-center shadow-[0_0_30px_rgba(236,72,153,0.3)] min-h-[400px]"> {feedback === 'correct' && <div className="absolute z-50 -top-16 text-9xl text-green-400 font-black pop-in drop-shadow-lg">O</div>} <div className="text-9xl mb-4 animate-bounce filter drop-shadow-lg">{currentOrder?.emoji}</div> <div className="flex flex-row flex-wrap justify-center items-end bg-black/40 px-6 py-4 rounded-2xl border border-white/20 gap-2 mb-4"> {currentOrder?.zhuyinTitle.split(" ").map((token, idx) => ( token === "＿" ? <AnswerBuilder key={idx} /> : <ZhuyinBlock key={idx} charCode={token} size="lg" /> ))} </div> </div> </div>
+                        <div className="flex-1 flex justify-end"> {options.length > 0 && ( <button onClick={() => handleOptionClick(options[1], 'right')} className={`w-32 h-32 md:w-48 md:h-48 rounded-3xl border-b-8 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center shadow-2xl ${wrongSide === 'right' ? 'bg-red-500 shake' : 'bg-gradient-to-br from-yellow-300 to-yellow-500 hover:scale-105'}`}> {options[1] === " " ? <span className="text-3xl text-black font-bold">一聲</span> : <ZhuyinBlock charCode={options[1]} size="xl" color="black" />} </button> )} </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 2. GAME STREET
+        const GameStreet = ({ onBack, playSound }) => {
+            const [target, setTarget] = useState("");
+            const [balloons, setBalloons] = useState([]);
+            const [score, setScore] = useState(0);
+            const [feedback, setFeedback] = useState(null);
+            const CHARS = ["ㄅ","ㄆ","ㄇ","ㄈ","ㄉ","ㄊ","ㄋ","ㄌ","ㄍ","ㄎ","ㄏ","ㄐ","ㄑ","ㄒ","ㄓ","ㄔ","ㄕ","ㄖ","ㄗ","ㄘ","ㄙ","ㄧ","ㄨ","ㄩ","ㄚ","ㄛ","ㄜ","ㄝ","ㄞ","ㄟ","ㄠ","ㄡ","ㄢ","ㄣ","ㄤ","ㄥ","ㄦ"];
+
+            const generateRound = () => {
+                const newTarget = CHARS[Math.floor(Math.random() * CHARS.length)];
+                setTarget(newTarget);
+                const newBalloons = Array.from({length: 9}, (_, i) => ({ id: i, char: i === 4 ? newTarget : CHARS[Math.floor(Math.random() * CHARS.length)], color: ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500'][Math.floor(Math.random()*5)], popped: false }));
+                for (let i = newBalloons.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [newBalloons[i], newBalloons[j]] = [newBalloons[j], newBalloons[i]]; }
+                if (!newBalloons.find(b => b.char === newTarget)) newBalloons[0].char = newTarget;
+                setBalloons(newBalloons);
+            };
+
+            useEffect(() => { generateRound(); }, []);
+
+            const handlePop = (balloon) => {
+                if (balloon.popped || feedback) return;
+                if (balloon.char === target) {
+                    playSound('pop'); setBalloons(prev => prev.map(b => b.id === balloon.id ? {...b, popped: true} : b)); setScore(prev => prev + 10);
+                    setTimeout(generateRound, 500);
+                } else {
+                    playSound('wrong'); setFeedback('wrong'); setTimeout(() => setFeedback(null), 500);
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-full night-market-bg">
+                    <div className="flex justify-between items-center p-4 md:px-8 z-10">
+                        <button onClick={() => { playSound('click'); onBack(); }} className="bg-white/10 hover:bg-white/20 backdrop-blur px-6 py-2 rounded-full text-lg border border-white/20">⬅ 回夜市</button>
+                        <div className="text-3xl font-black neon-text-blue">🏆 {score}</div>
+                    </div>
+                    <div className="flex-1 flex flex-row items-center justify-center p-4 gap-16 z-10">
+                        <div className="bg-gray-800/80 backdrop-blur p-8 rounded-3xl border-4 border-blue-500 text-center w-64 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                            <p className="text-gray-400 text-lg mb-4 font-bold">請打破</p>
+                            <div className="flex justify-center"><ZhuyinBlock charCode={target} size="xl" color="white" /></div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-6 p-6 bg-white/5 rounded-3xl backdrop-blur-sm border border-white/10 relative">
+                            {feedback === 'wrong' && <div className="absolute inset-0 z-50 flex items-center justify-center text-9xl text-red-500 font-bold shake" style={{textShadow:'0 0 10px black'}}>X</div>}
+                            {balloons.map((b) => ( <div key={b.id} onClick={() => handlePop(b)} className={`w-28 h-28 rounded-full flex items-center justify-center cursor-pointer transition-all relative border-b-4 border-black/20 ${b.popped ? 'opacity-0 scale-150' : `${b.color} shadow-xl active:scale-95 hover:scale-105`}`}> <div className="absolute top-4 right-6 w-4 h-3 bg-white/30 rounded-full transform rotate-45"></div> <ZhuyinBlock charCode={b.char} size="lg" color="white" /> </div> ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 3. SHOPPING STREET
+        const ShoppingStreet = ({ onBack, playSound }) => {
+            const [targetItem, setTargetItem] = useState(null);
+            const [shelfItems, setShelfItems] = useState([]);
+            const [score, setScore] = useState(0);
+            const [feedback, setFeedback] = useState(null);
+
+            const generateRound = () => {
+                const shuffledAll = [...SHOP_ITEMS].sort(() => 0.5 - Math.random());
+                const shelf = shuffledAll.slice(0, 4); setShelfItems(shelf); setTargetItem(shelf[Math.floor(Math.random() * shelf.length)]);
+            };
+
+            useEffect(() => { generateRound(); }, []);
+
+            const handleBuy = (item) => {
+                if (feedback) return;
+                if (item.name === targetItem.name) {
+                    playSound('correct'); setFeedback('correct'); setScore(prev => prev + 10);
+                    setTimeout(() => { setFeedback(null); generateRound(); }, 1000);
+                } else {
+                    playSound('wrong'); setFeedback('wrong'); setTimeout(() => setFeedback(null), 500);
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-full night-market-bg">
+                    <div className="flex justify-between items-center p-4 md:px-8 z-10">
+                        <button onClick={() => { playSound('click'); onBack(); }} className="bg-white/10 hover:bg-white/20 backdrop-blur px-6 py-2 rounded-full text-lg border border-white/20">⬅ 回夜市</button>
+                        <div className="text-3xl font-black neon-text-green">🛍️ {score}</div>
+                    </div>
+                    <div className="flex-1 flex flex-row items-center justify-center p-8 gap-16 z-10">
+                        <div className="flex flex-col items-center">
+                            <div className="bg-white text-black p-8 rounded-3xl mb-4 relative shadow-2xl border-4 border-gray-300 w-72">
+                                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white rotate-45 border-r-4 border-b-4 border-gray-300"></div>
+                                <p className="text-gray-500 text-lg font-bold mb-4 text-center">老闆，我要買...</p>
+                                <div className="flex justify-center gap-2"> {targetItem?.zhuyin.split(" ").map((token, i) => ( <ZhuyinBlock key={i} charCode={token} size="lg" color="black" /> ))} </div>
+                            </div>
+                            <div className="text-9xl animate-bounce filter drop-shadow-lg mt-4">🧒</div>
+                        </div>
+                        <div className="bg-gray-800/80 backdrop-blur p-6 rounded-3xl border-t-8 border-yellow-600 shadow-2xl relative">
+                            {feedback === 'correct' && <div className="absolute inset-0 z-50 flex items-center justify-center text-9xl text-green-500 font-black pop-in" style={{textShadow:'0 0 10px black'}}>O</div>}
+                            {feedback === 'wrong' && <div className="absolute inset-0 z-50 flex items-center justify-center text-9xl text-red-500 font-black shake" style={{textShadow:'0 0 10px black'}}>X</div>}
+                            <div className="grid grid-cols-2 gap-6"> {shelfItems.map((item, i) => ( <button key={i} onClick={() => handleBuy(item)} className="bg-gray-700 w-48 h-40 rounded-2xl flex flex-col items-center justify-center border-b-8 border-gray-600 active:border-b-0 active:translate-y-2 transition-all hover:bg-gray-600 group shadow-lg"> <div className="text-8xl group-hover:scale-110 transition-transform">{item.emoji}</div> </button> ))} </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 4. MAIN MENU
+        const MainMenu = ({ onSelectGame, playSound }) => {
+            return (
+                <div className="flex flex-col h-full night-market-bg overflow-y-auto">
+                    <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
+                        <div className="mb-12 p-6 border-4 border-yellow-400 rounded-3xl bg-black/40 backdrop-blur-md shadow-[0_0_20px_#eab308] text-center max-w-2xl w-full transform hover:scale-105 transition-transform duration-500">
+                            <h1 className="text-6xl md:text-7xl font-black text-white neon-text-pink mb-4 tracking-wider">夜市大冒險</h1>
+                            <p className="text-2xl md:text-3xl text-yellow-300 font-bold tracking-widest animate-pulse">來看看時間內可以完成多少美食吧！</p>
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl justify-center items-stretch">
+                            <button onClick={() => { playSound('click'); onSelectGame('food'); }} className="flex-1 bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-pink-500 rounded-3xl p-1 hover:scale-105 hover:-translate-y-2 transition-all shadow-2xl group neon-border-pink"> <div className="h-full rounded-[1.3rem] p-6 flex flex-col items-center justify-center gap-4 bg-gray-900/50 backdrop-blur-sm"> <div className="text-8xl group-hover:rotate-12 transition-transform">🥘</div> <h2 className="text-4xl font-black text-white neon-text-pink">美食街</h2> <div className="flex gap-2"><ZhuyinBlock charCode="ㄇㄟˇ" size="sm"/><ZhuyinBlock charCode="ㄕˊ" size="sm"/><ZhuyinBlock charCode="ㄐㄧㄝ" size="sm"/></div> <p className="text-gray-400 font-bold">注音填空挑戰</p> </div> </button>
+                            <button onClick={() => { playSound('click'); onSelectGame('game'); }} className="flex-1 bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-blue-500 rounded-3xl p-1 hover:scale-105 hover:-translate-y-2 transition-all shadow-2xl group neon-border-blue"> <div className="h-full rounded-[1.3rem] p-6 flex flex-col items-center justify-center gap-4 bg-gray-900/50 backdrop-blur-sm"> <div className="text-8xl group-hover:-rotate-12 transition-transform">🎈</div> <h2 className="text-4xl font-black text-white neon-text-blue">遊戲街</h2> <div className="flex gap-2"><ZhuyinBlock charCode="ㄧㄡˊ" size="sm"/><ZhuyinBlock charCode="ㄒㄧˋ" size="sm"/><ZhuyinBlock charCode="ㄐㄧㄝ" size="sm"/></div> <p className="text-gray-400 font-bold">射氣球認字</p> </div> </button>
+                            <button onClick={() => { playSound('click'); onSelectGame('shop'); }} className="flex-1 bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-green-500 rounded-3xl p-1 hover:scale-105 hover:-translate-y-2 transition-all shadow-2xl group neon-border-green"> <div className="h-full rounded-[1.3rem] p-6 flex flex-col items-center justify-center gap-4 bg-gray-900/50 backdrop-blur-sm"> <div className="text-8xl group-hover:translate-x-2 transition-transform">🛍️</div> <h2 className="text-4xl font-black text-white neon-text-green">購物街</h2> <div className="flex gap-2"><ZhuyinBlock charCode="ㄍㄡˋ" size="sm"/><ZhuyinBlock charCode="ㄨˋ" size="sm"/><ZhuyinBlock charCode="ㄐㄧㄝ" size="sm"/></div> <p className="text-gray-400 font-bold">幫客人買清單</p> </div> </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- ROOT ---
+        const App = () => {
+            const [currentView, setCurrentView] = useState('home');
+            const { playSound, isMuted, toggleMute } = useSound();
+
+            const renderView = () => {
+                switch(currentView) {
+                    case 'food': return <FoodGame onBack={() => setCurrentView('home')} playSound={playSound} />;
+                    case 'game': return <GameStreet onBack={() => setCurrentView('home')} playSound={playSound} />;
+                    case 'shop': return <ShoppingStreet onBack={() => setCurrentView('home')} playSound={playSound} />;
+                    default: return <MainMenu onSelectGame={setCurrentView} playSound={playSound} />;
+                }
+            };
+
+            return (
+                <div className="h-screen w-screen overflow-hidden bg-black select-none">
+                    {/* Mute Button Global */}
+                    <button onClick={toggleMute} className="fixed top-4 right-4 z-50 w-12 h-12 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-2xl shadow-lg border border-white/30 active:scale-95 transition-all">
+                        {isMuted ? '🔇' : '🔊'}
+                    </button>
+                    {renderView()}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
