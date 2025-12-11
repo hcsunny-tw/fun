@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>夜市大冒險：擴充版</title>
+    <title>夜市大冒險：正統注音修正版</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -106,7 +106,6 @@
                 osc.stop(ctx.currentTime + startTime + duration);
             };
 
-            // TTS (Text-to-Speech)
             const speak = (text) => {
                 if (isMuted || !window.speechSynthesis) return;
                 window.speechSynthesis.cancel();
@@ -171,7 +170,6 @@
                         {bodyChars.map((char, i) => (
                             <span key={i} className={`${s.font} font-bold my-[-2px] relative`}>
                                 {char}
-                                {/* Tone Fix: Attach to the LAST character of the column */}
                                 {isSideTone && i === bodyChars.length - 1 && (
                                     <span className={`absolute top-0 ${s.toneRight} ${s.tone} font-bold`}>{tone}</span>
                                 )}
@@ -224,7 +222,7 @@
         const SHOP_ITEMS = [
             { name: "鞋子", zhuyin: "ㄒㄧㄝˊ ㄗ˙", emoji: "👟" },
             { name: "帽子", zhuyin: "ㄇㄠˋ ㄗ˙", emoji: "🧢" },
-            { name: "洋裝", zhuyin: "ㄧㄤˊ ㄓㄨㄤ", emoji: "👗" }, // Fixed: 洋裝 instead of 裙子
+            { name: "洋裝", zhuyin: "ㄧㄤˊ ㄓㄨㄤ", emoji: "👗" },
             { name: "衣服", zhuyin: "ㄧ ㄈㄨˊ", emoji: "👕" },
             { name: "褲子", zhuyin: "ㄎㄨˋ ㄗ˙", emoji: "👖" },
             { name: "襪子", zhuyin: "ㄨㄚˋ ㄗ˙", emoji: "🧦" },
@@ -234,7 +232,6 @@
             { name: "雨傘", zhuyin: "ㄩˇ ㄙㄢˇ", emoji: "☂️" },
             { name: "戒指", zhuyin: "ㄐㄧㄝˋ ㄓˇ", emoji: "💍" },
             { name: "口紅", zhuyin: "ㄎㄡˇ ㄏㄨㄥˊ", emoji: "💄" },
-            // New Items
             { name: "足球", zhuyin: "ㄗㄨˊ ㄑㄧㄡˊ", emoji: "⚽" },
             { name: "籃球", zhuyin: "ㄌㄢˊ ㄑㄧㄡˊ", emoji: "🏀" },
             { name: "棒球", zhuyin: "ㄅㄤˋ ㄑㄧㄡˊ", emoji: "⚾" },
@@ -339,8 +336,6 @@
                             {bodyChars.map((c, i) => ( 
                                 <div key={i} className={`w-16 h-16 flex items-center justify-center my-1 relative ${i < step ? 'bg-yellow-400 text-black rounded-lg' : (i === step ? 'border-4 border-red-500 bg-red-900/30 text-red-400 rounded-lg animate-pulse' : 'border-4 border-dashed border-gray-600 rounded-lg')}`}> 
                                     <span className="text-5xl font-black zhuyin-font"> {i < step ? c : (i === step ? "?" : "")} </span> 
-                                    
-                                    {/* Tone Fix for AnswerBuilder: Attach to the last character slot */}
                                     {toneChar && toneChar !== '˙' && i === bodyChars.length - 1 && (
                                         <div className="absolute top-0 -right-16">
                                             {currentOrder.zhuyin.indexOf(toneChar) < step ? 
@@ -368,9 +363,34 @@
                     </div>
                     {isGameOver && <GameOverModal score={score} onRestart={() => { onUpdateHighScore(score); onBack(); }} />}
                     <div className="flex-1 flex flex-row items-center justify-between px-8 md:px-20 pb-8 z-10 max-w-7xl mx-auto w-full gap-8">
-                        <div className="flex-1 flex justify-start"> {options.length > 0 && ( <button onClick={() => handleOptionClick(options[0], 'left')} className={`w-32 h-32 md:w-48 md:h-48 rounded-3xl border-b-8 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center shadow-2xl ${wrongSide === 'left' ? 'bg-red-500 shake' : 'bg-gradient-to-br from-yellow-300 to-yellow-500 hover:scale-105'}`}> {options[0] === " " ? <span className="text-5xl font-black text-black"> </span> : <ZhuyinBlock charCode={options[0]} size="xl" color="black" />} </button> )} </div>
-                        <div className="flex-1 flex justify-center"> <div className="relative bg-gray-800/90 backdrop-blur-md p-8 rounded-[2rem] border-4 border-pink-500 w-full max-w-lg flex flex-col items-center shadow-[0_0_30px_rgba(236,72,153,0.3)] min-h-[400px]"> {feedback === 'correct' && <div className="absolute z-50 -top-16 text-9xl text-green-400 font-black pop-in drop-shadow-lg">O</div>} <div className="text-9xl mb-4 animate-bounce filter drop-shadow-lg">{currentOrder?.emoji}</div> <div className="flex flex-row flex-wrap justify-center items-end bg-black/40 px-6 py-4 rounded-2xl border border-white/20 gap-2 mb-4"> {currentOrder?.zhuyinTitle.split(" ").map((token, idx) => ( token === "＿" ? <AnswerBuilder key={idx} /> : <ZhuyinBlock key={idx} charCode={token} size="lg" /> ))} </div> </div> </div>
-                        <div className="flex-1 flex justify-end"> {options.length > 0 && ( <button onClick={() => handleOptionClick(options[1], 'right')} className={`w-32 h-32 md:w-48 md:h-48 rounded-3xl border-b-8 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center shadow-2xl ${wrongSide === 'right' ? 'bg-red-500 shake' : 'bg-gradient-to-br from-yellow-300 to-yellow-500 hover:scale-105'}`}> {options[1] === " " ? <span className="text-5xl font-black text-black"> </span> : <ZhuyinBlock charCode={options[1]} size="xl" color="black" />} </button> )} </div>
+                        <div className="flex-1 flex justify-start"> 
+                            {options.length > 0 && ( 
+                                <button onClick={() => handleOptionClick(options[0], 'left')} className={`w-32 h-32 md:w-48 md:h-48 rounded-3xl border-b-8 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center shadow-2xl ${wrongSide === 'left' ? 'bg-red-500 shake' : 'bg-gradient-to-br from-yellow-300 to-yellow-500 hover:scale-105'}`}> 
+                                    {/* Updated: Handle plain tone rendering */}
+                                    {isTone(options[0]) ? <span className="text-7xl md:text-8xl font-black text-black zhuyin-font">{options[0] === " " ? " " : options[0]}</span> : <ZhuyinBlock charCode={options[0]} size="xl" color="black" />} 
+                                </button> 
+                            )} 
+                        </div>
+                        
+                        {/* WIDER CARD (max-w-2xl) and flex-nowrap for title */}
+                        <div className="flex-1 flex justify-center"> 
+                            <div className="relative bg-gray-800/90 backdrop-blur-md p-8 rounded-[2rem] border-4 border-pink-500 w-full max-w-2xl flex flex-col items-center shadow-[0_0_30px_rgba(236,72,153,0.3)] min-h-[400px]"> 
+                                {feedback === 'correct' && <div className="absolute z-50 -top-16 text-9xl text-green-400 font-black pop-in drop-shadow-lg">O</div>} 
+                                <div className="text-9xl mb-4 animate-bounce filter drop-shadow-lg">{currentOrder?.emoji}</div> 
+                                <div className="flex flex-row flex-nowrap justify-center items-end bg-black/40 px-4 py-4 rounded-2xl border border-white/20 gap-1 mb-4 w-full"> 
+                                    {currentOrder?.zhuyinTitle.split(" ").map((token, idx) => ( token === "＿" ? <AnswerBuilder key={idx} /> : <ZhuyinBlock key={idx} charCode={token} size="lg" /> ))} 
+                                </div> 
+                            </div> 
+                        </div>
+                        
+                        <div className="flex-1 flex justify-end"> 
+                            {options.length > 0 && ( 
+                                <button onClick={() => handleOptionClick(options[1], 'right')} className={`w-32 h-32 md:w-48 md:h-48 rounded-3xl border-b-8 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center shadow-2xl ${wrongSide === 'right' ? 'bg-red-500 shake' : 'bg-gradient-to-br from-yellow-300 to-yellow-500 hover:scale-105'}`}> 
+                                    {/* Updated: Handle plain tone rendering */}
+                                    {isTone(options[1]) ? <span className="text-7xl md:text-8xl font-black text-black zhuyin-font">{options[1] === " " ? " " : options[1]}</span> : <ZhuyinBlock charCode={options[1]} size="xl" color="black" />} 
+                                </button> 
+                            )} 
+                        </div>
                     </div>
                 </div>
             );
