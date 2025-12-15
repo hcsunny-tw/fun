@@ -1,0 +1,523 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { ChefHat, Utensils, Trophy, Search, CheckCircle2, Heart, Zap, Bone, Sparkles, ArrowRight, BookOpen } from 'lucide-react';
+
+// --- 遊戲資料設定 (Game Data) ---
+
+// 食材清單 (Ingredients)
+const INGREDIENTS_DATA = [
+  { id: 'black_sesame', name_en: 'Black Sesame', name_zh: '黑芝麻', icon: '⚫' },
+  { id: 'white_sesame', name_en: 'White Sesame', name_zh: '白芝麻/油', icon: '⚪' },
+  { id: 'sugar', name_en: 'Sugar', name_zh: '糖', icon: '🍬' },
+  { id: 'flour', name_en: 'Flour', name_zh: '麵粉', icon: '🌾' },
+  { id: 'chicken', name_en: 'Chicken', name_zh: '雞肉', icon: '🍗' },
+  // FIX: 🫚 為新版 Emoji，舊裝置無法顯示，改用形狀相似的 🥔 代替塊根類，或使用圖片
+  { id: 'ginger', name_en: 'Ginger', name_zh: '老薑', icon: '🥔' }, 
+  { id: 'noodles', name_en: 'Noodles', name_zh: '麵條', icon: '🍜' },
+  { id: 'rice_wine', name_en: 'Rice Wine', name_zh: '米酒', icon: '🍶' },
+  { id: 'cheese', name_en: 'Cheese', name_zh: '起司', icon: '🧀' },
+];
+
+// 食譜清單 (Recipes) - 加入療效 (benefit)
+const RECIPES_DATA = [
+  { 
+    id: 'r1', 
+    name_en: 'Sesame Candy', 
+    name_zh: '芝麻糖', 
+    req: ['white_sesame', 'sugar'], 
+    score: 100,
+    desc: '香甜酥脆！',
+    benefit_en: 'High Calcium!',
+    benefit_zh: '白芝麻鈣質豐富，強健骨骼！',
+    icon: <Bone className="w-5 h-5 text-gray-500" />
+  },
+  { 
+    id: 'r2', 
+    name_en: 'Sesame Bun', 
+    name_zh: '芝麻包', 
+    req: ['flour', 'black_sesame', 'sugar'], 
+    score: 150,
+    desc: '熱氣騰騰！',
+    benefit_en: 'Vitamin E & Hair Care',
+    benefit_zh: '黑芝麻富含維生素E，烏黑秀髮！',
+    icon: <Sparkles className="w-5 h-5 text-purple-500" />
+  },
+  { 
+    id: 'r3', 
+    name_en: 'Sesame Noodles', 
+    name_zh: '麻醬麵', 
+    req: ['noodles', 'white_sesame'], 
+    score: 120,
+    desc: '將醬汁拌勻。',
+    benefit_en: 'Good Fats',
+    benefit_zh: '芝麻油脂是好油，幫助消化！',
+    icon: <Heart className="w-5 h-5 text-red-500" />
+  },
+  { 
+    id: 'r4', 
+    name_en: 'Sesame Oil Chicken', 
+    name_zh: '麻油雞', 
+    req: ['chicken', 'white_sesame', 'ginger', 'rice_wine'], 
+    score: 300,
+    desc: '香氣四溢！',
+    benefit_en: 'Warm Body & Circulation',
+    benefit_zh: '溫補身體，促進血液循環！',
+    icon: <Zap className="w-5 h-5 text-yellow-500" />
+  },
+  { 
+    id: 'r5', 
+    name_en: 'Sesame Pizza', 
+    name_zh: '芝麻餅皮披薩', 
+    req: ['flour', 'white_sesame', 'cheese'], 
+    score: 200,
+    desc: '濃郁起司與堅果香！',
+    benefit_en: 'Double Calcium Power',
+    benefit_zh: '芝麻加起司，雙重補鈣！',
+    icon: <Bone className="w-5 h-5 text-blue-500" />
+  },
+];
+
+// --- 輔助函式 ---
+const getRandomIngredient = () => {
+  const randomIndex = Math.floor(Math.random() * INGREDIENTS_DATA.length);
+  // 加入 uniqueId 防止 React key 重複問題
+  return { ...INGREDIENTS_DATA[randomIndex], uniqueId: Math.random().toString(36).substr(2, 9) };
+};
+
+const getRandomRecipe = () => {
+  const randomIndex = Math.floor(Math.random() * RECIPES_DATA.length);
+  return RECIPES_DATA[randomIndex];
+};
+
+// --- 元件 ---
+
+const Card = ({ item, isNew }) => (
+  <div className={`
+    relative flex flex-col items-center justify-center 
+    w-20 h-24 bg-white border-2 border-amber-200 rounded-lg shadow-sm shrink-0
+    transform transition-all duration-300 select-none
+    ${isNew ? 'scale-110 ring-2 ring-yellow-400' : 'hover:-translate-y-1'}
+  `}>
+    <div className="text-2xl mb-1">{item.icon}</div>
+    <div className="text-[10px] font-bold text-gray-800 text-center leading-tight px-1 break-words w-full">{item.name_en}</div>
+    <div className="text-[10px] text-gray-500 text-center">{item.name_zh}</div>
+  </div>
+);
+
+const Opponent = ({ name, handCount, score, status, avatarColor }) => (
+  <div className="flex flex-col items-center p-2 bg-amber-50 rounded-xl border border-amber-100 shadow-sm w-1/3 mx-1 transition-all">
+    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold mb-1 shadow-inner ${avatarColor}`}>
+      {name[0]}
+    </div>
+    <h3 className="font-bold text-gray-700 text-xs md:text-sm">{name}</h3>
+    <div className="text-[10px] md:text-xs text-gray-500 mb-1">得分: {score}</div>
+    <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-full border border-gray-200">
+      <div className="w-2 h-3 md:w-3 md:h-4 bg-blue-400 rounded-sm"></div>
+      <span className="text-[10px] md:text-xs font-bold">x {handCount}</span>
+    </div>
+    <div className="h-4 w-full flex items-center justify-center mt-1">
+      {status && (
+        <div className="text-[10px] font-bold text-amber-600 animate-bounce leading-tight truncate">
+          {status}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+export default function SesameChefGame() {
+  // 遊戲狀態
+  const [gameStatus, setGameStatus] = useState('menu'); // menu, playing, end
+  const [currentOrder, setCurrentOrder] = useState(null); // 改回單一物件，非陣列
+  const [turn, setTurn] = useState(0); // 0 = Player, 1-3 = CPU
+  const [logs, setLogs] = useState([]);
+  
+  // 玩家與電腦資料
+  const [playerHand, setPlayerHand] = useState([]);
+  const [playerScore, setPlayerScore] = useState(0);
+  
+  // 初始對手資料
+  const [opponents, setOpponents] = useState([
+    { id: 1, name: '小華 (Alex)', hand: [], score: 0, status: '', color: 'bg-red-400' },
+    { id: 2, name: '阿明 (Ben)', hand: [], score: 0, status: '', color: 'bg-green-400' },
+    { id: 3, name: '小美 (Cathy)', hand: [], score: 0, status: '', color: 'bg-purple-400' },
+  ]);
+
+  const logsEndRef = useRef(null);
+
+  // 自動捲動日誌
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
+
+  // 初始化遊戲
+  const startGame = () => {
+    setPlayerHand([]);
+    setPlayerScore(0);
+    setOpponents(prev => prev.map(opp => ({ ...opp, hand: [], score: 0, status: '' })));
+    setLogs(['遊戲開始！歡迎來到胡麻小廚神！']);
+    setCurrentOrder(getRandomRecipe()); // 初始化單一訂單
+    setTurn(0);
+    setGameStatus('playing');
+  };
+
+  const addLog = (msg) => {
+    setLogs(prev => [...prev.slice(-5), msg]);
+  };
+
+  // 檢查是否可以烹飪
+  const canCook = (hand, recipe) => {
+    if (!recipe) return false;
+    const handIds = hand.map(h => h.id);
+    return recipe.req.every(reqId => handIds.includes(reqId));
+  };
+
+  // 執行烹飪邏輯
+  const performCook = (who, hand, setHandFn, currentScore, setScoreFn, name) => {
+    // 扣除食材 (每個需要的食材只扣除一個)
+    let newHand = [...hand];
+    currentOrder.req.forEach(reqId => {
+      const index = newHand.findIndex(h => h.id === reqId);
+      if (index !== -1) newHand.splice(index, 1);
+    });
+    
+    setHandFn(newHand);
+    const newScore = currentScore + currentOrder.score;
+    setScoreFn(newScore);
+    
+    // 顯示成功與療效訊息
+    addLog(`🎉 ${name} 完成了 ${currentOrder.name_zh}! (+${currentOrder.score})`);
+    
+    // 檢查勝利
+    if (newScore >= 600) {
+      setGameStatus('end');
+      addLog(`🏆 ${name} 贏得了比賽！`);
+      return true; // Game Over
+    }
+
+    // 替換新訂單
+    const nextOrder = getRandomRecipe();
+    setCurrentOrder(nextOrder);
+
+    addLog(`🔔 新訂單: ${nextOrder.name_en} (${nextOrder.name_zh})`);
+    return false; // Game Continues
+  };
+
+  // 電腦 AI 邏輯
+  useEffect(() => {
+    if (gameStatus !== 'playing' || turn === 0) return;
+
+    const currentCpuIndex = turn - 1;
+    const cpu = opponents[currentCpuIndex];
+    
+    // 模擬思考時間
+    const timer = setTimeout(() => {
+      // 策略：直接檢查目前的訂單
+      if (canCook(cpu.hand, currentOrder)) {
+        // 執行烹飪
+        setOpponents(prev => {
+          const newOpps = [...prev];
+          const isGameOver = performCook(
+            cpu.name, 
+            cpu.hand, 
+            (h) => { newOpps[currentCpuIndex].hand = h; }, 
+            cpu.score, 
+            (s) => { newOpps[currentCpuIndex].score = s; }, 
+            cpu.name
+          );
+          
+          if (!isGameOver) {
+             newOpps[currentCpuIndex].status = 'Cooking!';
+             setTimeout(() => {
+                setOpponents(curr => {
+                    const clean = [...curr];
+                    if(clean[currentCpuIndex]) clean[currentCpuIndex].status = '';
+                    return clean;
+                });
+             }, 1500);
+          }
+          return newOpps;
+        });
+      } else {
+        // 不能煮，抽牌
+        const newItem = getRandomIngredient();
+        setOpponents(prev => {
+          const newOpps = [...prev];
+          newOpps[currentCpuIndex].hand.push(newItem);
+          newOpps[currentCpuIndex].status = `+ ${newItem.name_zh}`;
+          return newOpps;
+        });
+        
+        setTimeout(() => {
+           setOpponents(curr => {
+             const clean = [...curr];
+             if(clean[currentCpuIndex]) clean[currentCpuIndex].status = '';
+             return clean;
+           });
+        }, 1000);
+      }
+
+      // 如果遊戲沒結束，換下一位
+      setOpponents(currentOpps => {
+         const isAnyoneWin = currentOpps.some(o => o.score >= 600);
+         // 注意：這裡因為 state 更新非同步，我們假設如果剛才 performCook 回傳 true 則不繼續
+         // 簡單做法：檢查現在的分數狀態
+         if (!isAnyoneWin && playerScore < 600) {
+            setTurn(prev => (prev + 1) % 4);
+         }
+         return currentOpps;
+      });
+
+    }, 1500); 
+
+    return () => clearTimeout(timer);
+  }, [turn, gameStatus, currentOrder, playerScore]); 
+
+  // 玩家動作：抽牌
+  const playerDraw = () => {
+    if (turn !== 0) return;
+    
+    const newItem = getRandomIngredient();
+    setPlayerHand(prev => [...prev, newItem]);
+    addLog(`你找到了: ${newItem.name_en} (${newItem.name_zh})`);
+    setTurn(1); // 換電腦
+  };
+
+  // 玩家動作：烹飪
+  const playerCook = () => {
+    if (turn !== 0) return;
+    
+    if (!canCook(playerHand, currentOrder)) {
+      addLog("❌ 食材不夠！還缺一點東西...");
+      return;
+    }
+
+    performCook('你', playerHand, setPlayerHand, playerScore, setPlayerScore, '玩家');
+
+    // 如果沒有贏，才換下一位
+    if (playerScore + currentOrder.score < 600) {
+        setTurn(1);
+    }
+  };
+
+  const hasIngredient = (reqId) => playerHand.some(i => i.id === reqId);
+  const isPlayerTurn = turn === 0;
+  const readyToCook = currentOrder && canCook(playerHand, currentOrder);
+
+  // --- 畫面渲染 ---
+
+  if (gameStatus === 'menu') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-amber-50 font-sans p-4 select-none">
+        <div className="bg-white p-8 rounded-3xl shadow-xl text-center max-w-md w-full border-4 border-amber-400">
+          <ChefHat className="w-20 h-20 mx-auto text-amber-500 mb-4" />
+          <h1 className="text-4xl font-black text-gray-800 mb-2">胡麻小廚神</h1>
+          <h2 className="text-xl text-amber-600 font-bold mb-6">The Sesame Chef</h2>
+          
+          <div className="space-y-4 text-left bg-amber-50 p-5 rounded-xl mb-6 text-sm text-gray-600">
+            <p className="flex gap-2">👨‍🍳 <b>目標：</b> <span>收集食材，完成胡麻料理訂單。</span></p>
+            <p className="flex gap-2">💊 <b>學習：</b> <span>認識胡麻(Sesame)的健康功效。</span></p>
+            <p className="flex gap-2">🏆 <b>勝利：</b> <span>最先獲得 <span className="text-amber-600 font-bold">600分</span> 的人獲勝！</span></p>
+          </div>
+
+          <button 
+            onClick={startGame}
+            className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white text-xl font-bold rounded-xl transition-transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
+          >
+            <Utensils className="w-6 h-6" /> 開始料理！
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameStatus === 'end') {
+    const winner = playerScore >= 600 ? '你 (You)' : opponents.find(o => o.score >= 600)?.name || 'Someone';
+    const isPlayerWin = playerScore >= 600;
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-amber-50 font-sans p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-xl text-center max-w-md w-full border-4 border-amber-400">
+          <Trophy className={`w-24 h-24 mx-auto mb-4 animate-bounce ${isPlayerWin ? 'text-yellow-500' : 'text-gray-400'}`} />
+          <h1 className="text-3xl font-black text-gray-800 mb-2">遊戲結束！</h1>
+          <p className="text-xl text-gray-600 mb-6">
+            獲勝者是： <span className="font-bold text-amber-600 text-2xl">{winner}</span>
+          </p>
+          <div className="flex justify-between px-8 py-4 bg-gray-50 rounded-xl mb-6">
+            <div className="text-center">
+              <div className="text-xs text-gray-400">你的分數</div>
+              <div className="font-bold text-xl">{playerScore}</div>
+            </div>
+            <div className="text-center">
+               <div className="text-xs text-gray-400">最高分數</div>
+               <div className="font-bold text-xl">{Math.max(playerScore, ...opponents.map(o => o.score))}</div>
+            </div>
+          </div>
+          <button 
+            onClick={() => setGameStatus('menu')}
+            className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold transition-colors"
+          >
+            再玩一次 (Play Again)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-100 font-sans max-w-lg mx-auto shadow-2xl overflow-hidden relative">
+      
+      {/* 頂部：對手區 */}
+      <div className="bg-white p-2 md:p-3 flex justify-between items-start shadow-sm z-10 shrink-0">
+        {opponents.map((opp) => (
+          <Opponent key={opp.id} {...opp} avatarColor={opp.color} />
+        ))}
+      </div>
+
+      {/* 中央：遊戲桌與訂單 */}
+      <div className="flex-1 bg-amber-100 relative p-4 flex flex-col items-center overflow-hidden">
+        
+        {/* 單一訂單卡 (置中、放大) */}
+        {currentOrder && (
+          <div className={`
+            w-full max-w-xs bg-white rounded-2xl p-4 shadow-xl border-4 transition-all duration-500 relative flex flex-col
+            ${readyToCook && isPlayerTurn ? 'border-green-400 ring-4 ring-green-200 scale-105 z-20' : 'border-amber-300'}
+          `}>
+             {/* Ready Label */}
+             {readyToCook && isPlayerTurn && (
+               <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full animate-bounce shadow-md z-30 flex items-center gap-1">
+                 <CheckCircle2 className="w-3 h-3"/> 可烹飪!
+               </div>
+             )}
+
+            {/* Header */}
+            <div className="flex justify-between items-center mb-2 border-b-2 border-dashed border-gray-100 pb-2">
+              <span className="text-amber-600 font-black text-xl">+{currentOrder.score} 分</span>
+              <div className="text-gray-400 text-xs italic">Current Order</div>
+            </div>
+
+            {/* Main Content */}
+            <div className="text-center mb-3">
+              <h2 className="text-2xl font-black text-gray-800 leading-tight mb-1">{currentOrder.name_en}</h2>
+              <h3 className="text-lg text-gray-500 font-bold">{currentOrder.name_zh}</h3>
+            </div>
+
+            {/* Ingredients Needed */}
+            <div className="flex justify-center gap-2 mb-4">
+               {currentOrder.req.map((reqId, i) => {
+                 const ing = INGREDIENTS_DATA.find(x => x.id === reqId);
+                 const have = hasIngredient(reqId);
+                 return (
+                   <div key={i} className={`flex flex-col items-center transition-all ${have ? 'opacity-100 scale-110' : 'opacity-40 grayscale'}`}>
+                     <div className={`w-10 h-10 flex items-center justify-center rounded-full text-xl border-2 mb-1 ${have ? 'bg-green-100 border-green-400' : 'bg-gray-100 border-gray-300'}`}>
+                       {ing.icon}
+                     </div>
+                     <span className="text-[10px] font-bold text-gray-500">{ing.name_zh}</span>
+                   </div>
+                 )
+               })}
+            </div>
+
+            {/* Health Benefit Section - Prominent Display */}
+            <div className="mt-auto bg-green-50 border-2 border-green-100 rounded-xl p-3 flex items-start gap-3 relative overflow-hidden">
+               <div className="absolute -right-2 -bottom-2 text-green-100/50">
+                 <BookOpen size={64} />
+               </div>
+               <div className="p-2 bg-green-200/50 rounded-full text-green-700 shrink-0 z-10">
+                 {currentOrder.icon}
+               </div>
+               <div className="z-10">
+                 <h4 className="font-bold text-green-800 text-xs uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                   胡麻小知識
+                 </h4>
+                 <p className="text-sm text-green-900 font-medium leading-tight">
+                   {currentOrder.benefit_zh}
+                 </p>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Log 區 (縮小放到最下面，避免干擾) */}
+        <div className="w-full mt-auto h-20 overflow-y-auto bg-black/5 rounded-xl p-2 text-sm backdrop-blur-sm border border-white/50 shadow-inner">
+           {logs.map((log, i) => {
+             const isBenefit = log.includes('功效') || log.includes('Benefit');
+             return (
+                <div key={i} className={`mb-1 border-l-2 pl-2 rounded-r-md text-xs py-1 ${isBenefit ? 'bg-green-100 border-green-500 text-green-800 font-bold' : 'bg-white/60 border-amber-500 text-gray-700'}`}>
+                  {log}
+                </div>
+             );
+           })}
+           <div ref={logsEndRef} />
+        </div>
+
+      </div>
+
+      {/* 底部：玩家區 */}
+      <div className={`bg-white p-3 md:p-4 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] transition-colors duration-500 shrink-0 z-20 ${isPlayerTurn ? 'border-t-4 border-green-400' : 'border-t-4 border-gray-200'}`}>
+        
+        {/* 玩家資訊 */}
+        <div className="flex justify-between items-end mb-2 px-1">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">玩家 (You)</span>
+            <div className="text-2xl font-black text-gray-800 leading-none">{playerScore} <span className="text-xs font-normal text-gray-400">分</span></div>
+          </div>
+          <div className={`text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 ${isPlayerTurn ? 'bg-green-100 text-green-600 animate-pulse' : 'bg-gray-100 text-gray-400'}`}>
+            {isPlayerTurn ? <ArrowRight className="w-3 h-3"/> : null}
+            {isPlayerTurn ? "換你行動！" : "對手思考中..."}
+          </div>
+        </div>
+
+        {/* 手牌區 */}
+        <div className="flex gap-2 overflow-x-auto pb-2 px-1 min-h-[100px] items-center">
+          {playerHand.length === 0 && (
+            <div className="text-gray-400 text-xs flex items-center w-full justify-center border-2 border-dashed border-gray-200 rounded-lg h-20 bg-gray-50 w-full">
+              目前沒有手牌，請按下「搜尋食材」
+            </div>
+          )}
+          {playerHand.map((item, idx) => (
+            // 使用 uniqueId 確保 key 唯一
+            <Card key={item.uniqueId || `${item.id}-${idx}`} item={item} isNew={idx === playerHand.length - 1} />
+          ))}
+        </div>
+
+        {/* 控制按鈕 */}
+        <div className="grid grid-cols-2 gap-3 mt-1">
+          <button 
+            onClick={playerDraw}
+            disabled={!isPlayerTurn}
+            className={`
+              flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-lg shadow-md transition-all
+              ${isPlayerTurn 
+                ? 'bg-blue-500 hover:bg-blue-600 text-white active:scale-95' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
+            `}
+          >
+            <Search className="w-5 h-5" />
+            <div className="flex flex-col items-start leading-none">
+              <span>搜尋食材</span>
+              <span className="text-[10px] font-normal opacity-80">(抽牌)</span>
+            </div>
+          </button>
+
+          <button 
+            onClick={playerCook}
+            disabled={!isPlayerTurn || !readyToCook}
+            className={`
+              flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-lg shadow-md transition-all
+              ${isPlayerTurn && readyToCook
+                ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse active:scale-95 ring-2 ring-amber-300' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
+            `}
+          >
+            <Utensils className="w-5 h-5" />
+            <div className="flex flex-col items-start leading-none">
+              <span>Cook!</span>
+              <span className="text-[10px] font-normal opacity-80">(得分)</span>
+            </div>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
