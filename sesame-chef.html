@@ -11,7 +11,8 @@
     <!-- 2. 引入 React 和 Babel (核心庫) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- FIX: 升級 Babel 到最新版以支援現代語法 -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
         /* 避免手機上點擊的藍色高亮 */
@@ -158,7 +159,10 @@
             const logsEndRef = useRef(null);
 
             useEffect(() => {
-                logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                // FIX: 修正語法，使用標準 if 判斷取代 ?. 以避免舊版解析器錯誤
+                if (logsEndRef.current) {
+                    logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+                }
             }, [logs]);
 
             const startGame = () => {
