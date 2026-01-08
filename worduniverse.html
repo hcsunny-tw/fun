@@ -451,10 +451,10 @@
         <div class="hud-panel p-8 rounded-xl text-center max-w-sm w-full mx-4 border-2 border-blue-400">
             <h2 class="text-3xl font-bold mb-2 text-blue-300 font-[Orbitron] tracking-wider neon-text">SYSTEM PAUSED</h2>
             <p class="text-gray-400 mb-6 text-sm">系統已暫停，等待指令...</p>
-            <button id="resume-game-btn" class="block w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white font-bold py-4 px-6 rounded-xl mb-4 shadow-lg transition transform active:scale-95 border border-green-500 tracking-wider">
+            <button id="resume-game-btn" class="block w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white font-bold py-3 px-6 rounded-lg mb-4 shadow-lg transition transform active:scale-95 border border-green-500 tracking-wider">
                 ▶ 繼續任務
             </button>
-            <button id="quit-game-btn" class="block w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition transform active:scale-95 border border-red-500 tracking-wider">
+            <button id="quit-game-btn" class="block w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition transform active:scale-95 border border-red-500 tracking-wider">
                 🏠 放棄返回首頁
             </button>
         </div>
@@ -550,13 +550,17 @@
                         </button>
                     </div>
                 </div>
-            <!-- 3. 排行榜畫面 -->
+
+                <button id="back-to-menu-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-3 px-8 rounded-lg shadow-lg border border-gray-600 transition hover:text-white">
+                    返回總部
+                </button>
+            </div>
+
             <div id="leaderboard-content" class="hidden w-full text-gray-800">
                 <div class="flex justify-between items-center mb-2 px-2">
                     <h2 class="text-2xl font-bold text-cyan-400 flex items-center gap-2">
                         <span class="text-3xl">🏆</span> 星際英雄榜
                     </h2>
-                    <!-- 移除舊的 level name span，改用下方的 tabs -->
                 </div>
                 
                 <!-- 新增：關卡切換標籤列 -->
@@ -621,7 +625,7 @@
             if (!auth) return;
             
             const statusMsg = document.getElementById('status-msg');
-            statusMsg.innerText = "正在建立加密連線...";
+            if(statusMsg) statusMsg.innerText = "正在建立加密連線...";
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -630,14 +634,15 @@
                 }
             } catch (e) {
                 console.error("Auth error", e);
-                statusMsg.innerText = "離線訓練模式 (無法存檔)";
+                if(statusMsg) statusMsg.innerText = "離線訓練模式 (無法存檔)";
             }
         };
 
         if (auth) {
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
-                if (user) document.getElementById('status-msg').innerText = "";
+                const statusMsg = document.getElementById('status-msg');
+                if (user && statusMsg) statusMsg.innerText = "";
             });
         }
         
@@ -831,6 +836,7 @@
             isPaused: false
         };
 
+        // DOM Elements
         const gameArea = document.getElementById('game-area');
         const turretArea = document.getElementById('turret-area');
         const scoreDisplay = document.getElementById('score-display');
@@ -865,20 +871,22 @@
         const finalScoreEl = document.getElementById('final-score');
         const flashLayer = document.getElementById('flash-layer');
         const rankListBody = document.getElementById('rank-list-body');
-        const lbLevelName = document.getElementById('lb-level-name');
         
         // 關卡選擇按鈕邏輯
         const levelBtnContainer = document.getElementById('level-btn-container');
-        levelBtnContainer.addEventListener('click', (e) => {
-            const btn = e.target.closest('.level-select-btn');
-            if (!btn) return;
-            const allBtns = levelBtnContainer.querySelectorAll('.level-select-btn');
-            allBtns.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            state.level = btn.dataset.value;
-        });
+        if(levelBtnContainer){
+            levelBtnContainer.addEventListener('click', (e) => {
+                const btn = e.target.closest('.level-select-btn');
+                if (!btn) return;
+                const allBtns = levelBtnContainer.querySelectorAll('.level-select-btn');
+                allBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                state.level = btn.dataset.value;
+            });
+        }
 
         function initTurrets(levelKey) {
+            if(!turretArea) return;
             turretArea.innerHTML = '';
             gameData[levelKey].turrets.forEach(t => {
                 const btn = document.createElement('div');
@@ -936,10 +944,10 @@
             cancelAnimationFrame(state.animationFrameId);
 
             if (meteorObj && meteorObj.data) {
-                fbTitle.innerText = reason;
-                fbQuestion.innerText = meteorObj.data.q;
-                fbAnswer.innerText = meteorObj.data.ans;
-                fbExplanation.innerText = meteorObj.data.explain || "請多加練習！";
+                if(fbTitle) fbTitle.innerText = reason;
+                if(fbQuestion) fbQuestion.innerText = meteorObj.data.q;
+                if(fbAnswer) fbAnswer.innerText = meteorObj.data.ans;
+                if(fbExplanation) fbExplanation.innerText = meteorObj.data.explain || "請多加練習！";
                 
                 if(meteorObj.el && meteorObj.el.parentNode) {
                     const rect = meteorObj.el.getBoundingClientRect();
@@ -948,7 +956,7 @@
                 }
                 state.meteors = state.meteors.filter(m => m !== meteorObj);
                 
-                feedbackModal.classList.remove('hidden');
+                if(feedbackModal) feedbackModal.classList.remove('hidden');
             } else {
                 if (state.lives <= 0) gameOver();
                 else state.isPlaying = true;
@@ -956,7 +964,7 @@
         }
 
         function resumeFromFeedback() {
-            feedbackModal.classList.add('hidden');
+            if(feedbackModal) feedbackModal.classList.add('hidden');
             
             if (state.lives <= 0) {
                 gameOver();
@@ -973,14 +981,14 @@
             if (state.isPaused) {
                 state.isPaused = false;
                 state.isPlaying = true;
-                pauseModal.classList.add('hidden');
+                if(pauseModal) pauseModal.classList.add('hidden');
                 state.lastSpawnTime = performance.now();
                 state.animationFrameId = requestAnimationFrame(loop);
             } else {
                 state.isPaused = true;
                 state.isPlaying = false;
                 cancelAnimationFrame(state.animationFrameId);
-                pauseModal.classList.remove('hidden');
+                if(pauseModal) pauseModal.classList.remove('hidden');
             }
         }
 
@@ -994,23 +1002,23 @@
             });
             state.meteors = [];
             
-            gameArea.innerHTML = ''; 
-            turretArea.innerHTML = '';
+            if(gameArea) gameArea.innerHTML = ''; 
+            if(turretArea) turretArea.innerHTML = '';
             document.querySelectorAll('.laser, .confetti, .fire-particle').forEach(el => el.remove());
 
-            pauseModal.classList.add('hidden');
-            feedbackModal.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            leaderboardScreen.classList.add('hidden');
+            if(pauseModal) pauseModal.classList.add('hidden');
+            if(feedbackModal) feedbackModal.classList.add('hidden');
+            if(gameOverScreen) gameOverScreen.classList.add('hidden');
+            if(leaderboardScreen) leaderboardScreen.classList.add('hidden');
             
-            modal.classList.remove('hidden');
-            startScreen.classList.remove('hidden');
+            if(modal) modal.classList.remove('hidden');
+            if(startScreen) startScreen.classList.remove('hidden');
             
-            // 隱藏 HUD
-            gameHud.classList.add('hidden');
-            homeBtn.classList.add('hidden');
+            if(gameHud) gameHud.classList.add('hidden');
+            if(homeBtn) homeBtn.classList.add('hidden');
             
-            document.getElementById('status-msg').innerText = "";
+            const statusMsg = document.getElementById('status-msg');
+            if(statusMsg) statusMsg.innerText = "";
         }
 
         function createLaser(startEl, endEl) {
@@ -1068,8 +1076,10 @@
         }
 
         function flashScreen() {
-            flashLayer.classList.add('flash-red');
-            setTimeout(() => flashLayer.classList.remove('flash-red'), 300);
+            if(flashLayer) {
+                flashLayer.classList.add('flash-red');
+                setTimeout(() => flashLayer.classList.remove('flash-red'), 300);
+            }
         }
 
         function createExplosion(x, y) {
@@ -1135,8 +1145,8 @@
         }
 
         function updateUI() {
-            scoreDisplay.innerText = state.score;
-            livesDisplay.innerText = "❤️".repeat(state.lives);
+            if(scoreDisplay) scoreDisplay.innerText = state.score;
+            if(livesDisplay) livesDisplay.innerText = "❤️".repeat(state.lives);
         }
 
         function startGame() {
@@ -1150,14 +1160,14 @@
             state.fallSpeed = window.innerWidth < 768 ? 1.5 : 2;
             if (!state.level) state.level = 'yi';
             
-            gameArea.innerHTML = '';
-            modal.classList.add('hidden');
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            leaderboardScreen.classList.add('hidden');
+            if(gameArea) gameArea.innerHTML = '';
+            if(modal) modal.classList.add('hidden');
+            if(startScreen) startScreen.classList.add('hidden');
+            if(gameOverScreen) gameOverScreen.classList.add('hidden');
+            if(leaderboardScreen) leaderboardScreen.classList.add('hidden');
             
-            gameHud.classList.remove('hidden');
-            homeBtn.classList.remove('hidden');
+            if(gameHud) gameHud.classList.remove('hidden');
+            if(homeBtn) homeBtn.classList.remove('hidden');
             
             initTurrets(state.level);
             updateUI();
@@ -1170,26 +1180,30 @@
             state.isPlaying = false;
             cancelAnimationFrame(state.animationFrameId);
             
-            finalScoreEl.innerText = state.score;
+            if(finalScoreEl) finalScoreEl.innerText = state.score;
             
-            modal.classList.remove('hidden');
-            startScreen.classList.add('hidden');
-            leaderboardScreen.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
+            if(modal) modal.classList.remove('hidden');
+            if(startScreen) startScreen.classList.add('hidden');
+            if(leaderboardScreen) leaderboardScreen.classList.add('hidden');
+            if(gameOverScreen) gameOverScreen.classList.remove('hidden');
             
-            homeBtn.classList.add('hidden');
-            gameHud.classList.add('hidden');
+            if(homeBtn) homeBtn.classList.add('hidden');
+            if(gameHud) gameHud.classList.add('hidden');
             
-            nicknameInput.value = '';
-            saveScoreBtn.disabled = false;
-            saveScoreBtn.innerText = "儲存";
-            saveScoreBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-            saveScoreBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+            if(nicknameInput) nicknameInput.value = '';
+            if(saveScoreBtn) {
+                saveScoreBtn.disabled = false;
+                saveScoreBtn.innerText = "儲存";
+                saveScoreBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                saveScoreBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+            }
             
-            if(state.score === 0) {
-                 saveScoreSection.classList.add('hidden');
-            } else {
-                 saveScoreSection.classList.remove('hidden');
+            if(saveScoreSection) {
+                if(state.score === 0) {
+                     saveScoreSection.classList.add('hidden');
+                } else {
+                     saveScoreSection.classList.remove('hidden');
+                }
             }
         }
 
@@ -1226,28 +1240,26 @@
 
         function resetToMenu() {
             returnToHome();
-            document.getElementById('status-msg').innerText = "";
+            const statusMsg = document.getElementById('status-msg');
+            if(statusMsg) statusMsg.innerText = "";
         }
 
-        // --- 優化後的排行榜邏輯 ---
         async function showLeaderboard() {
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            leaderboardScreen.classList.remove('hidden');
+            if(startScreen) startScreen.classList.add('hidden');
+            if(gameOverScreen) gameOverScreen.classList.add('hidden');
+            if(leaderboardScreen) leaderboardScreen.classList.remove('hidden');
             
-            // 1. 產生並渲染標籤列
             renderLeaderboardTabs();
 
-            // 2. 載入目前關卡的資料
-            await refreshLeaderboardList(state.level || 'yi');
+            const currentLevel = state.level || 'yi';
+            await refreshLeaderboardList(currentLevel);
         }
 
-        // 渲染標籤按鈕
         function renderLeaderboardTabs() {
             const container = document.getElementById('lb-tabs-container');
+            if (!container) return; 
             container.innerHTML = '';
             
-            // 定義顯示名稱對照
             const labels = {
                 'yi': '意義易', 'zai': '在再', 'shi': '事世市', 
                 'xiang': '想響享', 'bo': '撥波', 'shen': '伸身', 'yin_ying': '因應'
@@ -1255,32 +1267,31 @@
 
             Object.keys(gameData).forEach(key => {
                 const btn = document.createElement('button');
-                btn.className = `lb-tab-btn ${key === state.level ? 'active' : ''}`;
+                const isActive = key === (state.level || 'yi');
+                btn.className = `lb-tab-btn ${isActive ? 'active' : ''}`;
                 btn.innerText = labels[key] || key;
                 
                 btn.onclick = async () => {
-                    // 更新 UI 狀態
                     document.querySelectorAll('.lb-tab-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     
-                    // 更新全域選取狀態 (讓首頁的按鈕也同步)
                     state.level = key;
                     const startBtns = document.querySelectorAll('.level-select-btn');
                     startBtns.forEach(b => {
-                        if(b.dataset.value === key) b.classList.add('selected');
+                        if (b.dataset.value === key) b.classList.add('selected');
                         else b.classList.remove('selected');
                     });
-
-                    // 刷新列表
+                    
                     await refreshLeaderboardList(key);
                 };
                 container.appendChild(btn);
             });
         }
 
-        // 刷新列表內容
         async function refreshLeaderboardList(level) {
             const rankListBody = document.getElementById('rank-list-body');
+            if (!rankListBody) return;
+            
             rankListBody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-cyan-400 animate-pulse">正在接收星際數據...</td></tr>`;
 
             const data = await fetchLeaderboard(level);
@@ -1309,16 +1320,15 @@
             }
         }
 
-        // --- 事件綁定 ---
-        startBtn.addEventListener('click', startGame);
-        saveScoreBtn.addEventListener('click', submitScore);
-        viewRankBtn.addEventListener('click', showLeaderboard);
-        closeRankBtn.addEventListener('click', resetToMenu);
-        backToMenuBtn.addEventListener('click', resetToMenu);
-        resumeFeedbackBtn.addEventListener('click', resumeFromFeedback);
-        homeBtn.addEventListener('click', togglePause);
-        resumeGameBtn.addEventListener('click', togglePause);
-        quitGameBtn.addEventListener('click', returnToHome);
+        if(startBtn) startBtn.addEventListener('click', startGame);
+        if(saveScoreBtn) saveScoreBtn.addEventListener('click', submitScore);
+        if(viewRankBtn) viewRankBtn.addEventListener('click', showLeaderboard);
+        if(closeRankBtn) closeRankBtn.addEventListener('click', resetToMenu);
+        if(backToMenuBtn) backToMenuBtn.addEventListener('click', resetToMenu);
+        if(resumeFeedbackBtn) resumeFeedbackBtn.addEventListener('click', resumeFromFeedback);
+        if(homeBtn) homeBtn.addEventListener('click', togglePause);
+        if(resumeGameBtn) resumeGameBtn.addEventListener('click', togglePause);
+        if(quitGameBtn) quitGameBtn.addEventListener('click', returnToHome);
 
     </script>
 </body>
