@@ -263,7 +263,7 @@
         .rank-2 { color: #718096; font-weight: bold; }
         .rank-3 { color: #b7791f; font-weight: bold; }
 
-        /* 關卡選擇按鈕樣式 - 星球版 (優化：固定寬度適應 Flex) */
+        /* 關卡選擇按鈕樣式 - 星球版 */
         .level-select-btn {
             background: radial-gradient(circle at 30% 30%, #63b3ed, #2b6cb0, #1a365d);
             color: white;
@@ -278,10 +278,9 @@
             font-family: "Noto Serif TC", serif;
             
             border-radius: 50%;
-            /* 固定寬度以確保 Flex 排列整齊 */
             width: 90px;
             height: 90px;
-            flex: 0 0 auto; /* 禁止壓縮 */
+            flex: 0 0 auto;
             
             text-align: center;
             line-height: 1.2;
@@ -379,6 +378,36 @@
         }
         .sci-fi-home-btn {
             animation: pulse-glow 3s infinite;
+        }
+
+        /* --- 新增：排行榜內部標籤與捲軸樣式 --- */
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #2b6cb0; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+
+        .lb-tab-btn {
+            background: rgba(16, 24, 40, 0.6);
+            border: 1px solid #4a5568;
+            color: #a0aec0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            font-weight: bold;
+            font-family: "Noto Serif TC", serif;
+            flex-shrink: 0; /* 防止被壓縮 */
+        }
+        .lb-tab-btn:hover {
+            border-color: #63b3ed;
+            color: #63b3ed;
+        }
+        .lb-tab-btn.active {
+            background: linear-gradient(135deg, #2b6cb0, #2c5282);
+            color: white;
+            border-color: #63b3ed;
+            box-shadow: 0 0 10px rgba(66, 153, 225, 0.5);
         }
 
     </style>
@@ -521,18 +550,18 @@
                         </button>
                     </div>
                 </div>
-
-                <button id="back-to-menu-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-3 px-8 rounded-lg shadow-lg border border-gray-600 transition hover:text-white">
-                    返回總部
-                </button>
-            </div>
-
+            <!-- 3. 排行榜畫面 -->
             <div id="leaderboard-content" class="hidden w-full text-gray-800">
-                <div class="flex justify-between items-center mb-4 px-2">
+                <div class="flex justify-between items-center mb-2 px-2">
                     <h2 class="text-2xl font-bold text-cyan-400 flex items-center gap-2">
                         <span class="text-3xl">🏆</span> 星際英雄榜
                     </h2>
-                    <span id="lb-level-name" class="bg-cyan-900 text-cyan-200 text-sm px-3 py-1 rounded-full font-bold border border-cyan-700">關卡</span>
+                    <!-- 移除舊的 level name span，改用下方的 tabs -->
+                </div>
+                
+                <!-- 新增：關卡切換標籤列 -->
+                <div id="lb-tabs-container" class="flex overflow-x-auto gap-2 mb-4 pb-2 px-1 custom-scrollbar w-full">
+                    <!-- JS 會自動產生標籤 -->
                 </div>
                 
                 <div class="overflow-y-auto max-h-[300px] border border-cyan-800 rounded-lg mb-6 bg-gray-900 bg-opacity-80 custom-scrollbar">
@@ -564,18 +593,15 @@
         import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
 
         // --- Firebase 初始化 ---
-        // 重要：當您要發布到 GitHub Pages 時，請將下方的 firebaseConfig 內容替換成您自己的專案設定
-        // 您可以在 Firebase Console -> Project Settings -> General -> Your apps 下方找到
-const firebaseConfig = {
-  apiKey: "AIzaSyAZreTKruIWq9fGt40Iktq1amqiFNS0P2k",
-  authDomain: "worduniverse.firebaseapp.com",
-  projectId: "worduniverse",
-  storageBucket: "worduniverse.firebasestorage.app",
-  messagingSenderId: "621098829006",
-  appId: "1:621098829006:web:794dddff45087a5cee3c9f",
-  measurementId: "G-WGVQV8L8DH"
-};
-
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyAZreTKruIWq9fGt40Iktq1amqiFNS0P2k",
+            authDomain: "worduniverse.firebaseapp.com",
+            projectId: "worduniverse",
+            storageBucket: "worduniverse.firebasestorage.app",
+            messagingSenderId: "621098829006",
+            appId: "1:621098829006:web:794dddff45087a5cee3c9f",
+            measurementId: "G-WGVQV8L8DH"
+        };
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
@@ -586,13 +612,13 @@ const firebaseConfig = {
             auth = getAuth(app);
             db = getFirestore(app);
         } catch (e) {
-            console.error("Firebase 初始化失敗，請檢查設定:", e);
+            console.error("Firebase 初始化失敗:", e);
         }
         
         let currentUser = null;
 
         const initAuth = async () => {
-            if (!auth) return; // 如果沒設定好就跳過
+            if (!auth) return;
             
             const statusMsg = document.getElementById('status-msg');
             statusMsg.innerText = "正在建立加密連線...";
@@ -604,7 +630,7 @@ const firebaseConfig = {
                 }
             } catch (e) {
                 console.error("Auth error", e);
-                statusMsg.innerText = "連線失敗 (啟動離線模式)";
+                statusMsg.innerText = "離線訓練模式 (無法存檔)";
             }
         };
 
@@ -621,7 +647,6 @@ const firebaseConfig = {
         async function saveScoreToCloud(level, name, score) {
             if (!currentUser || score === 0 || !db) return;
             try {
-                // 注意：在正式環境，您可以將 'default-app-id' 替換為固定的字串，例如 'word-battle-game'
                 const currentAppId = appId === 'default-app-id' ? 'word-battle-v1' : appId;
                 
                 const colRef = collection(db, 'artifacts', currentAppId, 'public', 'data', `leaderboard_${level}`);
@@ -634,7 +659,7 @@ const firebaseConfig = {
                 return true;
             } catch (e) {
                 console.error("Error saving score:", e);
-                alert("傳輸失敗，請檢查訊號或 Firebase 設定");
+                alert("傳輸失敗，請檢查訊號");
                 return false;
             }
         }
@@ -803,13 +828,14 @@ const firebaseConfig = {
             meteors: [], 
             spawnRate: 2400,
             fallSpeed: 2, lastSpawnTime: 0, animationFrameId: null,
-            isPaused: false // 新增暫停狀態
+            isPaused: false
         };
 
         const gameArea = document.getElementById('game-area');
         const turretArea = document.getElementById('turret-area');
         const scoreDisplay = document.getElementById('score-display');
         const livesDisplay = document.getElementById('lives-display');
+        const gameHud = document.getElementById('game-hud');
         
         const modal = document.getElementById('modal-overlay');
         const startScreen = document.getElementById('start-screen-content');
@@ -842,18 +868,12 @@ const firebaseConfig = {
         const lbLevelName = document.getElementById('lb-level-name');
         
         // 關卡選擇按鈕邏輯
-        // 使用 Event Delegation 避免動態生成問題，雖然這裡是靜態的
         const levelBtnContainer = document.getElementById('level-btn-container');
         levelBtnContainer.addEventListener('click', (e) => {
-            // 尋找被點擊的按鈕（處理按鈕內部元素的冒泡）
             const btn = e.target.closest('.level-select-btn');
             if (!btn) return;
-
-            // 移除所有按鈕的 selected class
             const allBtns = levelBtnContainer.querySelectorAll('.level-select-btn');
             allBtns.forEach(b => b.classList.remove('selected'));
-            
-            // 加入當前按鈕
             btn.classList.add('selected');
             state.level = btn.dataset.value;
         });
@@ -878,7 +898,7 @@ const firebaseConfig = {
         }
 
         function fireTurret(turretEl, char) {
-            if (!state.isPlaying || state.isPaused) return; // 暫停時不能發射
+            if (!state.isPlaying || state.isPaused) return; 
             const card = turretEl.querySelector('.char-card');
             card.style.transform = "scale(0.9)";
             setTimeout(() => card.style.transform = "scale(1)", 100);
@@ -904,7 +924,6 @@ const firebaseConfig = {
             }
         }
 
-        // --- 教學回饋與暫停邏輯 ---
         function handleWrongAnswer(meteorObj, reason="隕石防禦失敗！") {
             state.score = Math.max(0, state.score - 5);
             state.lives--;
@@ -913,7 +932,7 @@ const firebaseConfig = {
             shakeScreen();
             flashScreen();
             
-            state.isPlaying = false; // 暫停遊戲迴圈
+            state.isPlaying = false; 
             cancelAnimationFrame(state.animationFrameId);
 
             if (meteorObj && meteorObj.data) {
@@ -922,10 +941,9 @@ const firebaseConfig = {
                 fbAnswer.innerText = meteorObj.data.ans;
                 fbExplanation.innerText = meteorObj.data.explain || "請多加練習！";
                 
-                // 銷毀該隕石，產生爆炸
                 if(meteorObj.el && meteorObj.el.parentNode) {
                     const rect = meteorObj.el.getBoundingClientRect();
-                    createFireExplosion(rect.left + rect.width/2, rect.top + rect.height/2); // 爆炸特效
+                    createFireExplosion(rect.left + rect.width/2, rect.top + rect.height/2);
                     meteorObj.el.remove();
                 }
                 state.meteors = state.meteors.filter(m => m !== meteorObj);
@@ -949,19 +967,16 @@ const firebaseConfig = {
             }
         }
 
-        // --- 新增：手動暫停與回首頁 ---
         function togglePause() {
-            if (!state.isPlaying && !state.isPaused) return; // 不在遊戲中或已經是教學暫停中
+            if (!state.isPlaying && !state.isPaused) return;
 
             if (state.isPaused) {
-                // 恢復
                 state.isPaused = false;
                 state.isPlaying = true;
                 pauseModal.classList.add('hidden');
                 state.lastSpawnTime = performance.now();
                 state.animationFrameId = requestAnimationFrame(loop);
             } else {
-                // 暫停
                 state.isPaused = true;
                 state.isPlaying = false;
                 cancelAnimationFrame(state.animationFrameId);
@@ -970,25 +985,19 @@ const firebaseConfig = {
         }
 
         function returnToHome() {
-            // 清理遊戲狀態
             state.isPlaying = false;
             state.isPaused = false;
             cancelAnimationFrame(state.animationFrameId);
+            
             state.meteors.forEach(m => {
                 if(m.el) m.el.remove();
             });
             state.meteors = [];
             
-            // 2. Clear Game Area (Meteors container)
             gameArea.innerHTML = ''; 
-
-            // 3. Clear Turrets
             turretArea.innerHTML = '';
-
-            // 4. Clear Global Particles/Lasers (attached to body)
             document.querySelectorAll('.laser, .confetti, .fire-particle').forEach(el => el.remove());
 
-            // UI toggles
             pauseModal.classList.add('hidden');
             feedbackModal.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
@@ -998,10 +1007,9 @@ const firebaseConfig = {
             startScreen.classList.remove('hidden');
             
             // 隱藏 HUD
-            document.getElementById('game-hud').classList.add('hidden');
+            gameHud.classList.add('hidden');
             homeBtn.classList.add('hidden');
             
-            // Clear status message just in case
             document.getElementById('status-msg').innerText = "";
         }
 
@@ -1040,10 +1048,9 @@ const firebaseConfig = {
 
         function destroyMeteor(meteorObj, isSuccess) {
             const rect = meteorObj.el.getBoundingClientRect();
-            // 產生火焰爆炸
             createFireExplosion(rect.left + rect.width/2, rect.top + rect.height/2);
 
-            meteorObj.el.remove(); // 直接移除，不再只是加 class
+            meteorObj.el.remove();
             state.meteors = state.meteors.filter(m => m !== meteorObj);
             
             if (isSuccess) {
@@ -1065,7 +1072,6 @@ const firebaseConfig = {
             setTimeout(() => flashLayer.classList.remove('flash-red'), 300);
         }
 
-        // --- 爆炸特效函式 ---
         function createExplosion(x, y) {
             const particleCount = 20;
             for (let i = 0; i < particleCount; i++) {
@@ -1086,23 +1092,21 @@ const firebaseConfig = {
             }
         }
 
-        // 新增：火焰爆炸特效 (隕石專用)
         function createFireExplosion(x, y) {
             const particleCount = 15;
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.classList.add('fire-particle');
                 
-                // 火焰顏色：紅、橘、黃
                 const fireColors = ['#ff0000', '#ff6600', '#ffcc00'];
                 particle.style.backgroundColor = fireColors[Math.floor(Math.random() * fireColors.length)];
-                particle.style.color = particle.style.backgroundColor; // for shadow
+                particle.style.color = particle.style.backgroundColor;
                 
                 particle.style.left = x + 'px';
                 particle.style.top = y + 'px';
                 
                 const angle = Math.random() * Math.PI * 2;
-                const velocity = 30 + Math.random() * 60; // 擴散範圍
+                const velocity = 30 + Math.random() * 60;
                 const tx = Math.cos(angle) * velocity;
                 const ty = Math.sin(angle) * velocity;
                 
@@ -1110,7 +1114,7 @@ const firebaseConfig = {
                 particle.style.setProperty('--ty', `${ty}px`);
                 
                 document.body.appendChild(particle);
-                setTimeout(() => particle.remove(), 600); // 0.6s 後消失
+                setTimeout(() => particle.remove(), 600);
             }
         }
 
@@ -1135,8 +1139,6 @@ const firebaseConfig = {
             livesDisplay.innerText = "❤️".repeat(state.lives);
         }
 
-        // --- 流程控制 ---
-
         function startGame() {
             initAudio();
             state.score = 0;
@@ -1154,8 +1156,7 @@ const firebaseConfig = {
             gameOverScreen.classList.add('hidden');
             leaderboardScreen.classList.add('hidden');
             
-            // 顯示 HUD 與控制按鈕
-            document.getElementById('game-hud').classList.remove('hidden');
+            gameHud.classList.remove('hidden');
             homeBtn.classList.remove('hidden');
             
             initTurrets(state.level);
@@ -1176,10 +1177,9 @@ const firebaseConfig = {
             leaderboardScreen.classList.add('hidden');
             gameOverScreen.classList.remove('hidden');
             
-            // 隱藏控制按鈕
             homeBtn.classList.add('hidden');
+            gameHud.classList.add('hidden');
             
-            // 重置輸入框
             nicknameInput.value = '';
             saveScoreBtn.disabled = false;
             saveScoreBtn.innerText = "儲存";
@@ -1229,36 +1229,80 @@ const firebaseConfig = {
             document.getElementById('status-msg').innerText = "";
         }
 
+        // --- 優化後的排行榜邏輯 ---
         async function showLeaderboard() {
             startScreen.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
             leaderboardScreen.classList.remove('hidden');
             
-            const selectedBtn = document.querySelector('.level-select-btn.selected');
-            const levelText = selectedBtn ? selectedBtn.innerText.split('\n')[0].trim() : "關卡";
-            
-            lbLevelName.innerText = levelText;
-            
-            rankListBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">正在接收數據...</td></tr>`;
+            // 1. 產生並渲染標籤列
+            renderLeaderboardTabs();
 
-            const data = await fetchLeaderboard(state.level || 'yi');
+            // 2. 載入目前關卡的資料
+            await refreshLeaderboardList(state.level || 'yi');
+        }
+
+        // 渲染標籤按鈕
+        function renderLeaderboardTabs() {
+            const container = document.getElementById('lb-tabs-container');
+            container.innerHTML = '';
+            
+            // 定義顯示名稱對照
+            const labels = {
+                'yi': '意義易', 'zai': '在再', 'shi': '事世市', 
+                'xiang': '想響享', 'bo': '撥波', 'shen': '伸身', 'yin_ying': '因應'
+            };
+
+            Object.keys(gameData).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = `lb-tab-btn ${key === state.level ? 'active' : ''}`;
+                btn.innerText = labels[key] || key;
+                
+                btn.onclick = async () => {
+                    // 更新 UI 狀態
+                    document.querySelectorAll('.lb-tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 更新全域選取狀態 (讓首頁的按鈕也同步)
+                    state.level = key;
+                    const startBtns = document.querySelectorAll('.level-select-btn');
+                    startBtns.forEach(b => {
+                        if(b.dataset.value === key) b.classList.add('selected');
+                        else b.classList.remove('selected');
+                    });
+
+                    // 刷新列表
+                    await refreshLeaderboardList(key);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // 刷新列表內容
+        async function refreshLeaderboardList(level) {
+            const rankListBody = document.getElementById('rank-list-body');
+            rankListBody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-cyan-400 animate-pulse">正在接收星際數據...</td></tr>`;
+
+            const data = await fetchLeaderboard(level);
             
             rankListBody.innerHTML = '';
             if (data.length === 0) {
-                rankListBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">尚無指揮官紀錄，搶下首勝吧！</td></tr>`;
+                rankListBody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-gray-500">尚無指揮官紀錄，搶下首勝吧！</td></tr>`;
             } else {
                 data.forEach((item, index) => {
                     let rankClass = "";
                     let medal = "";
-                    if (index === 0) { rankClass = "rank-1"; medal = "🥇"; }
-                    else if (index === 1) { rankClass = "rank-2"; medal = "🥈"; }
-                    else if (index === 2) { rankClass = "rank-3"; medal = "🥉"; }
+                    if (index === 0) { rankClass = "text-yellow-400 font-black text-xl"; medal = "🥇"; }
+                    else if (index === 1) { rankClass = "text-gray-300 font-bold text-lg"; medal = "🥈"; }
+                    else if (index === 2) { rankClass = "text-yellow-700 font-bold text-lg"; medal = "🥉"; }
+                    else { rankClass = "text-cyan-200"; medal = `<span class="opacity-50 text-sm ml-1">#${index+1}</span>`; }
 
                     const row = document.createElement('tr');
+                    row.className = "hover:bg-cyan-900/30 transition-colors border-b border-cyan-900/30";
                     row.innerHTML = `
-                        <td class="text-center font-bold text-gray-600">${index + 1}</td>
-                        <td class="${rankClass}">${medal} ${item.name}</td>
-                        <td class="text-right font-mono font-bold text-blue-600">${item.score}</td>
+                        <td class="text-center py-3">${medal}</td>
+                        <td class="py-3 ${rankClass}">${item.name}</td>
+                        <td class="text-right pr-6 py-3 font-mono font-bold text-cyan-300">${item.score}</td>
                     `;
                     rankListBody.appendChild(row);
                 });
@@ -1268,14 +1312,11 @@ const firebaseConfig = {
         // --- 事件綁定 ---
         startBtn.addEventListener('click', startGame);
         saveScoreBtn.addEventListener('click', submitScore);
-        
         viewRankBtn.addEventListener('click', showLeaderboard);
         closeRankBtn.addEventListener('click', resetToMenu);
         backToMenuBtn.addEventListener('click', resetToMenu);
-        
         resumeFeedbackBtn.addEventListener('click', resumeFromFeedback);
-        
-        homeBtn.addEventListener('click', togglePause); // 按下 Home 先暫停並顯示選單
+        homeBtn.addEventListener('click', togglePause);
         resumeGameBtn.addEventListener('click', togglePause);
         quitGameBtn.addEventListener('click', returnToHome);
 
