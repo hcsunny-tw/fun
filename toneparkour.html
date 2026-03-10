@@ -913,9 +913,11 @@
             ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
             spawnTimer++;
-            if (spawnTimer > 1500) gameSpeed = 4;
-            if (spawnTimer > 3500) gameSpeed = 5;
-            if (spawnTimer > 6000) gameSpeed = 6;
+            // 調整加速曲線，並設定最高速限制為 5.0 (避免過快)
+            if (spawnTimer > 1500) gameSpeed = 3.5;
+            if (spawnTimer > 3000) gameSpeed = 4.0;
+            if (spawnTimer > 5000) gameSpeed = 4.5;
+            if (spawnTimer > 7500) gameSpeed = 5.0; // 最高限速
 
             // Spawn Obstacles
             const lastObs = obstacles[obstacles.length - 1];
@@ -972,6 +974,7 @@
             score = 0;
             lives = 3;
             gameSpeed = 3; 
+            spawnTimer = 0; // 重大修正：重新開始時必須重置計時器，否則速度會卡在高速
             obstacles = [];
             player = new Player();
             updateUI();
