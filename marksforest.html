@@ -11,8 +11,14 @@
         /* 為了使用注音，我們需要定義一個支援注音的字體族群 */
         @font-face {
             font-family: 'BPMF';
-            /* 這裡使用一個開源的注音字體，確保沒有安裝的電腦也能看到 */
-            src: url('https://cdn.jsdelivr.net/gh/max32002/BPMF-Fonts/fonts/BPMF_Regular.woff2') format('woff2');
+            /* 💡 教師自訂字體區：
+               現在設定為讀取您放在 GitHub 上的字體檔。
+               請將您的注音字體檔案重新命名為「BPMF.woff2」或「BPMF.ttf」，
+               並將它與這個 index.html 放在同一個資料夾中即可！
+               (註：在還沒上傳字體到 GitHub 前，目前的預覽畫面可能會暫時退回一般字體喔)
+            */
+            src: url('BPMF.woff2') format('woff2'),
+                 url('BPMF.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
         }
