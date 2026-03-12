@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>標點森林大冒險 - 教學回饋版</title>
+    <style>
+        /* --- UI/UX 設計：童趣插畫風與 RWD 響應式設計 --- */
+        body {
+            font-family: 'BiauKai', 'DFKai-SB', '微軟正黑體', sans-serif;
+            background-color: #E8F5E9; /* 柔和的森林淺綠色 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            color: #333;
+            overflow: hidden; /* 防止彈出視窗時背景滾動 */
+        }
+        #game-container {
+            background-color: #FFFFFF;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 600px;
+            border: 4px solid #81C784;
+            position: relative;
+        }
+        h1 { color: #2E7D32; font-size: 2rem; margin-top: 0; }
+        .level-info { font-size: 1.2rem; color: #555; margin-bottom: 20px; font-weight: bold; }
+        
+        /* 句子顯示區塊 */
+        #sentence-box {
+            font-size: 2rem;
+            line-height: 2.5;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #FFF9C4; /* 溫暖的紙張顏色 */
+            border-radius: 15px;
+            word-wrap: break-word;
+        }
+        
+        /* 挖空的格子 */
+        .blank-slot {
+            display: inline-block;
+            width: 45px;
+            height: 45px;
+            border: 3px dashed #FF9800;
+            border-radius: 10px;
+            vertical-align: middle;
+            margin: 0 5px;
+            cursor: pointer;
+            background-color: #FFF;
+            transition: all 0.3s;
+            line-height: 45px;
+            text-align: center;
+        }
+        .blank-slot.active {
+            border-color: #F44336;
+            background-color: #FFCDD2;
+            transform: scale(1.15);
+            box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+        }
+        
+        /* 標點符號按鈕鍵盤 */
+        #keyboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .symbol-btn {
+            font-size: 1.8rem;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background-color: #4FC3F7;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #0288D1;
+            transition: transform 0.1s, box-shadow 0.1s;
+            font-family: inherit; /* 繼承標楷體，讓符號更標準 */
+        }
+        .symbol-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #0288D1;
+        }
+        
+        /* 狀態回饋文字 */
+        #feedback {
+            font-size: 1.5rem;
+            font-weight: bold;
+            height: 30px;
+            margin-top: 20px;
+            color: #4CAF50;
+        }
+        
+        /* --- 教學提示彈出視窗 (Modal) --- */
+        #hint-modal {
+            display: none; /* 預設隱藏 */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* 半透明黑底 */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px); /* 讓背景模糊，聚焦提示 */
+        }
+        .modal-content {
+            background-color: #FFF;
+            padding: 40px 30px;
+            border-radius: 25px;
+            width: 80%;
+            max-width: 400px;
+            border: 5px solid #FFCA28; /* 醒目的黃色邊框 */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 活潑的彈出動畫 */
+        }
+        .modal-title {
+            color: #E65100;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            margin-top: 0;
+        }
+        #hint-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: #424242;
+            margin-bottom: 25px;
+        }
+        .retry-btn {
+            font-size: 1.4rem;
+            padding: 12px 30px;
+            background-color: #81C784;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #388E3C;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .retry-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #388E3C;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>🌲 標點森林大冒險 🌲</h1>
+    <div class="level-info">第 <span id="current-level">1</span> 關 / 共 <span id="total-levels"></span> 關</div>
+    
+    <div id="sentence-box">
+        <!-- 題目會動態生成在這裡 -->
+    </div>
+
+    <!-- 絕對只包含您指定的 8 個符號 -->
+    <div id="keyboard">
+        <button class="symbol-btn" onclick="insertSymbol('，')">，</button>
+        <button class="symbol-btn" onclick="insertSymbol('。')">。</button>
+        <button class="symbol-btn" onclick="insertSymbol('！')">！</button>
+        <button class="symbol-btn" onclick="insertSymbol('？')">？</button>
+        <button class="symbol-btn" onclick="insertSymbol('、')">、</button>
+        <button class="symbol-btn" onclick="insertSymbol('：')">：</button>
+        <button class="symbol-btn" onclick="insertSymbol('「')">「</button>
+        <button class="symbol-btn" onclick="insertSymbol('」')">」</button>
+    </div>
+
+    <div id="feedback"></div>
+</div>
+
+<!-- 教學提示彈出視窗 -->
+<div id="hint-modal">
+    <div class="modal-content">
+        <h2 class="modal-title">💡 說書人小提示</h2>
+        <div id="hint-text">這裡會顯示教學提示</div>
+        <button class="retry-btn" onclick="closeHintAndRetry()">我知道了，再試一次</button>
+    </div>
+</div>
+
+<script>
+    /* --- 教師自訂題庫與教學提示區 --- 
+       老師，您可以在這裡新增 `hint`（提示）。
+       當學生答錯時，就會跳出這段話教導他們！
+    */
+    const questions = [
+        { 
+            text: "小鳥在樹上唱歌_", 
+            answers: ["。"],
+            hint: "這句話已經完整說完了喔！說完一句話的最後，要用圓圓的「句號（。）」來結束。"
+        },
+        { 
+            text: "我喜歡吃蘋果_香蕉和芭樂_", 
+            answers: ["、", "。"],
+            hint: "「蘋果」和「香蕉」都是水果，把它們並列在一起時，中間要用像瓜子一樣的「頓號（、）」。最後說完了再用「句號（。）」。"
+        },
+        { 
+            text: "天啊_那是一隻大恐龍嗎_", 
+            answers: ["！", "？"],
+            hint: "「天啊」表示很驚訝，要用「驚嘆號（！）」。後面在問問題，所以要用像耳朵一樣的「問號（？）」。"
+        },
+        { 
+            text: "老師說__大家要專心上課__", 
+            answers: ["：", "「", "。", "」"],
+            hint: "遇到「某某人說」的時候，要先用兩個點的「冒號（：）」，然後用「引號（「」）」把他說的話包起來。引號裡面說完話了，也要記得加上「句號（。）」喔！"
+        },
+        { 
+            text: "弟弟不小心跌倒了_他哭得很傷心_", 
+            answers: ["，", "。"],
+            hint: "話說到一半需要停頓休息一下，要用「逗號（，）」。整句話說完了，才用「句號（。）」。"
+        },
+        { 
+            text: "媽媽問__今天在學校好玩嗎__", 
+            answers: ["：", "「", "？", "」"],
+            hint: "有人說話或問問題時，要用「冒號（：）」和「引號（「」）」。引號裡面是一句問話，所以要用「問號（？）」喔！"
+        },
+        { 
+            text: "花園裡有紅色的_黃色的和白色的花_", 
+            answers: ["、", "。"],
+            hint: "「紅色的」、「黃色的」是同一類的東西，並排在一起要用「頓號（、）」。整句話說完後要加上「句號（。）」。"
+        },
+        { 
+            text: "妹妹開心地大叫__太棒了__", 
+            answers: ["：", "「", "！", "」"],
+            hint: "遇到大叫或說話時，要用「冒號（：）」和「引號（「」）」。引號裡面是很開心的心情，所以要用「驚嘆號（！）」。"
+        },
+        { 
+            text: "你要喝果汁_還是喝牛奶呢_", 
+            answers: ["，", "？"],
+            hint: "句子中間稍微停頓要用「逗號（，）」。最後是在問問題，所以要用「問號（？）」。"
+        },
+        { 
+            text: "早安_今天天氣真好_", 
+            answers: ["，", "。"],
+            hint: "「早安」打完招呼後稍微停頓，用「逗號（，）」。這句話說完了，最後用「句號（。）」。"
+        }
+    ];
+
+    let currentLevelIndex = 0;
+    let currentSlots = [];
+    let activeSlotIndex = 0;
+
+    // --- 新增：洗牌函數 (打亂題目順序) ---
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            // 交換元素位置
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function initGame() {
+        shuffleArray(questions); // 每次載入遊戲時，自動打亂題庫順序
+        document.getElementById("total-levels").innerText = questions.length;
+        loadLevel();
+    }
+
+    function loadLevel() {
+        if (currentLevelIndex >= questions.length) {
+            document.getElementById("sentence-box").innerHTML = "🎉 恭喜你！你已經學會所有的標點符號了！";
+            document.getElementById("keyboard").classList.add("hidden");
+            document.getElementById("feedback").innerText = "";
+            return;
+        }
+
+        document.getElementById("current-level").innerText = currentLevelIndex + 1;
+        document.getElementById("feedback").innerText = "";
+        
+        const q = questions[currentLevelIndex];
+        const sentenceBox = document.getElementById("sentence-box");
+        sentenceBox.innerHTML = "";
+        currentSlots = [];
+        activeSlotIndex = 0;
+
+        let parts = q.text.split("_");
+        for (let i = 0; i < parts.length; i++) {
+            if (parts[i]) {
+                const span = document.createElement("span");
+                span.innerText = parts[i];
+                sentenceBox.appendChild(span);
+            }
+            if (i < parts.length - 1) {
+                const slot = document.createElement("span");
+                slot.className = "blank-slot";
+                slot.dataset.index = i;
+                slot.onclick = () => setActiveSlot(i);
+                sentenceBox.appendChild(slot);
+                currentSlots.push(slot);
+            }
+        }
+        
+        if(currentSlots.length > 0) setActiveSlot(0);
+    }
+
+    function setActiveSlot(index) {
+        currentSlots.forEach(slot => slot.classList.remove("active"));
+        activeSlotIndex = index;
+        currentSlots[activeSlotIndex].classList.add("active");
+    }
+
+    function insertSymbol(symbol) {
+        if (currentSlots.length === 0) return;
+
+        const activeSlot = currentSlots[activeSlotIndex];
+        activeSlot.innerText = symbol;
+        activeSlot.style.border = "none";
+        activeSlot.style.color = "#E91E63";
+        activeSlot.style.fontWeight = "bold";
+
+        let allFilled = true;
+        let userAnswer = [];
+        currentSlots.forEach(slot => {
+            if (!slot.innerText) allFilled = false;
+            userAnswer.push(slot.innerText);
+        });
+
+        if (!allFilled) {
+            for(let i = 0; i < currentSlots.length; i++) {
+                if(!currentSlots[i].innerText) {
+                    setActiveSlot(i);
+                    break;
+                }
+            }
+        } else {
+            checkAnswer(userAnswer);
+        }
+    }
+
+    function checkAnswer(userAnswer) {
+        const currentQuestion = questions[currentLevelIndex];
+        const correctAnswers = currentQuestion.answers;
+        let isCorrect = true;
+
+        for (let i = 0; i < correctAnswers.length; i++) {
+            if (userAnswer[i] !== correctAnswers[i]) {
+                isCorrect = false;
+                break;
+            }
+        }
+
+        const feedback = document.getElementById("feedback");
+        if (isCorrect) {
+            feedback.style.color = "#4CAF50";
+            feedback.innerText = "✨ 太棒了！完全正確！";
+            setTimeout(() => {
+                currentLevelIndex++;
+                loadLevel();
+            }, 1500);
+        } else {
+            // 答錯時，呼叫顯示教學提示的功能
+            showHint(currentQuestion.hint);
+        }
+    }
+
+    // --- 新增：顯示與隱藏教學提示的函數 ---
+    function showHint(hintText) {
+        document.getElementById("hint-text").innerText = hintText;
+        document.getElementById("hint-modal").style.display = "flex";
+    }
+
+    function closeHintAndRetry() {
+        document.getElementById("hint-modal").style.display = "none";
+        // 清空這一關的答案，讓學生重新挑戰
+        loadLevel(); 
+    }
+
+    window.onload = initGame;
+</script>
+
+</body>
+</html>
