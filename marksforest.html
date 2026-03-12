@@ -3,154 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>標點森林大冒險 - 教學回饋版</title>
+    <title>標點森林大冒險 - 8-bit 可愛森林版</title>
+    <!-- 引入開源的注音字型 (BPMF) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* --- UI/UX 設計：童趣插畫風與 RWD 響應式設計 --- */
+        /* --- UI/UX 設計：8-bit 像素森林風與 RWD 響應式設計 --- */
+        /* 為了使用注音，我們需要定義一個支援注音的字體族群 */
+        @font-face {
+            font-family: 'BPMF';
+            /* 這裡使用一個開源的注音字體，確保沒有安裝的電腦也能看到 */
+            src: url('https://cdn.jsdelivr.net/gh/max32002/BPMF-Fonts/fonts/BPMF_Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         body {
-            font-family: 'BiauKai', 'DFKai-SB', '微軟正黑體', sans-serif;
-            background-color: #E8F5E9; /* 柔和的森林淺綠色 */
+            /* 優先使用注音字體，如果失敗則退回標準字體 */
+            font-family: 'BPMF', 'BiauKai', 'DFKai-SB', 'Noto Sans TC', '微軟正黑體', sans-serif;
+            
+            /* --- 🎨 教師自訂背景圖區 --- */
+            /* 如果您沒有設定圖片，預設會顯示這個柔和的森林淺綠色 */
+            background-color: #E8F5E9; 
+            
+            /* 老師，請將您的圖片網址或檔名放在下方 url('') 的單引號中間！
+               💡 祕訣：如果您把圖片 (例如 bg.jpg) 跟這個 index.html 放在 GitHub 的同一個資料夾，
+               可以直接寫成： background-image: url('bg.jpg');
+            */
+            background-image: url(''); 
+            
+            /* 讓背景圖片漂亮地填滿整個畫面，且不會跟著滾動 */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            /* --------------------------- */
+            
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             text-align: center;
-            color: #333;
-            overflow: hidden; /* 防止彈出視窗時背景滾動 */
+            color: #3E2723; /* 深木頭色文字，增加對比度 */
+            overflow: hidden; 
         }
+
+        /* 遊戲主面板：立體積木感 */
         #game-container {
-            background-color: #FFFFFF;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            background-color: #FFFFFA;
+            border: 6px solid #3E2723;
+            border-radius: 16px;
+            padding: 30px 40px;
+            /* 復古 8-bit 風格的硬陰影 */
+            box-shadow: 8px 8px 0px #3E2723;
             width: 90%;
-            max-width: 600px;
-            border: 4px solid #81C784;
+            max-width: 650px;
             position: relative;
         }
-        h1 { color: #2E7D32; font-size: 2rem; margin-top: 0; }
-        .level-info { font-size: 1.2rem; color: #555; margin-bottom: 20px; font-weight: bold; }
+
+        h1 { 
+            color: #2E7D32; 
+            font-size: 2.2rem; 
+            margin-top: 0; 
+            text-shadow: 2px 2px 0px #A5D6A7; /* 可愛文字陰影 */
+            /* 標題不一定要注音，維持清晰即可，視需求調整 */
+            font-family: 'BiauKai', 'DFKai-SB', 'Noto Sans TC', sans-serif; 
+        }
         
-        /* 句子顯示區塊 */
+        .level-info { 
+            font-size: 1.3rem; 
+            color: #555; 
+            margin-bottom: 25px; 
+            font-weight: bold; 
+            background-color: #E8F5E9;
+            display: inline-block;
+            padding: 5px 15px;
+            border: 3px solid #3E2723;
+            border-radius: 10px;
+            box-shadow: 3px 3px 0px #3E2723;
+            font-family: 'BiauKai', 'DFKai-SB', 'Noto Sans TC', sans-serif; 
+        }
+        
+        /* 句子顯示區塊 (此處需要確保注音字體套用) */
         #sentence-box {
-            font-size: 2rem;
-            line-height: 2.5;
+            font-size: 2.5rem; /* 注音字體通常需要比較大一點才清楚 */
+            line-height: 2.8; /* 增加行距以容納注音符號 */
             margin-bottom: 30px;
-            padding: 20px;
-            background-color: #FFF9C4; /* 溫暖的紙張顏色 */
-            border-radius: 15px;
+            padding: 25px;
+            background-color: #FFF9C4; 
+            border: 4px solid #FBC02D;
+            border-radius: 12px;
             word-wrap: break-word;
+            box-shadow: inset 3px 3px 0px rgba(0,0,0,0.05); /* 內部微微凹陷感 */
         }
         
         /* 挖空的格子 */
         .blank-slot {
             display: inline-block;
-            width: 45px;
-            height: 45px;
-            border: 3px dashed #FF9800;
-            border-radius: 10px;
+            width: 48px;
+            height: 48px;
+            border: 4px dashed #FF9800;
+            border-radius: 8px;
             vertical-align: middle;
-            margin: 0 5px;
+            margin: 0 6px;
             cursor: pointer;
             background-color: #FFF;
-            transition: all 0.3s;
-            line-height: 45px;
+            transition: all 0.2s;
+            line-height: 48px;
             text-align: center;
+            box-shadow: 3px 3px 0px rgba(255, 152, 0, 0.3);
+            /* 讓格子內的標點符號不帶注音，保持純粹 */
+            font-family: 'BiauKai', 'DFKai-SB', 'Noto Sans TC', sans-serif; 
         }
         .blank-slot.active {
-            border-color: #F44336;
+            border: 4px solid #F44336;
+            border-style: solid;
             background-color: #FFCDD2;
             transform: scale(1.15);
-            box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+            box-shadow: 4px 4px 0px #D32F2F;
         }
         
-        /* 標點符號按鈕鍵盤 */
+        /* 標點符號按鈕鍵盤：大顆粒遊戲按鍵感 */
         #keyboard {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 15px;
         }
         .symbol-btn {
-            font-size: 1.8rem;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            background-color: #4FC3F7;
-            color: white;
+            font-size: 2rem;
+            padding: 12px;
+            border: 4px solid #3E2723;
+            border-radius: 12px;
+            background-color: #81D4FA;
+            color: #3E2723;
+            font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 6px 0 #0288D1;
+            box-shadow: 0 6px 0 #3E2723; /* 立體陰影 */
             transition: transform 0.1s, box-shadow 0.1s;
-            font-family: inherit; /* 繼承標楷體，讓符號更標準 */
+            /* 按鈕上的標點符號使用標準字體即可 */
+            font-family: 'BiauKai', 'DFKai-SB', 'Noto Sans TC', sans-serif; 
         }
         .symbol-btn:active {
-            transform: translateY(6px);
-            box-shadow: 0 0 0 #0288D1;
+            transform: translateY(6px); /* 按下去的效果 */
+            box-shadow: 0 0 0 #3E2723;
+            background-color: #4FC3F7;
         }
         
         /* 狀態回饋文字 */
         #feedback {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: bold;
-            height: 30px;
-            margin-top: 20px;
+            height: 35px;
+            margin-top: 25px;
             color: #4CAF50;
+            text-shadow: 1px 1px 0px #FFF;
+            font-family: 'BiauKai', 'DFKai-SB', 'Noto Sans TC', sans-serif; 
         }
         
         /* --- 教學提示彈出視窗 (Modal) --- */
         #hint-modal {
-            display: none; /* 預設隱藏 */
+            display: none; 
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.6); /* 半透明黑底 */
+            background-color: rgba(0, 0, 0, 0.6); 
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            backdrop-filter: blur(3px); /* 讓背景模糊，聚焦提示 */
+            backdrop-filter: blur(4px); 
         }
         .modal-content {
             background-color: #FFF;
             padding: 40px 30px;
-            border-radius: 25px;
-            width: 80%;
-            max-width: 400px;
-            border: 5px solid #FFCA28; /* 醒目的黃色邊框 */
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            border-radius: 16px;
+            width: 85%;
+            max-width: 420px;
+            border: 6px solid #3E2723;
+            box-shadow: 10px 10px 0px #3E2723; /* 彈出視窗也有可愛立體陰影 */
             text-align: center;
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 活潑的彈出動畫 */
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
         .modal-title {
             color: #E65100;
-            font-size: 1.8rem;
-            margin-bottom: 15px;
+            font-size: 2rem;
+            margin-bottom: 20px;
             margin-top: 0;
+            text-shadow: 2px 2px 0px #FFE082;
+            font-family: 'BiauKai', 'DFKai-SB', 'Noto Sans TC', sans-serif; 
         }
         #hint-text {
-            font-size: 1.4rem;
-            line-height: 1.6;
-            color: #424242;
-            margin-bottom: 25px;
+            font-size: 1.8rem; /* 提示文字也變大，因為使用注音字體 */
+            line-height: 2.2;
+            color: #3E2723;
+            margin-bottom: 30px;
+            font-weight: bold;
         }
         .retry-btn {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             padding: 12px 30px;
-            background-color: #81C784;
-            color: white;
-            border: none;
-            border-radius: 30px;
+            background-color: #A5D6A7;
+            color: #3E2723;
+            border: 4px solid #3E2723;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 5px 0 #388E3C;
-            font-family: inherit;
+            box-shadow: 0 6px 0 #3E2723;
+            font-family: 'BiauKai', 'DFKai-SB', 'Noto Sans TC', sans-serif; 
             font-weight: bold;
             transition: transform 0.1s, box-shadow 0.1s;
         }
         .retry-btn:active {
-            transform: translateY(5px);
-            box-shadow: 0 0 0 #388E3C;
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #3E2723;
+            background-color: #81C784;
         }
 
         @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+            0% { transform: scale(0.5) translateY(50px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
         }
         
         .hidden { display: none !important; }
@@ -191,10 +259,7 @@
 </div>
 
 <script>
-    /* --- 教師自訂題庫與教學提示區 --- 
-       老師，您可以在這裡新增 `hint`（提示）。
-       當學生答錯時，就會跳出這段話教導他們！
-    */
+    /* --- 教師自訂題庫與教學提示區 --- */
     const questions = [
         { 
             text: "小鳥在樹上唱歌_", 
@@ -227,9 +292,10 @@
             hint: "有人說話或問問題時，要用「冒號（：）」和「引號（「」）」。引號裡面是一句問話，所以要用「問號（？）」喔！"
         },
         { 
-            text: "花園裡有紅色的_黃色的和白色的花_", 
-            answers: ["、", "。"],
-            hint: "「紅色的」、「黃色的」是同一類的東西，並排在一起要用「頓號（、）」。整句話說完後要加上「句號（。）」。"
+            /* 新增：多個頓號的題目 */
+            text: "動物園裡有大象_獅子_猴子和長頸鹿_", 
+            answers: ["、", "、", "。"],
+            hint: "「大象」、「獅子」、「猴子」都是動物，把它們並列在一起時，中間都要用像瓜子一樣的「頓號（、）」。整句話說完後要加上「句號（。）」。"
         },
         { 
             text: "妹妹開心地大叫__太棒了__", 
@@ -252,11 +318,10 @@
     let currentSlots = [];
     let activeSlotIndex = 0;
 
-    // --- 新增：洗牌函數 (打亂題目順序) ---
+    // --- 洗牌函數 (打亂題目順序) ---
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            // 交換元素位置
             [array[i], array[j]] = [array[j], array[i]];
         }
     }
@@ -269,7 +334,7 @@
 
     function loadLevel() {
         if (currentLevelIndex >= questions.length) {
-            document.getElementById("sentence-box").innerHTML = "🎉 恭喜你！你已經學會所有的標點符號了！";
+            document.getElementById("sentence-box").innerHTML = "🎉 恭喜過關！<br>你已經是標點小達人了！";
             document.getElementById("keyboard").classList.add("hidden");
             document.getElementById("feedback").innerText = "";
             return;
@@ -315,7 +380,7 @@
 
         const activeSlot = currentSlots[activeSlotIndex];
         activeSlot.innerText = symbol;
-        activeSlot.style.border = "none";
+        activeSlot.style.border = "4px solid transparent"; /* 取消虛線，保持大小不變 */
         activeSlot.style.color = "#E91E63";
         activeSlot.style.fontWeight = "bold";
 
@@ -352,7 +417,7 @@
 
         const feedback = document.getElementById("feedback");
         if (isCorrect) {
-            feedback.style.color = "#4CAF50";
+            feedback.style.color = "#2E7D32";
             feedback.innerText = "✨ 太棒了！完全正確！";
             setTimeout(() => {
                 currentLevelIndex++;
@@ -364,7 +429,6 @@
         }
     }
 
-    // --- 新增：顯示與隱藏教學提示的函數 ---
     function showHint(hintText) {
         document.getElementById("hint-text").innerText = hintText;
         document.getElementById("hint-modal").style.display = "flex";
