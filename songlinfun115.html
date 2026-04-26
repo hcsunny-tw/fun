@@ -23,10 +23,11 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             border: 3px solid #FFD700;
         }
-        .capybara-img { font-size: 4em; margin-bottom: 0px; }
+        .school-logo { width: 120px; height: auto; margin-bottom: 10px; border-radius: 10px; }
         
-        #loading-section { font-size: 1.5em; color: #4682B4; padding: 50px; }
-        #login-section, #level-section, #read-section { display: none; }
+        /* 預設顯示登入區塊，移除載入中畫面 */
+        #login-section { display: block; }
+        #level-section, #read-section { display: none; }
         
         /* 登入區塊 */
         .login-box {
@@ -116,27 +117,13 @@
             margin-top: 10px;
             display: none;
         }
-        
-        /* 老師後台區塊 */
-        #teacher-section { display: none; }
-        .school-logo { width: 120px; height: auto; margin-bottom: 10px; border-radius: 10px; }
-        .record-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 1.1em; }
-        .record-table th, .record-table td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-        .record-table th { background-color: #F0F8FF; color: #4682B4; }
-        .btn-teacher { background-color: #696969; color: white; font-size: 1em; padding: 8px 15px; margin-top: 20px;}
-        .btn-teacher:hover { background-color: #505050; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 老師請將 src 裡的網址替換成松林國小的真實 Logo 網址 -->
     <img src="https://img.icons8.com/color/96/000000/pine-tree.png" alt="松林雙語Fun Logo" class="school-logo" id="school-logo">
     <h1>松林雙語Fun</h1>
-    
-    <div id="loading-section">
-        <p>正在準備系統，請稍候...</p>
-    </div>
 
     <!-- 1. 登入區塊 -->
     <div id="login-section">
@@ -151,11 +138,10 @@
             </div>
             <button class="btn" onclick="window.loginAndFetchTask()">🚀 進入挑戰大廳</button>
         </div>
-        <p style="color: gray; font-size: 0.9em;">提示：老師測試可使用 601 班 5 號</p>
-        <button class="btn btn-teacher" onclick="window.enterTeacherBackend()">👨‍🏫 進入老師後台</button>
+        <p style="color: gray; font-size: 0.9em;">提示：測試可使用 601 班 5 號</p>
     </div>
 
-    <!-- 2. 關卡選擇區塊 (新增) -->
+    <!-- 2. 關卡選擇區塊 -->
     <div id="level-section">
         <h2 style="color: #4682B4;">歡迎，<span id="welcome-student-id"></span>！</h2>
         <p style="font-size: 1.2em; color: #666;">請選擇你要挑戰的關卡：</p>
@@ -186,98 +172,45 @@
         <div id="score-board">
             <div class="stars-display" id="stars-display"></div>
             <p style="font-size: 1.5em; font-weight: bold; margin-top: 5px;">準確率：<span id="score-text">0</span>%</p>
-            <p id="upload-status" class="upload-status">🔊 完美達成！已將這關的優美聲音上傳給老師！</p>
-        </div>
-    </div>
-
-    <!-- 4. 老師後台區塊 (新增) -->
-    <div id="teacher-section">
-        <h2 style="color: #4682B4;">👨‍🏫 老師管理後台：學生錄音驗收</h2>
-        <button class="btn" onclick="window.loadTeacherRecords()">🔄 重新整理</button>
-        <button class="btn btn-back" onclick="window.backToLogin()">🔙 回首頁</button>
-        
-        <div style="overflow-x: auto;">
-            <table class="record-table">
-                <thead>
-                    <tr>
-                        <th>過關時間</th>
-                        <th>班級座號</th>
-                        <th>闖關關卡</th>
-                        <th>分數</th>
-                        <th>錄音檔 (達90分上傳)</th>
-                    </tr>
-                </thead>
-                <tbody id="record-tbody">
-                    <tr><td colspan="5">點擊「重新整理」載入資料...</td></tr>
-                </tbody>
-            </table>
+            <p id="upload-status" class="upload-status">🔊 完美達成！已將這關的聲音上傳給老師！</p>
         </div>
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+<script>
     // ==========================================
-    // 👩‍🏫 老師設定區：闖關題庫
+    // 👩‍🏫 老師設定區：Google Apps Script 與題庫
     // ==========================================
-    
-    // 方法 1：本地題庫 (格式：班級_座號 -> 固定三關的內容)
-    //const localTaskDatabase = {
-        //"601_5": [
-          //  { title: "第一關：自我介紹", text: "Hello, my name is Capybara. I am ten years old. Nice to meet you." },
-            //{ title: "第二關：英語校園導覽", text: "Welcome to our school. This is the library. We can read books here." },
-            //{ title: "第三關：英語故事短文朗讀", text: "Once upon a time, there was a little turtle. He walked very slowly but never gave up." }
-        //],
-        //    };
 
-    // 方法 2：使用 Google 試算表 (推薦)
-    // 試算表欄位順序需為：A欄(班級), B欄(座號), C欄(自我介紹稿), D欄(校園導覽稿), E欄(故事短文稿)
+    // 🌟 請在這裡填入你部署好的 Google Apps Script (GAS) 網址
+    const GAS_URL = https://script.google.com/macros/s/AKfycbwq5fwQ5BRISqZIL8eu0LWceIrkTTVwJk39mEvq-1Cp_jTMuEEimFisKojjNwhpJjCkCA/exec"; 
+
+    // 🌟 若使用 Google 試算表派題，請填入 CSV 網址。留空則使用下方本地題庫
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1LgbSMV4hFCDB2PIyZzp35hpYB8dRJ34-ypBHQKjx8oA/edit?usp=sharing"; 
+
+    // 本地題庫
+    const localTaskDatabase = {
+        "601_5": [
+            { title: "第一關：自我介紹", text: "Hello, my name is Capybara. I am ten years old. Nice to meet you." },
+            { title: "第二關：英語校園導覽", text: "Welcome to our school. This is the library. We can read books here." },
+            { title: "第三關：英語故事短文朗讀", text: "Once upon a time, there was a little turtle. He walked very slowly but never gave up." }
+        ]
+    };
 
     // ==========================================
 
     let currentStudentId = "";
-    let currentStudentTasks = []; // 存放該學生的所有關卡
-    let currentLevelIndex = 0;    // 目前正在挑戰第幾關 (0, 1, 2)
+    let currentStudentTasks = []; 
+    let currentLevelIndex = 0;    
     let fetchedTasks = {}; 
-    
-    // 暫存本次連線的破關紀錄，讓大廳可以顯示星星
     let sessionCompletedLevels = {}; 
 
-    // --- Firebase 初始化 ---
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    let currentUser = null;
-
-    const initAuth = async () => {
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (error) {
-            console.error("Auth Error:", error);
-        }
+    // 網頁載入時直接讀取題庫
+    window.onload = async function() {
+        await loadTasks();
     };
-    initAuth();
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
-            await loadTasks(); 
-            document.getElementById('loading-section').style.display = 'none';
-            document.getElementById('login-section').style.display = 'block';
-        }
-    });
-
-    // --- 載入題庫邏輯 (支援 CSV 解析 三關) ---
+    // --- 載入題庫邏輯 ---
     async function loadTasks() {
         if (GOOGLE_SHEET_CSV_URL) {
             try {
@@ -298,19 +231,16 @@
         for(let i = 1; i < lines.length; i++) {
             if(!lines[i].trim()) continue;
             const row = lines[i].split(',');
-            // 檢查是否有足夠的欄位 (班, 座, 關1稿, 關2稿, 關3稿)
             if(row.length >= 5) {
                 const classStr = row[0].trim();
                 const seatStr = parseInt(row[1].trim()).toString(); 
                 const key = `${classStr}_${seatStr}`;
                 
-                // 將固定的關卡標題與試算表中的稿子配對
                 let tasks = [
                     { title: "第一關：自我介紹", text: row[2] ? row[2].trim().replace(/"/g, '') : "" },
                     { title: "第二關：英語校園導覽", text: row[3] ? row[3].trim().replace(/"/g, '') : "" },
                     { title: "第三關：英語故事短文朗讀", text: row[4] ? row[4].trim().replace(/"/g, '') : "" }
                 ];
-                // 過濾掉沒有稿子的空關卡 (以防老師某關沒填)
                 fetchedTasks[key] = tasks.filter(t => t.text.length > 0);
             }
         }
@@ -366,8 +296,6 @@
     }
 
     // --- 畫面切換與操作邏輯 ---
-    
-    // 1. 登入並獲取所有關卡
     window.loginAndFetchTask = function() {
         const classVal = document.getElementById('class-input').value.trim();
         const seatVal = parseInt(document.getElementById('seat-input').value.trim()).toString(); 
@@ -391,7 +319,6 @@
         }
     };
 
-    // 2. 渲染關卡選擇清單
     window.renderLevelSelection = function() {
         const levelList = document.getElementById('level-list');
         levelList.innerHTML = "";
@@ -409,7 +336,6 @@
         });
     }
 
-    // 3. 進入指定關卡
     window.enterLevel = function(index) {
         currentLevelIndex = index;
         const task = currentStudentTasks[index];
@@ -424,76 +350,19 @@
         resetResultUI();
     };
 
-    // 4. 退回相關
     window.backToLevelSelection = function() {
         if(isRecognizing) window.stopRecordingAndRecognition();
         document.getElementById('read-section').style.display = "none";
         document.getElementById('level-section').style.display = "block";
-        window.renderLevelSelection(); // 重新渲染以更新星星狀態
+        window.renderLevelSelection(); 
     };
 
     window.backToLogin = function() {
         if(isRecognizing) window.stopRecordingAndRecognition();
         document.getElementById('level-section').style.display = "none";
-        document.getElementById('read-section').style.display = "none";
-        document.getElementById('teacher-section').style.display = "none";
         document.getElementById('login-section').style.display = "block";
         document.getElementById('class-input').value = "";
         document.getElementById('seat-input').value = "";
-    };
-
-    // --- 老師後台邏輯 ---
-    window.enterTeacherBackend = async function() {
-        const pwd = prompt("請輸入老師後台密碼 (預設為 1234)：");
-        if(pwd !== "1234") {
-            alert("密碼錯誤！");
-            return;
-        }
-        document.getElementById('login-section').style.display = "none";
-        document.getElementById('teacher-section').style.display = "block";
-        await window.loadTeacherRecords();
-    };
-
-    window.loadTeacherRecords = async function() {
-        const tbody = document.getElementById('record-tbody');
-        tbody.innerHTML = "<tr><td colspan='5'>資料載入中，請稍候...</td></tr>";
-
-        try {
-            const querySnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'audio_submissions'));
-            let records = [];
-            querySnapshot.forEach((doc) => {
-                records.push(doc.data());
-            });
-
-            // 在前端進行排序 (依時間新到舊)，讓最新的錄音排在最上面
-            records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-            tbody.innerHTML = "";
-            if(records.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='5'>目前還沒有學生上傳錄音喔！</td></tr>";
-                return;
-            }
-
-            records.forEach(rec => {
-                const tr = document.createElement('tr');
-                const dateObj = new Date(rec.timestamp);
-                const timeStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-                
-                tr.innerHTML = `
-                    <td>${timeStr}</td>
-                    <td><strong style="color:#4682B4;">${rec.student_id.replace('_', '班')}號</strong></td>
-                    <td>${rec.level_title}</td>
-                    <td>${rec.score}⭐</td>
-                    <td>
-                        <audio controls src="${rec.audio_base64}" style="width: 200px; height: 40px;"></audio>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        } catch (e) {
-            console.error("載入失敗", e);
-            tbody.innerHTML = "<tr><td colspan='5'>讀取失敗，請確認資料庫連線。</td></tr>";
-        }
     };
 
     // --- 錄音與結算 ---
@@ -593,43 +462,56 @@
 
         document.getElementById('stars-display').innerText = starStr;
 
-        // 如果達到 5 星 (90分以上)
+        // 如果達到 5 星 (90分以上)，呼叫上傳到 Google Drive
         if (score >= 90) {
-            // 標記這關已經完美通關
             const recordKey = `${currentStudentId}_lvl_${currentLevelIndex}`;
             sessionCompletedLevels[recordKey] = true;
             
-            // 上傳音檔
-            if(audioBlob && currentUser) {
-                uploadAudioToFirestore(audioBlob, score, currentStudentTasks[currentLevelIndex].title);
+            if(audioBlob) {
+                uploadAudioToGoogleDrive(audioBlob, score, currentStudentTasks[currentLevelIndex].title);
             }
         }
     }
 
-    function uploadAudioToFirestore(blob, score, levelTitle) {
+    // 🚀 新的上傳功能：透過 GAS 上傳至 Google Drive
+    function uploadAudioToGoogleDrive(blob, score, levelTitle) {
+        if (!GAS_URL) {
+            console.log("尚未設定 Google Apps Script 網址，跳過上傳。");
+            return;
+        }
+
         const reader = new FileReader();
         reader.readAsDataURL(blob); 
         reader.onloadend = async function() {
-            const base64Audio = reader.result;
-            
-            if(base64Audio.length > 900000) {
-                console.warn("音檔過大，跳過存檔。");
-                return;
-            }
+            // 取得 Base64 編碼，去掉前面的 data:audio/webm;base64,
+            const base64Audio = reader.result.split(',')[1]; 
+
+            const statusEl = document.getElementById('upload-status');
+            statusEl.innerText = "⏳ 正在將音檔傳送到老師的雲端硬碟...";
+            statusEl.style.color = "#FF8C00";
+            statusEl.style.display = "block";
+
+            const payload = {
+                student_id: currentStudentId,
+                level_title: levelTitle,
+                score: score,
+                mime_type: blob.type,
+                audio_base64: base64Audio
+            };
 
             try {
-                const recordRef = collection(db, 'artifacts', appId, 'public', 'data', 'audio_submissions');
-                await addDoc(recordRef, {
-                    student_id: currentStudentId,
-                    level_title: levelTitle, // 新增：紀錄這是哪一關的錄音
-                    score: score,
-                    audio_base64: base64Audio,
-                    timestamp: new Date().toISOString()
+                // 使用 fetch 將資料 POST 到 Google Apps Script
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
                 });
                 
-                document.getElementById('upload-status').style.display = "block";
+                statusEl.innerText = "🔊 完美達成！已將這關的聲音上傳給老師！";
+                statusEl.style.color = "#C71585";
             } catch (error) {
                 console.error("上傳音檔失敗:", error);
+                statusEl.innerText = "❌ 哎呀，上傳雲端失敗了，請檢查網路連線。";
+                statusEl.style.color = "red";
             }
         }
     }
