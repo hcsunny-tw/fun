@@ -58,15 +58,17 @@
             background-color: #FFA500;
             color: white;
             padding: 15px;
-            font-size: 1.5em;
+            font-size: 1.3em;
             border-radius: 15px;
             border: 3px solid #FF8C00;
             cursor: pointer;
             transition: transform 0.2s, background-color 0.2s;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            line-height: 1.4;
         }
         .level-btn:hover { transform: scale(1.02); background-color: #FF8C00; }
         .level-completed { background-color: #32CD32; border-color: #228B22; }
+        .level-stats { font-size: 0.8em; color: #FFF; font-weight: normal; margin-top: 5px; display: block;}
         
         /* 朗讀區塊 */
         #script-display {
@@ -100,6 +102,35 @@
         .btn-back { background-color: #87CEFA; color: #333; }
         .btn:disabled { background-color: #ccc; cursor: not-allowed; }
         
+        /* 新增按鈕與寵物特效 */
+        .btn-listen { background-color: #9370DB; color: white; margin-bottom: 15px; }
+        .btn-listen:hover { background-color: #8A2BE2; }
+        
+        .pet-container {
+            background-color: #E6E6FA;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px auto;
+            width: 80%;
+            border: 2px dashed #9370DB;
+        }
+        .pet-emoji { font-size: 4em; margin: 10px 0; }
+        .pet-title { font-size: 1.3em; font-weight: bold; color: #4B0082; }
+        
+        .combo-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FF4500;
+            margin-top: 10px;
+            animation: pulse 1s infinite;
+            display: none;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
         #result-box {
             margin-top: 20px;
             font-size: 1.2em;
@@ -122,9 +153,7 @@
 <body>
 
 <div class="container">
-    <img src="https://img.icons8.com/color/96/000000/pine-tree.png" alt="松林雙語Fun Logo" class="school-logo" id="school-logo">
-    <h1>松林雙語Fun</h1>
-
+    <img src="./logo.png" alt="松林雙語Fun Logo" class="school-logo" id="school-logo" style="cursor: pointer;" onclick="window.backToLogin()" title="回首頁">
     <!-- 1. 登入區塊 -->
     <div id="login-section">
         <div class="login-box">
@@ -144,6 +173,14 @@
     <!-- 2. 關卡選擇區塊 -->
     <div id="level-section">
         <h2 style="color: #4682B4;">歡迎，<span id="welcome-student-id"></span>！</h2>
+        
+        <!-- 寵物進化區塊 -->
+        <div class="pet-container">
+            <div class="pet-title" id="pet-title">🥚 神秘的寵物蛋 (0 顆星)</div>
+            <div class="pet-emoji" id="pet-emoji">🥚</div>
+            <div style="font-size: 0.9em; color: #666;">累積星星，讓你的專屬寵物進化吧！</div>
+        </div>
+
         <p style="font-size: 1.2em; color: #666;">請選擇你要挑戰的關卡：</p>
         
         <div id="level-list">
@@ -158,6 +195,8 @@
         <h2 style="color: #8B4513; background-color: #FFE4B5; display: inline-block; padding: 5px 20px; border-radius: 20px;">
             <span id="student-identity"></span> - <span id="task-title"></span>
         </h2>
+        <br>
+        <button class="btn btn-listen" onclick="window.playAudio()">🔊 聽老師唸一次</button>
         <div id="script-display"></div>
         
         <button class="btn" id="start-btn" onclick="window.startRecordingAndRecognition()">🎤 開始朗讀</button>
@@ -171,6 +210,7 @@
 
         <div id="score-board">
             <div class="stars-display" id="stars-display"></div>
+            <div id="combo-display" class="combo-text">🔥 0 Combo 連擊！</div>
             <p style="font-size: 1.5em; font-weight: bold; margin-top: 5px;">準確率：<span id="score-text">0</span>%</p>
             <p id="upload-status" class="upload-status">🔊 完美達成！已將這關的聲音上傳給老師！</p>
         </div>
@@ -203,7 +243,11 @@
     let currentStudentTasks = []; 
     let currentLevelIndex = 0;    
     let fetchedTasks = {}; 
-    let sessionCompletedLevels = {}; 
+    
+    // 從瀏覽器本地儲存讀取過去的最高分紀錄，避免重整畫面就不見
+    let sessionScores = JSON.parse(localStorage.getItem('matsubayashi_scores')) || {}; 
+    let petData = JSON.parse(localStorage.getItem('matsubayashi_pets')) || {}; // 記錄學生的專屬寵物
+    const petEmojis = ['🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐧', '🦉', '🦄', '🦖', '🦫', '🐰', '🐹']; // 可孵化的動物清單
 
     // 網頁載入時直接讀取題庫
     window.onload = async function() {
@@ -378,24 +422,77 @@
         }
     };
 
+    // 🌟 更新：大廳顯示最高準確率與星星
     window.renderLevelSelection = function() {
         const levelList = document.getElementById('level-list');
         levelList.innerHTML = "";
         
+        let totalStars = 0; // 計算總星星數
+
         currentStudentTasks.forEach((task, index) => {
             const btn = document.createElement('button');
             const recordKey = `${currentStudentId}_lvl_${index}`;
-            const isCompleted = sessionCompletedLevels[recordKey];
+            const bestScore = sessionScores[recordKey];
             
-            btn.className = `level-btn ${isCompleted ? 'level-completed' : ''}`;
-            btn.innerHTML = isCompleted ? `⭐ ${task.title} (完美通關)` : `🔓 ${task.title}`;
-            btn.onclick = () => window.enterLevel(index);
+            let statusHtml = "🔓 尚未挑戰";
+            let btnClass = "level-btn";
             
-            levelList.appendChild(btn);
-        });
-    }
+            if (bestScore !== undefined) {
+                let starStr = "";
+                let starsCount = 0;
+                
+                if (bestScore >= 90) { starStr = "⭐⭐⭐⭐⭐"; starsCount = 5; }
+                else if (bestScore >= 80) { starStr = "⭐⭐⭐⭐"; starsCount = 4; }
+                else if (bestScore >= 60) { starStr = "⭐⭐⭐"; starsCount = 3; }
+                else if (bestScore >= 40) { starStr = "⭐⭐"; starsCount = 2; }
+                else { starStr = "⭐"; starsCount = 1; }
+                
+                totalStars += starsCount; // 累加至總星星
+                
+                statusHtml = `${starStr} (最高 ${bestScore}%)`;
+                if (bestScore >= 90) {
+                btnClass += " level-completed";
+            }
+        }
+        
+        btn.className = btnClass;
+        btn.innerHTML = `${task.title} <span class="level-stats">${statusHtml}</span>`;
+        btn.onclick = () => window.enterLevel(index);
+        
+        levelList.appendChild(btn);
+    });
 
-    window.enterLevel = function(index) {
+    // 隨機賦予寵物邏輯 (若該學生還沒有寵物，則隨機抽一隻並儲存)
+    if (!petData[currentStudentId]) {
+        const randomEmoji = petEmojis[Math.floor(Math.random() * petEmojis.length)];
+        petData[currentStudentId] = randomEmoji;
+        localStorage.setItem('matsubayashi_pets', JSON.stringify(petData));
+    }
+    const myPet = petData[currentStudentId];
+
+    // 寵物進化邏輯
+    const petTitleEl = document.getElementById('pet-title');
+    const petEmojiEl = document.getElementById('pet-emoji');
+    
+    if (totalStars === 0) {
+        petTitleEl.innerText = `🥚 神秘的寵物蛋 (${totalStars} 顆星)`;
+        petEmojiEl.innerText = "🥚";
+    } else if (totalStars >= 1 && totalStars <= 4) {
+        petTitleEl.innerText = `🐣 剛孵化的小動物 (${totalStars} 顆星)`;
+        petEmojiEl.innerText = "🐣";
+    } else if (totalStars >= 5 && totalStars <= 9) {
+        petTitleEl.innerText = `✨ 快樂的寵物夥伴 (${totalStars} 顆星)`;
+        petEmojiEl.innerText = myPet;
+    } else if (totalStars >= 10 && totalStars <= 14) {
+        petTitleEl.innerText = `🎓 學霸寵物 (${totalStars} 顆星)`;
+        petEmojiEl.innerText = `🎓${myPet}`;
+    } else if (totalStars >= 15) {
+        petTitleEl.innerText = `👑 傳說中的國王寵物 (${totalStars} 顆星)`;
+        petEmojiEl.innerText = `👑${myPet}`;
+    }
+}
+
+window.enterLevel = function(index) {
         currentLevelIndex = index;
         const task = currentStudentTasks[index];
         
@@ -410,22 +507,36 @@
     };
 
     window.backToLevelSelection = function() {
-        if(isRecognizing) window.stopRecordingAndRecognition();
-        document.getElementById('read-section').style.display = "none";
-        document.getElementById('level-section').style.display = "block";
-        window.renderLevelSelection(); 
+    if(isRecognizing) window.stopRecordingAndRecognition();
+    document.getElementById('read-section').style.display = "none";
+    document.getElementById('level-section').style.display = "block";
+    window.renderLevelSelection(); 
+};
+
+window.backToLogin = function() {
+    if(isRecognizing) window.stopRecordingAndRecognition();
+    document.getElementById('read-section').style.display = "none"; // 確保朗讀畫面也被隱藏
+    document.getElementById('level-section').style.display = "none";
+    document.getElementById('login-section').style.display = "block";
+    document.getElementById('class-input').value = "";
+    document.getElementById('seat-input').value = "";
+};
+
+// --- 錄音與結算 ---
+window.playAudio = function() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // 停止之前可能還在唸的聲音
+            const utterance = new SpeechSynthesisUtterance(currentStudentTasks[currentLevelIndex].text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85; // 稍微放慢語速，適合學生聆聽
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("你的瀏覽器不支援語音朗讀功能喔！");
+        }
     };
 
-    window.backToLogin = function() {
-        if(isRecognizing) window.stopRecordingAndRecognition();
-        document.getElementById('level-section').style.display = "none";
-        document.getElementById('login-section').style.display = "block";
-        document.getElementById('class-input').value = "";
-        document.getElementById('seat-input').value = "";
-    };
-
-    // --- 錄音與結算 ---
     window.startRecordingAndRecognition = async function() {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel(); // 錄音前確保關閉朗讀
         resetResultUI();
         audioChunks = [];
         audioBlob = null;
@@ -477,6 +588,7 @@
     function resetResultUI() {
         document.getElementById('result-box').style.display = "none";
         document.getElementById('stars-display').innerText = "";
+        document.getElementById('combo-display').style.display = "none";
         document.getElementById('score-text').innerText = "0";
         document.getElementById('upload-status').style.display = "none";
     }
@@ -492,6 +604,8 @@
         let htmlOutput = "";
         let matchCount = 0;
         let validWordCount = 0;
+        let currentCombo = 0;
+        let maxCombo = 0;
 
         targetWords.forEach(word => {
             if(!word) return; 
@@ -501,8 +615,11 @@
             if (cleanWord && spokenClean.includes(cleanWord)) {
                 htmlOutput += `<span style="color: #32CD32; font-weight: bold;">${word}</span> `;
                 matchCount++;
+                currentCombo++;
+                if (currentCombo > maxCombo) maxCombo = currentCombo; // 紀錄最高連擊
             } else {
                 htmlOutput += `<span style="color: #FF6347; text-decoration: underline; text-decoration-color: #FFD700;">${word}</span> `;
+                currentCombo = 0; // 唸錯或漏掉，連擊中斷
             }
         });
 
@@ -512,6 +629,15 @@
         if(score > 100) score = 100;
         document.getElementById('score-text').innerText = score;
         
+        // 顯示 Combo 特效
+        const comboEl = document.getElementById('combo-display');
+        if (maxCombo >= 5) {
+            comboEl.innerText = `🔥 狂飆 ${maxCombo} Combo 連擊！`;
+            comboEl.style.display = "block";
+        } else {
+            comboEl.style.display = "none";
+        }
+
         let starStr = "";
         if (score >= 90) starStr = "⭐⭐⭐⭐⭐";
         else if (score >= 80) starStr = "⭐⭐⭐⭐";
@@ -521,36 +647,60 @@
 
         document.getElementById('stars-display').innerText = starStr;
 
-        // 如果達到 5 星 (90分以上)，呼叫上傳到 Google Drive
-        if (score >= 90) {
-            const recordKey = `${currentStudentId}_lvl_${currentLevelIndex}`;
-            sessionCompletedLevels[recordKey] = true;
+        // 🌟 更新：處理最高分寫入邏輯
+        const recordKey = `${currentStudentId}_lvl_${currentLevelIndex}`;
+        const previousBest = sessionScores[recordKey] || 0;
+
+        // 如果這次分數破紀錄，更新本地端並傳送給 GAS 試算表
+        if (score > previousBest) {
+            sessionScores[recordKey] = score;
+            localStorage.setItem('matsubayashi_scores', JSON.stringify(sessionScores));
             
-            if(audioBlob) {
-                uploadAudioToGoogleDrive(audioBlob, score, currentStudentTasks[currentLevelIndex].title);
-            }
+            // 呼叫更新試算表分數的功能
+            updateScoreToGoogleSheet(currentStudentId, currentLevelIndex, score);
+        }
+
+        // 如果達到 5 星 (90分以上)，呼叫上傳到 Google Drive (分開處理音檔)
+        if (score >= 90 && audioBlob) {
+            uploadAudioToGoogleDrive(audioBlob, score, currentStudentTasks[currentLevelIndex].title);
         }
     }
 
-    // 🚀 新的上傳功能：透過 GAS 上傳至 Google Drive
+    // 🚀 新增功能：將最高分數傳送給 GAS 更新到 Excel 試算表
+    function updateScoreToGoogleSheet(studentId, levelIndex, score) {
+        if (!GAS_URL) return;
+
+        const payload = {
+            action: "update_score",
+            student_id: studentId,
+            level_index: levelIndex,
+            score: score
+        };
+
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }).then(response => response.json())
+          .then(data => console.log("分數寫入試算表結果：", data.status))
+          .catch(error => console.error("分數寫入失敗:", error));
+    }
+
+    // 🚀 上傳音檔功能 (保持原樣，但加上 action 防止與分數寫入衝突)
     function uploadAudioToGoogleDrive(blob, score, levelTitle) {
-        if (!GAS_URL) {
-            console.log("尚未設定 Google Apps Script 網址，跳過上傳。");
-            return;
-        }
+        if (!GAS_URL) return;
 
         const reader = new FileReader();
         reader.readAsDataURL(blob); 
         reader.onloadend = async function() {
-            // 取得 Base64 編碼，去掉前面的 data:audio/webm;base64,
             const base64Audio = reader.result.split(',')[1]; 
-
             const statusEl = document.getElementById('upload-status');
+            
             statusEl.innerText = "⏳ 正在將音檔傳送到老師的雲端硬碟...";
             statusEl.style.color = "#FF8C00";
             statusEl.style.display = "block";
 
             const payload = {
+                action: "upload_audio", // 標記為上傳音檔動作
                 student_id: currentStudentId,
                 level_title: levelTitle,
                 score: score,
@@ -559,12 +709,10 @@
             };
 
             try {
-                // 使用 fetch 將資料 POST 到 Google Apps Script
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
                     body: JSON.stringify(payload)
                 });
-                
                 statusEl.innerText = "🔊 完美達成！已將這關的聲音上傳給老師！";
                 statusEl.style.color = "#C71585";
             } catch (error) {
