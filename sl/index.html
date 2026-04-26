@@ -13,115 +13,127 @@
             padding: 20px;
             margin: 0;
         }
-        h1 { color: #FF7F50; font-size: 2.2em; margin-bottom: 5px; }
+        h1 { color: #FF7F50; font-size: 2.5em; margin-bottom: 5px; } /* 標題放大 */
+        
         .container {
             background-color: white;
             border-radius: 20px;
             padding: 30px;
-            max-width: 800px;
+            max-width: 900px; /* 稍微放寬以適應平板 */
             margin: 0 auto;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            border: 3px solid #FFD700;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 4px solid #FFD700;
         }
-        .school-logo { width: 120px; height: auto; margin-bottom: 10px; border-radius: 10px; }
         
-        /* 預設顯示登入區塊，移除載入中畫面 */
+        /* 🌟 優化 2：Logo 放大並增加互動效果 */
+        .school-logo { 
+            width: 220px; /* 放大 Logo */
+            max-width: 80%; 
+            height: auto; 
+            margin-bottom: 15px; 
+            border-radius: 15px; 
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .school-logo:hover {
+            transform: scale(1.05);
+        }
+        
         #login-section { display: block; }
         #level-section, #read-section { display: none; }
         
-        /* 登入區塊 */
         .login-box {
             background-color: #F0F8FF;
-            padding: 20px;
+            padding: 30px 20px;
             border-radius: 15px;
             margin: 20px auto;
-            max-width: 400px;
+            max-width: 500px;
             border: 2px dashed #4682B4;
         }
-        .input-group { margin: 15px 0; }
-        .input-group label { font-size: 1.3em; font-weight: bold; color: #4682B4; display: block; margin-bottom: 5px; }
+        .input-group { margin: 20px 0; }
+        .input-group label { font-size: 1.5em; font-weight: bold; color: #4682B4; display: block; margin-bottom: 10px; }
+        
+        /* 🌟 優化 1：輸入框放大，適合平板觸控 */
         .code-input {
-            font-size: 1.5em;
-            padding: 10px;
+            font-size: 1.8em;
+            padding: 15px;
             width: 80%;
             text-align: center;
-            border: 2px solid #ccc;
-            border-radius: 10px;
+            border: 3px solid #ccc;
+            border-radius: 15px;
             font-family: inherit;
         }
         
-        /* 關卡選擇區塊 */
         .level-btn {
             display: block;
-            width: 80%;
-            margin: 15px auto;
+            width: 85%;
+            margin: 20px auto;
             background-color: #FFA500;
             color: white;
-            padding: 15px;
-            font-size: 1.3em;
-            border-radius: 15px;
+            padding: 20px; /* 放大點擊範圍 */
+            font-size: 1.5em;
+            border-radius: 20px;
             border: 3px solid #FF8C00;
             cursor: pointer;
             transition: transform 0.2s, background-color 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.1);
             line-height: 1.4;
         }
         .level-btn:hover { transform: scale(1.02); background-color: #FF8C00; }
         .level-completed { background-color: #32CD32; border-color: #228B22; }
-        .level-stats { font-size: 0.8em; color: #FFF; font-weight: normal; margin-top: 5px; display: block;}
+        .level-stats { font-size: 0.9em; color: #FFF; font-weight: normal; margin-top: 8px; display: block;}
         
-        /* 朗讀區塊 */
         #script-display {
-            font-size: 2.2em; 
+            font-size: 2.5em; /* 放大字體保護視力 */
             line-height: 1.6;
             color: #4682B4;
-            margin: 20px 0;
+            margin: 25px 0;
             text-align: left;
-            padding: 20px;
+            padding: 25px;
             background-color: #F0F8FF;
             border-radius: 15px;
+            border: 2px solid #B0C4DE;
         }
         
-        /* 通用按鈕 */
+        /* 🌟 優化 1：按鈕放大，適合平板觸控 */
         .btn {
             background-color: #32CD32;
             color: white;
             border: none;
-            padding: 12px 25px;
-            font-size: 1.3em;
+            padding: 15px 35px;
+            font-size: 1.5em;
             border-radius: 50px;
             cursor: pointer;
             transition: 0.3s;
-            margin: 5px;
+            margin: 10px;
             font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.1);
         }
-        .btn:hover { background-color: #228B22; }
+        .btn:hover { background-color: #228B22; transform: translateY(-2px); }
         .btn-stop { background-color: #FF6347; }
         .btn-stop:hover { background-color: #DC143C; }
         .btn-back { background-color: #87CEFA; color: #333; }
-        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
         
-        /* 新增按鈕與寵物特效 */
-        .btn-listen { background-color: #9370DB; color: white; margin-bottom: 15px; }
+        .btn-listen { background-color: #9370DB; color: white; margin-bottom: 20px; }
         .btn-listen:hover { background-color: #8A2BE2; }
         
         .pet-container {
             background-color: #E6E6FA;
-            border-radius: 15px;
-            padding: 15px;
-            margin: 15px auto;
-            width: 80%;
-            border: 2px dashed #9370DB;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px auto;
+            width: 85%;
+            border: 3px dashed #9370DB;
         }
-        .pet-emoji { font-size: 4em; margin: 10px 0; }
-        .pet-title { font-size: 1.3em; font-weight: bold; color: #4B0082; }
+        .pet-emoji { font-size: 5em; margin: 15px 0; }
+        .pet-title { font-size: 1.5em; font-weight: bold; color: #4B0082; }
         
         .combo-text {
-            font-size: 1.5em;
+            font-size: 1.8em;
             font-weight: bold;
             color: #FF4500;
-            margin-top: 10px;
+            margin-top: 15px;
             animation: pulse 1s infinite;
             display: none;
         }
@@ -132,20 +144,21 @@
         }
         
         #result-box {
-            margin-top: 20px;
-            font-size: 1.2em;
+            margin-top: 25px;
+            font-size: 1.4em;
             text-align: left;
             background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #E0E0E0;
             display: none;
         }
-        .stars-display { color: #FFD700; font-size: 2.5em; margin-top: 10px; }
+        .stars-display { color: #FFD700; font-size: 3em; margin-top: 15px; }
         .upload-status {
             color: #C71585;
             font-weight: bold;
-            font-size: 1.2em;
-            margin-top: 10px;
+            font-size: 1.3em;
+            margin-top: 15px;
             display: none;
         }
     </style>
@@ -153,13 +166,15 @@
 <body>
 
 <div class="container">
-    <img src="./logo.png" alt="松林雙語Fun Logo" class="school-logo" id="school-logo" style="cursor: pointer;" onclick="window.backToLogin()" title="回首頁">
+    <img src="./logo.png" alt="松林雙語Fun Logo" class="school-logo" id="school-logo" onclick="window.backToLogin()" title="回首頁">
+    <h1>松林雙語Fun</h1>
+
     <!-- 1. 登入區塊 -->
     <div id="login-section">
         <div class="login-box">
             <div class="input-group">
                 <label for="class-input">你的班級 (例如: 601)</label>
-                <input type="text" id="class-input" class="code-input" placeholder="請輸入班級">
+                <input type="number" id="class-input" class="code-input" placeholder="請輸入班級">
             </div>
             <div class="input-group">
                 <label for="seat-input">你的座號 (例如: 05)</label>
@@ -167,32 +182,32 @@
             </div>
             <button class="btn" onclick="window.loginAndFetchTask()">🚀 進入挑戰大廳</button>
         </div>
-        <p style="color: gray; font-size: 0.9em;">提示：如果載入失敗，可測試備用帳號 601 班 5 號</p>
+        <p style="color: gray; font-size: 1em;">提示：如果載入失敗，可測試備用帳號 601 班 5 號</p>
     </div>
 
     <!-- 2. 關卡選擇區塊 -->
     <div id="level-section">
-        <h2 style="color: #4682B4;">歡迎，<span id="welcome-student-id"></span>！</h2>
+        <h2 style="color: #4682B4; font-size: 1.8em;">歡迎，<span id="welcome-student-id"></span>！</h2>
         
         <!-- 寵物進化區塊 -->
         <div class="pet-container">
             <div class="pet-title" id="pet-title">🥚 神秘的寵物蛋 (0 顆星)</div>
             <div class="pet-emoji" id="pet-emoji">🥚</div>
-            <div style="font-size: 0.9em; color: #666;">累積星星，讓你的專屬寵物進化吧！</div>
+            <div style="font-size: 1.1em; color: #666;">累積星星，讓你的專屬寵物進化吧！</div>
         </div>
 
-        <p style="font-size: 1.2em; color: #666;">請選擇你要挑戰的關卡：</p>
+        <p style="font-size: 1.4em; color: #666;">請選擇你要挑戰的關卡：</p>
         
         <div id="level-list">
             <!-- 關卡按鈕會由 JS 動態生成 -->
         </div>
         
-        <button class="btn btn-back" style="margin-top: 20px;" onclick="window.backToLogin()">🔙 換人登入</button>
+        <button class="btn btn-back" style="margin-top: 30px;" onclick="window.backToLogin()">🔙 換人登入</button>
     </div>
 
     <!-- 3. 朗讀區塊 -->
     <div id="read-section">
-        <h2 style="color: #8B4513; background-color: #FFE4B5; display: inline-block; padding: 5px 20px; border-radius: 20px;">
+        <h2 style="color: #8B4513; background-color: #FFE4B5; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.5em;">
             <span id="student-identity"></span> - <span id="task-title"></span>
         </h2>
         <br>
@@ -211,7 +226,7 @@
         <div id="score-board">
             <div class="stars-display" id="stars-display"></div>
             <div id="combo-display" class="combo-text">🔥 0 Combo 連擊！</div>
-            <p style="font-size: 1.5em; font-weight: bold; margin-top: 5px;">準確率：<span id="score-text">0</span>%</p>
+            <p style="font-size: 1.8em; font-weight: bold; margin-top: 10px;">準確率：<span id="score-text">0</span>%</p>
             <p id="upload-status" class="upload-status">🔊 完美達成！已將這關的聲音上傳給老師！</p>
         </div>
     </div>
@@ -244,22 +259,21 @@
     let currentLevelIndex = 0;    
     let fetchedTasks = {}; 
     
-    // 從瀏覽器本地儲存讀取過去的最高分紀錄，避免重整畫面就不見
+    // 從瀏覽器本地儲存讀取過去的最高分紀錄
     let sessionScores = JSON.parse(localStorage.getItem('matsubayashi_scores')) || {}; 
-    let petData = JSON.parse(localStorage.getItem('matsubayashi_pets')) || {}; // 記錄學生的專屬寵物
-    const petEmojis = ['🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐧', '🦉', '🦄', '🦖', '🦫', '🐰', '🐹']; // 可孵化的動物清單
+    let petData = JSON.parse(localStorage.getItem('matsubayashi_pets')) || {}; 
+    const petEmojis = ['🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐧', '🦉', '🦄', '🦖', '🦫', '🐰', '🐹']; 
 
     // 網頁載入時直接讀取題庫
     window.onload = async function() {
         await loadTasks();
     };
 
-    // --- 載入題庫邏輯 (修復版) ---
+    // --- 載入題庫邏輯 ---
     async function loadTasks() {
         if (GOOGLE_SHEET_CSV_URL) {
             try {
                 let fetchUrl = GOOGLE_SHEET_CSV_URL;
-                // 自動將 /edit 網址轉換為 csv 下載網址
                 if (fetchUrl.includes('/edit')) {
                     fetchUrl = fetchUrl.substring(0, fetchUrl.indexOf('/edit')) + '/export?format=csv';
                 }
@@ -269,9 +283,8 @@
                 
                 const csvData = await response.text();
                 
-                // 檢查是否回傳了 HTML 錯誤頁面 (代表表單權限沒開)
                 if (csvData.trim().startsWith('<!DOCTYPE html>')) {
-                    alert("⚠️ 無法讀取 Google 表單！請確認表單的共用設定為「知道連結的人都能查看」。(暫時改用測試題庫)");
+                    alert("⚠️ 無法讀取 Google 表單！請確認表單設定為「知道連結的人都能查看」。");
                     fetchedTasks = localTaskDatabase;
                 } else {
                     parseCSV(csvData);
@@ -285,9 +298,8 @@
         }
     }
 
-    // 升級版 CSV 解析器：能正確處理句子中的「逗號」與「引號」
     function parseCSV(csvText) {
-        csvText = csvText.replace(/\r/g, ''); // 移除 Windows 的換行符號
+        csvText = csvText.replace(/\r/g, ''); 
         
         const rows = [];
         let currentRow = [];
@@ -317,23 +329,22 @@
                 currentCell += char;
             }
         }
-        // 處理最後一個字元與最後一行
         if (currentCell !== '' || csvText.endsWith(',')) currentRow.push(currentCell);
         if (currentRow.length > 0) rows.push(currentRow);
 
-        // 開始將資料寫入系統題庫 (從 1 開始，跳過標題行)
         for(let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if(row.length < 2) continue; // 資料不全跳過
+            if(row.length < 2) continue; 
             
-            const classStr = row[0] ? row[0].trim() : "";
+            const classStrRaw = row[0] ? row[0].trim() : "";
             const seatStrRaw = row[1] ? row[1].trim() : "";
             
-            if (!classStr || !seatStrRaw) continue;
+            if (!classStrRaw || !seatStrRaw) continue;
             
-            // 將座號強制轉換為純數字字串，避免「05」跟「5」對不起來
+            // 強制轉換為純數字避免 05 與 5 的衝突
+            const classStr = parseInt(classStrRaw).toString();
             const seatStr = parseInt(seatStrRaw).toString(); 
-            if (isNaN(seatStr)) continue;
+            if (isNaN(classStr) || isNaN(seatStr)) continue;
 
             const key = `${classStr}_${seatStr}`;
             
@@ -344,8 +355,7 @@
             ];
             fetchedTasks[key] = tasks.filter(t => t.text.length > 0);
         }
-        
-        console.log("題庫讀取成功！載入了", Object.keys(fetchedTasks).length, "筆學生資料。");
+        console.log("題庫讀取成功！");
     }
 
     // --- 語音與錄音設定 ---
@@ -399,11 +409,15 @@
 
     // --- 畫面切換與操作邏輯 ---
     window.loginAndFetchTask = function() {
-        const classVal = document.getElementById('class-input').value.trim();
+        const classValRaw = document.getElementById('class-input').value.trim();
         const seatValRaw = document.getElementById('seat-input').value.trim();
+        
+        const classVal = parseInt(classValRaw).toString();
         const seatVal = parseInt(seatValRaw).toString(); 
         
-        if(!classVal || !seatValRaw || isNaN(seatVal)) { alert("請輸入正確的班級與座號！"); return; }
+        if(!classValRaw || !seatValRaw || isNaN(classVal) || isNaN(seatVal)) { 
+            alert("請輸入正確的班級與座號！"); return; 
+        }
 
         const studentKey = `${classVal}_${seatVal}`;
         const tasks = fetchedTasks[studentKey];
@@ -418,16 +432,15 @@
             document.getElementById('login-section').style.display = "none";
             document.getElementById('level-section').style.display = "block";
         } else {
-            alert("找不到你的關卡資料！請檢查班級或座號。");
+            alert("找不到你的關卡資料！請檢查班級或座號是否有在雲端題庫中。");
         }
     };
 
-    // 🌟 更新：大廳顯示最高準確率與星星
     window.renderLevelSelection = function() {
         const levelList = document.getElementById('level-list');
         levelList.innerHTML = "";
         
-        let totalStars = 0; // 計算總星星數
+        let totalStars = 0; 
 
         currentStudentTasks.forEach((task, index) => {
             const btn = document.createElement('button');
@@ -447,52 +460,50 @@
                 else if (bestScore >= 40) { starStr = "⭐⭐"; starsCount = 2; }
                 else { starStr = "⭐"; starsCount = 1; }
                 
-                totalStars += starsCount; // 累加至總星星
+                totalStars += starsCount; 
                 
                 statusHtml = `${starStr} (最高 ${bestScore}%)`;
                 if (bestScore >= 90) {
-                btnClass += " level-completed";
+                    btnClass += " level-completed";
+                }
             }
+            
+            btn.className = btnClass;
+            btn.innerHTML = `${task.title} <span class="level-stats">${statusHtml}</span>`;
+            btn.onclick = () => window.enterLevel(index);
+            
+            levelList.appendChild(btn);
+        });
+
+        if (!petData[currentStudentId]) {
+            const randomEmoji = petEmojis[Math.floor(Math.random() * petEmojis.length)];
+            petData[currentStudentId] = randomEmoji;
+            localStorage.setItem('matsubayashi_pets', JSON.stringify(petData));
         }
+        const myPet = petData[currentStudentId];
+
+        const petTitleEl = document.getElementById('pet-title');
+        const petEmojiEl = document.getElementById('pet-emoji');
         
-        btn.className = btnClass;
-        btn.innerHTML = `${task.title} <span class="level-stats">${statusHtml}</span>`;
-        btn.onclick = () => window.enterLevel(index);
-        
-        levelList.appendChild(btn);
-    });
-
-    // 隨機賦予寵物邏輯 (若該學生還沒有寵物，則隨機抽一隻並儲存)
-    if (!petData[currentStudentId]) {
-        const randomEmoji = petEmojis[Math.floor(Math.random() * petEmojis.length)];
-        petData[currentStudentId] = randomEmoji;
-        localStorage.setItem('matsubayashi_pets', JSON.stringify(petData));
+        if (totalStars === 0) {
+            petTitleEl.innerText = `🥚 神秘的寵物蛋 (${totalStars} 顆星)`;
+            petEmojiEl.innerText = "🥚";
+        } else if (totalStars >= 1 && totalStars <= 4) {
+            petTitleEl.innerText = `🐣 剛孵化的小動物 (${totalStars} 顆星)`;
+            petEmojiEl.innerText = "🐣";
+        } else if (totalStars >= 5 && totalStars <= 9) {
+            petTitleEl.innerText = `✨ 快樂的寵物夥伴 (${totalStars} 顆星)`;
+            petEmojiEl.innerText = myPet;
+        } else if (totalStars >= 10 && totalStars <= 14) {
+            petTitleEl.innerText = `🎓 學霸寵物 (${totalStars} 顆星)`;
+            petEmojiEl.innerText = `🎓${myPet}`;
+        } else if (totalStars >= 15) {
+            petTitleEl.innerText = `👑 傳說中的國王寵物 (${totalStars} 顆星)`;
+            petEmojiEl.innerText = `👑${myPet}`;
+        }
     }
-    const myPet = petData[currentStudentId];
 
-    // 寵物進化邏輯
-    const petTitleEl = document.getElementById('pet-title');
-    const petEmojiEl = document.getElementById('pet-emoji');
-    
-    if (totalStars === 0) {
-        petTitleEl.innerText = `🥚 神秘的寵物蛋 (${totalStars} 顆星)`;
-        petEmojiEl.innerText = "🥚";
-    } else if (totalStars >= 1 && totalStars <= 4) {
-        petTitleEl.innerText = `🐣 剛孵化的小動物 (${totalStars} 顆星)`;
-        petEmojiEl.innerText = "🐣";
-    } else if (totalStars >= 5 && totalStars <= 9) {
-        petTitleEl.innerText = `✨ 快樂的寵物夥伴 (${totalStars} 顆星)`;
-        petEmojiEl.innerText = myPet;
-    } else if (totalStars >= 10 && totalStars <= 14) {
-        petTitleEl.innerText = `🎓 學霸寵物 (${totalStars} 顆星)`;
-        petEmojiEl.innerText = `🎓${myPet}`;
-    } else if (totalStars >= 15) {
-        petTitleEl.innerText = `👑 傳說中的國王寵物 (${totalStars} 顆星)`;
-        petEmojiEl.innerText = `👑${myPet}`;
-    }
-}
-
-window.enterLevel = function(index) {
+    window.enterLevel = function(index) {
         currentLevelIndex = index;
         const task = currentStudentTasks[index];
         
@@ -507,28 +518,28 @@ window.enterLevel = function(index) {
     };
 
     window.backToLevelSelection = function() {
-    if(isRecognizing) window.stopRecordingAndRecognition();
-    document.getElementById('read-section').style.display = "none";
-    document.getElementById('level-section').style.display = "block";
-    window.renderLevelSelection(); 
-};
+        if(isRecognizing) window.stopRecordingAndRecognition();
+        document.getElementById('read-section').style.display = "none";
+        document.getElementById('level-section').style.display = "block";
+        window.renderLevelSelection(); 
+    };
 
-window.backToLogin = function() {
-    if(isRecognizing) window.stopRecordingAndRecognition();
-    document.getElementById('read-section').style.display = "none"; // 確保朗讀畫面也被隱藏
-    document.getElementById('level-section').style.display = "none";
-    document.getElementById('login-section').style.display = "block";
-    document.getElementById('class-input').value = "";
-    document.getElementById('seat-input').value = "";
-};
+    window.backToLogin = function() {
+        if(isRecognizing) window.stopRecordingAndRecognition();
+        document.getElementById('read-section').style.display = "none"; 
+        document.getElementById('level-section').style.display = "none";
+        document.getElementById('login-section').style.display = "block";
+        document.getElementById('class-input').value = "";
+        document.getElementById('seat-input').value = "";
+    };
 
-// --- 錄音與結算 ---
-window.playAudio = function() {
+    // --- 錄音與結算 ---
+    window.playAudio = function() {
         if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); // 停止之前可能還在唸的聲音
+            window.speechSynthesis.cancel(); 
             const utterance = new SpeechSynthesisUtterance(currentStudentTasks[currentLevelIndex].text);
             utterance.lang = 'en-US';
-            utterance.rate = 0.85; // 稍微放慢語速，適合學生聆聽
+            utterance.rate = 0.85; 
             window.speechSynthesis.speak(utterance);
         } else {
             alert("你的瀏覽器不支援語音朗讀功能喔！");
@@ -536,7 +547,7 @@ window.playAudio = function() {
     };
 
     window.startRecordingAndRecognition = async function() {
-        if ('speechSynthesis' in window) window.speechSynthesis.cancel(); // 錄音前確保關閉朗讀
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel(); 
         resetResultUI();
         audioChunks = [];
         audioBlob = null;
@@ -616,10 +627,10 @@ window.playAudio = function() {
                 htmlOutput += `<span style="color: #32CD32; font-weight: bold;">${word}</span> `;
                 matchCount++;
                 currentCombo++;
-                if (currentCombo > maxCombo) maxCombo = currentCombo; // 紀錄最高連擊
+                if (currentCombo > maxCombo) maxCombo = currentCombo; 
             } else {
                 htmlOutput += `<span style="color: #FF6347; text-decoration: underline; text-decoration-color: #FFD700;">${word}</span> `;
-                currentCombo = 0; // 唸錯或漏掉，連擊中斷
+                currentCombo = 0; 
             }
         });
 
@@ -629,7 +640,6 @@ window.playAudio = function() {
         if(score > 100) score = 100;
         document.getElementById('score-text').innerText = score;
         
-        // 顯示 Combo 特效
         const comboEl = document.getElementById('combo-display');
         if (maxCombo >= 5) {
             comboEl.innerText = `🔥 狂飆 ${maxCombo} Combo 連擊！`;
@@ -647,26 +657,23 @@ window.playAudio = function() {
 
         document.getElementById('stars-display').innerText = starStr;
 
-        // 🌟 更新：處理最高分寫入邏輯
         const recordKey = `${currentStudentId}_lvl_${currentLevelIndex}`;
         const previousBest = sessionScores[recordKey] || 0;
 
-        // 如果這次分數破紀錄，更新本地端並傳送給 GAS 試算表
+        // 🌟 分數破紀錄時：更新本地並發送給 Google Sheet
         if (score > previousBest) {
             sessionScores[recordKey] = score;
             localStorage.setItem('matsubayashi_scores', JSON.stringify(sessionScores));
             
-            // 呼叫更新試算表分數的功能
             updateScoreToGoogleSheet(currentStudentId, currentLevelIndex, score);
         }
 
-        // 如果達到 5 星 (90分以上)，呼叫上傳到 Google Drive (分開處理音檔)
         if (score >= 90 && audioBlob) {
             uploadAudioToGoogleDrive(audioBlob, score, currentStudentTasks[currentLevelIndex].title);
         }
     }
 
-    // 🚀 新增功能：將最高分數傳送給 GAS 更新到 Excel 試算表
+    // 🚀 優化 3：使用 no-cors 模式，解決跨域阻擋導致無法寫入試算表的問題
     function updateScoreToGoogleSheet(studentId, levelIndex, score) {
         if (!GAS_URL) return;
 
@@ -679,13 +686,17 @@ window.playAudio = function() {
 
         fetch(GAS_URL, {
             method: 'POST',
+            mode: 'no-cors', // 忽略跨域警告，強制背景送出
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8' // 使用 plain text 確保 GAS 接收
+            },
             body: JSON.stringify(payload)
-        }).then(response => response.json())
-          .then(data => console.log("分數寫入試算表結果：", data.status))
-          .catch(error => console.error("分數寫入失敗:", error));
+        }).then(() => {
+            console.log("分數寫入請求已傳送至背景");
+        }).catch(error => console.error("分數寫入請求發送失敗:", error));
     }
 
-    // 🚀 上傳音檔功能 (保持原樣，但加上 action 防止與分數寫入衝突)
+    // 🚀 上傳音檔功能 (同樣加上 no-cors 保護傳輸)
     function uploadAudioToGoogleDrive(blob, score, levelTitle) {
         if (!GAS_URL) return;
 
@@ -700,7 +711,7 @@ window.playAudio = function() {
             statusEl.style.display = "block";
 
             const payload = {
-                action: "upload_audio", // 標記為上傳音檔動作
+                action: "upload_audio", 
                 student_id: currentStudentId,
                 level_title: levelTitle,
                 score: score,
@@ -709,10 +720,15 @@ window.playAudio = function() {
             };
 
             try {
-                const response = await fetch(GAS_URL, {
+                await fetch(GAS_URL, {
                     method: 'POST',
+                    mode: 'no-cors', // 忽略跨域警告
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8'
+                    },
                     body: JSON.stringify(payload)
                 });
+                // 因為 no-cors 無法讀取回傳值，只要沒報錯就當作成功
                 statusEl.innerText = "🔊 完美達成！已將這關的聲音上傳給老師！";
                 statusEl.style.color = "#C71585";
             } catch (error) {
