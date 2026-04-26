@@ -138,7 +138,7 @@
             </div>
             <button class="btn" onclick="window.loginAndFetchTask()">🚀 進入挑戰大廳</button>
         </div>
-        <p style="color: gray; font-size: 0.9em;">提示：測試可使用 601 班 5 號</p>
+        <p style="color: gray; font-size: 0.9em;">提示：如果載入失敗，可測試備用帳號 601 班 5 號</p>
     </div>
 
     <!-- 2. 關卡選擇區塊 -->
@@ -185,10 +185,10 @@
     // 🌟 請在這裡填入你部署好的 Google Apps Script (GAS) 網址
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwq5fwQ5BRISqZIL8eu0LWceIrkTTVwJk39mEvq-1Cp_jTMuEEimFisKojjNwhpJjCkCA/exec"; 
 
-    // 🌟 若使用 Google 試算表派題，請填入 CSV 網址。留空則使用下方本地題庫
+    // 🌟 你的 Google 試算表網址 (已包含自動轉換功能)
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1LgbSMV4hFCDB2PIyZzp35hpYB8dRJ34-ypBHQKjx8oA/edit?usp=sharing"; 
 
-    // 本地題庫
+    // 本地題庫 (當網路出錯時的備案)
     const localTaskDatabase = {
         "601_5": [
             { title: "第一關：自我介紹", text: "Hello, my name is Capybara. I am ten years old. Nice to meet you." },
@@ -210,13 +210,28 @@
         await loadTasks();
     };
 
-    // --- 載入題庫邏輯 ---
+    // --- 載入題庫邏輯 (修復版) ---
     async function loadTasks() {
         if (GOOGLE_SHEET_CSV_URL) {
             try {
-                const response = await fetch(GOOGLE_SHEET_CSV_URL);
+                let fetchUrl = GOOGLE_SHEET_CSV_URL;
+                // 自動將 /edit 網址轉換為 csv 下載網址
+                if (fetchUrl.includes('/edit')) {
+                    fetchUrl = fetchUrl.substring(0, fetchUrl.indexOf('/edit')) + '/export?format=csv';
+                }
+
+                const response = await fetch(fetchUrl);
+                if (!response.ok) throw new Error("Network response was not ok");
+                
                 const csvData = await response.text();
-                parseCSV(csvData);
+                
+                // 檢查是否回傳了 HTML 錯誤頁面 (代表表單權限沒開)
+                if (csvData.trim().startsWith('<!DOCTYPE html>')) {
+                    alert("⚠️ 無法讀取 Google 表單！請確認表單的共用設定為「知道連結的人都能查看」。(暫時改用測試題庫)");
+                    fetchedTasks = localTaskDatabase;
+                } else {
+                    parseCSV(csvData);
+                }
             } catch (e) {
                 console.error("無法讀取 Google 表單，改用本地題庫", e);
                 fetchedTasks = localTaskDatabase;
@@ -226,24 +241,67 @@
         }
     }
 
+    // 升級版 CSV 解析器：能正確處理句子中的「逗號」與「引號」
     function parseCSV(csvText) {
-        const lines = csvText.split('\n');
-        for(let i = 1; i < lines.length; i++) {
-            if(!lines[i].trim()) continue;
-            const row = lines[i].split(',');
-            if(row.length >= 5) {
-                const classStr = row[0].trim();
-                const seatStr = parseInt(row[1].trim()).toString(); 
-                const key = `${classStr}_${seatStr}`;
-                
-                let tasks = [
-                    { title: "第一關：自我介紹", text: row[2] ? row[2].trim().replace(/"/g, '') : "" },
-                    { title: "第二關：英語校園導覽", text: row[3] ? row[3].trim().replace(/"/g, '') : "" },
-                    { title: "第三關：英語故事短文朗讀", text: row[4] ? row[4].trim().replace(/"/g, '') : "" }
-                ];
-                fetchedTasks[key] = tasks.filter(t => t.text.length > 0);
+        csvText = csvText.replace(/\r/g, ''); // 移除 Windows 的換行符號
+        
+        const rows = [];
+        let currentRow = [];
+        let currentCell = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < csvText.length; i++) {
+            const char = csvText[i];
+            const nextChar = csvText[i + 1];
+            
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    currentCell += '"';
+                    i++; 
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                currentRow.push(currentCell);
+                currentCell = '';
+            } else if (char === '\n' && !inQuotes) {
+                currentRow.push(currentCell);
+                rows.push(currentRow);
+                currentRow = [];
+                currentCell = '';
+            } else {
+                currentCell += char;
             }
         }
+        // 處理最後一個字元與最後一行
+        if (currentCell !== '' || csvText.endsWith(',')) currentRow.push(currentCell);
+        if (currentRow.length > 0) rows.push(currentRow);
+
+        // 開始將資料寫入系統題庫 (從 1 開始，跳過標題行)
+        for(let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if(row.length < 2) continue; // 資料不全跳過
+            
+            const classStr = row[0] ? row[0].trim() : "";
+            const seatStrRaw = row[1] ? row[1].trim() : "";
+            
+            if (!classStr || !seatStrRaw) continue;
+            
+            // 將座號強制轉換為純數字字串，避免「05」跟「5」對不起來
+            const seatStr = parseInt(seatStrRaw).toString(); 
+            if (isNaN(seatStr)) continue;
+
+            const key = `${classStr}_${seatStr}`;
+            
+            let tasks = [
+                { title: "第一關：自我介紹", text: row[2] ? row[2].trim() : "" },
+                { title: "第二關：英語校園導覽", text: row[3] ? row[3].trim() : "" },
+                { title: "第三關：英語故事短文朗讀", text: row[4] ? row[4].trim() : "" }
+            ];
+            fetchedTasks[key] = tasks.filter(t => t.text.length > 0);
+        }
+        
+        console.log("題庫讀取成功！載入了", Object.keys(fetchedTasks).length, "筆學生資料。");
     }
 
     // --- 語音與錄音設定 ---
@@ -298,9 +356,10 @@
     // --- 畫面切換與操作邏輯 ---
     window.loginAndFetchTask = function() {
         const classVal = document.getElementById('class-input').value.trim();
-        const seatVal = parseInt(document.getElementById('seat-input').value.trim()).toString(); 
+        const seatValRaw = document.getElementById('seat-input').value.trim();
+        const seatVal = parseInt(seatValRaw).toString(); 
         
-        if(!classVal || !seatVal || isNaN(seatVal)) { alert("請輸入正確的班級與座號！"); return; }
+        if(!classVal || !seatValRaw || isNaN(seatVal)) { alert("請輸入正確的班級與座號！"); return; }
 
         const studentKey = `${classVal}_${seatVal}`;
         const tasks = fetchedTasks[studentKey];
