@@ -772,6 +772,9 @@
         if (index === 1) medal = '🥈';
         if (index === 2) medal = '🥉';
 
+        // 🛡️ 終極防護：無視試算表自動轉換的時間戳記，直接用寫入的「秒數 (entry.time)」重新轉換！
+        const displayTime = entry.time ? formatTime(entry.time) : entry.timeStr;
+
         // 優化排版：只顯示名次、姓名、標籤、時間，並強制左右對齊
         item.innerHTML = `
           <div class="flex items-center gap-2 overflow-hidden w-[55%]">
@@ -780,7 +783,7 @@
           </div>
           <div class="flex items-center justify-end gap-2 w-[45%]">
             <span class="bg-[#d4b886] px-1.5 py-0.5 rounded text-[11px] sm:text-xs border border-[#8b5a2b] text-[#5c4033] font-bold whitespace-nowrap shadow-inner">${entry.difficulty[0]}${entry.count}</span>
-            <span class="text-[#004d00] font-mono w-14 text-right font-bold text-base sm:text-lg">${entry.timeStr}</span>
+            <span class="text-[#004d00] font-mono w-14 text-right font-bold text-base sm:text-lg">${displayTime}</span>
           </div>
         `;
         listEl.appendChild(item);
