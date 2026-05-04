@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>彭彭老師的藝廊</title>
+    <!-- 加入網頁分頁 Icon (扳手) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+    
     <!-- 引入古典 serif 字體 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,12 +18,11 @@
         body {
             margin: 0;
             overflow: hidden; 
-            background-color: #fdfbf7; /* 明亮的古典牆面 */
-            font-family: 'Playfair Display', 'Noto Serif TC', serif; /* 博物館經典襯線字體 */
+            background-color: #fdfbf7; 
+            font-family: 'Playfair Display', 'Noto Serif TC', serif; 
             touch-action: none;
         }
 
-        /* 3D 攝影機視角設定 */
         #scene {
             width: 100vw;
             height: 100vh;
@@ -29,26 +31,22 @@
             position: relative;
         }
 
-        /* 承載所有 3D 物件的「世界」 */
         #world {
             width: 100%;
             height: 100%;
             position: absolute;
             transform-style: preserve-3d;
-            /* 將動畫時間縮短為 0.5s，讓操作更靈敏 */
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* 走廊地板 - 經典大理石棋盤格 (水平延伸) */
         .floor {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 30000px; /* 極寬的水平空間 */
+            width: 30000px; 
             height: 3000px; 
             margin-left: -15000px;
             margin-top: -1500px;
-            /* 模擬大理石地磚的棋盤格與漸層 */
             background: 
                 linear-gradient(rgba(253, 251, 247, 0) 0%, rgba(253, 251, 247, 1) 85%),
                 repeating-conic-gradient(#ffffff 0% 25%, #e8e6df 0% 50%) 50% / 200px 200px;
@@ -56,7 +54,6 @@
             box-shadow: inset 0 0 100px rgba(0,0,0,0.05);
         }
 
-        /* 牆面踢腳板 (增加水平空間的真實感) */
         .baseboard {
             position: absolute;
             top: 50%;
@@ -64,42 +61,38 @@
             width: 30000px;
             height: 16px;
             margin-left: -15000px;
-            margin-top: 234px; /* 接在地板上方 */
-            background: linear-gradient(to bottom, #d4af37, #aa8222); /* 古典金邊 */
+            margin-top: 234px; 
+            background: linear-gradient(to bottom, #d4af37, #aa8222); 
             transform: translate3d(0, 0, -410px);
             box-shadow: 0 5px 10px rgba(0,0,0,0.2);
         }
 
-        /* 畫框設定 - 華麗金色畫框 */
+        /* --- 畫框 RWD 設定 --- */
         .artwork {
             position: absolute;
             left: 50%;
             top: 50%;
-            width: 360px;
-            height: 270px;
-            margin-left: -180px;
-            margin-top: -135px;
             background: #fff;
-            padding: 16px; /* 畫作內襯留白(Matting) */
-            border: 14px ridge #c5a059; /* 模擬立體金框 */
+            padding: 16px;
+            border: 14px ridge #c5a059;
             box-shadow: 10px 20px 40px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s;
             border-radius: 2px;
-            /* 水平陳列：X軸由變數決定，Z軸稍微往後推 */
-            transform: translate3d(var(--x-pos), -40px, -400px);
+            
+            /* 預設：手機版 (較小) */
+            width: 280px;
+            height: 210px;
+            margin-left: -140px;
+            margin-top: -105px;
+            transform: translate3d(var(--x-pos), -40px, -450px);
         }
 
-        /* 滑鼠移上去的浮雕特效 (往前拉近) */
         .artwork:hover {
             box-shadow: 20px 40px 60px rgba(0,0,0,0.5), 0 0 30px rgba(197, 160, 89, 0.6), inset 0 0 10px rgba(0,0,0,0.1);
-            transform: translate3d(var(--x-pos), -40px, -250px) scale(1.05);
-        }
-        .artwork:hover .play-overlay {
-            opacity: 1;
+            transform: translate3d(var(--x-pos), -40px, -300px) scale(1.05);
         }
 
-        /* 畫作圖片 */
         .artwork img {
             width: 100%;
             height: 100%;
@@ -107,10 +100,8 @@
             box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
         }
 
-        /* 畫作標題 - 博物館解說牌 (Plaque) */
         .artwork-title {
             position: absolute;
-            bottom: -50px;
             left: 50%;
             transform: translateX(-50%);
             background: #fcfbf9;
@@ -118,14 +109,49 @@
             padding: 6px 16px;
             font-weight: bold;
             color: #333;
-            font-size: 0.95rem;
             box-shadow: 2px 4px 8px rgba(0,0,0,0.15);
             white-space: nowrap;
             border-radius: 2px;
             font-family: 'Noto Serif TC', serif;
+            
+            /* 預設：手機版 */
+            font-size: 1rem;
+            bottom: -40px;
         }
 
-        /* 懸浮的「開啟」圖示 */
+        /* RWD: 平板版 */
+        @media (min-width: 640px) {
+            .artwork {
+                width: 360px; height: 270px; margin-left: -180px; margin-top: -135px;
+                transform: translate3d(var(--x-pos), -40px, -400px);
+            }
+            .artwork:hover {
+                transform: translate3d(var(--x-pos), -40px, -250px) scale(1.05);
+            }
+            .artwork-title {
+                font-size: 1.15rem;
+                bottom: -45px;
+            }
+        }
+
+        /* RWD: 電腦版 (畫框最大化) */
+        @media (min-width: 1024px) {
+            .artwork {
+                width: 520px; height: 390px; margin-left: -260px; margin-top: -195px;
+                border: 18px ridge #c5a059; /* 框更厚重 */
+                padding: 20px;
+                transform: translate3d(var(--x-pos), -40px, -400px);
+            }
+            .artwork:hover {
+                transform: translate3d(var(--x-pos), -40px, -200px) scale(1.05);
+            }
+            .artwork-title {
+                font-size: 1.4rem; /* 標題明顯放大 */
+                bottom: -55px;
+                padding: 8px 24px;
+            }
+        }
+
         .play-overlay {
             position: absolute;
             top: 16px; left: 16px; right: 16px; bottom: 16px;
@@ -150,7 +176,6 @@
     <!--  0. 2D 網格視圖 (Grid View)                -->
     <!-- ========================================== -->
     <div id="grid-view" class="fixed inset-0 z-30 overflow-y-auto bg-[#fdfbf7] pt-24 pb-32 px-4 sm:px-8 hidden">
-        <!-- 調整為更密集的網格與較小的間距 -->
         <div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6" id="grid-container">
             <!-- JavaScript 會將卡片動態新增到這裡 -->
         </div>
@@ -162,35 +187,28 @@
     <div id="lobby" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#fdfbf7] bg-opacity-95 backdrop-blur-md transition-opacity duration-500">
         <div class="text-center mb-10">
             <h1 class="text-5xl font-bold mb-3 text-[#2c3e50] tracking-widest uppercase" style="font-family: 'Playfair Display', serif;">Musée d'Éducation</h1>
-            <h2 class="text-2xl font-bold text-[#c5a059] tracking-widest mb-4">教育資源古典藝廊</h2>
+            <h2 class="text-3xl font-bold text-[#c5a059] tracking-widest mb-4">彭彭老師的藝廊</h2>
             <div class="w-24 h-1 bg-[#c5a059] mx-auto mb-4"></div>
             <p class="text-stone-500 text-lg px-4">請選擇下方導覽圖的展區，開始您的藝術之旅：</p>
         </div>
         
-        <!-- 展覽平面圖 (Floor Plan) 主體 - 古典博物館藍圖設計 -->
         <div class="relative w-full max-w-4xl h-[480px] bg-[#fdfaf4] border-8 border-double border-[#d4af37] p-6 shadow-2xl flex flex-col box-border transform scale-90 md:scale-100">
-            
-            <!-- 左上角館徽/年份裝飾 -->
             <div class="absolute top-3 left-4 text-[#c5a059] font-serif text-[10px] tracking-widest pointer-events-none flex flex-col items-center hidden sm:flex">
                 <span class="text-lg">🏛️</span>
                 <span>EST. 2024</span>
             </div>
 
-            <!-- 網格佈局：4欄 x 4列 -->
             <div class="grid grid-cols-4 grid-rows-4 gap-3 w-full h-full relative z-10 mt-6">
-
-                <!-- 特展廳 (Special Exhibition) -->
+                <!-- 特展廳 (Special Exhibition) - 點擊會隨機抽 3 個作品 -->
                 <div onclick="enterGallery('特展廳')" class="col-span-2 row-span-1 group relative border border-stone-300 bg-white hover:bg-[#f9f5eb] hover:border-[#c5a059] shadow-sm flex flex-col items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden">
-                    <span class="text-xl font-bold text-[#8b0000] group-hover:scale-110 transition-transform z-10">⚜️ 特展廳</span>
+                    <span class="text-xl font-bold text-[#8b0000] group-hover:scale-110 transition-transform z-10">⚜️ 特展廳 (隨機展出)</span>
                     <div class="absolute bottom-1 right-2 text-[10px] font-mono text-stone-400 group-hover:text-[#c5a059] z-10 tracking-widest uppercase hidden sm:block">Special Exh.</div>
                 </div>
 
-                <!-- 綜合總覽 (ALL) -->
                 <div onclick="enterGallery('全部')" class="col-start-3 row-span-1 group relative border border-stone-300 bg-white hover:bg-[#f9f5eb] hover:border-[#c5a059] shadow-sm flex flex-col items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden">
                     <span class="text-sm font-bold text-[#1e3a8a] group-hover:scale-110 transition-transform z-10">全區導覽</span>
                 </div>
 
-                <!-- ZONE B (教學工具區) -->
                 <div onclick="enterGallery('工具區')" class="col-start-4 row-start-1 row-span-3 group relative border border-stone-300 bg-white hover:bg-[#f9f5eb] hover:border-[#c5a059] shadow-sm flex flex-col items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden">
                     <div class="flex flex-col items-center gap-3 z-10 group-hover:scale-110 transition-transform">
                         <span class="text-2xl text-stone-600">🕰️</span>
@@ -199,14 +217,10 @@
                     <div class="absolute bottom-3 text-sm font-mono text-stone-400 group-hover:text-[#c5a059] z-10 tracking-widest uppercase hidden sm:block">East Wing</div>
                 </div>
 
-                <!-- ZONE A (趣味遊戲館 Complex) -->
                 <div class="col-start-1 col-span-3 row-start-2 row-span-2 relative flex flex-col border border-stone-300 shadow-sm bg-white overflow-hidden">
-                    <!-- Complex 標題 -->
                     <div class="w-full bg-[#f4f1ea] text-center py-2 text-xs font-serif text-[#2c3e50] tracking-widest border-b border-stone-300 font-bold uppercase">
                         趣味遊戲大廳 (Main Gallery)
                     </div>
-                    
-                    <!-- 3 個子房間 -->
                     <div class="flex-1 flex w-full relative z-10">
                         <div onclick="enterGallery('國語遊戲')" class="flex-1 group relative border-r border-stone-200 hover:bg-[#f9f5eb] flex flex-col items-center justify-center cursor-pointer transition-all duration-300">
                             <span class="text-2xl mb-2 group-hover:scale-110 transition-transform">📜</span>
@@ -223,7 +237,6 @@
                     </div>
                 </div>
 
-                <!-- 空白區塊 1 (左下): 古典指南針 -->
                 <div class="col-start-1 row-start-4 relative flex flex-col items-center justify-center pointer-events-none hidden sm:flex">
                     <div class="w-14 h-14 border border-[#c5a059] rounded-full flex flex-col items-center justify-center text-stone-600 font-serif text-[12px] bg-white shadow-sm">
                         <span class="text-[#8b0000] font-bold">N</span>
@@ -231,16 +244,13 @@
                     </div>
                 </div>
 
-                <!-- 空白區塊 2 (右下): 比例尺 -->
                 <div class="col-start-4 row-start-4 relative flex flex-col items-end justify-end pointer-events-none pb-4 pr-4 hidden sm:flex">
                     <div class="w-full border-b border-l border-r border-stone-400 h-2 relative">
                         <span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-mono text-stone-500 whitespace-nowrap">SCALE 1:100</span>
                     </div>
                 </div>
-
             </div>
 
-            <!-- 底部入口箭頭 -->
             <div class="absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
                 <span class="text-2xl font-bold text-[#c5a059] animate-pulse">▲</span>
                 <span class="text-sm font-bold text-[#2c3e50] tracking-widest font-serif uppercase">Main Entrance</span>
@@ -252,8 +262,6 @@
     <!--  2. 導覽控制介面 (HUD)                    -->
     <!-- ========================================== -->
     <div id="hud" class="fixed bottom-8 left-0 right-0 z-40 flex justify-center items-center gap-4 md:gap-8 opacity-0 pointer-events-none transition-opacity duration-500">
-        
-        <!-- 切換視角按鈕 -->
         <button onclick="toggleViewMode()" id="view-toggle-btn" class="pointer-events-auto absolute left-4 md:left-8 top-[-50px] md:top-auto bg-white/90 hover:bg-white text-[#2c3e50] border border-[#c5a059] px-4 md:px-6 py-2 md:py-3 rounded-sm shadow-lg font-bold transition tracking-widest uppercase text-xs">
             切換 2D 列表
         </button>
@@ -271,7 +279,6 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </button>
 
-        <!-- 回大廳按鈕 -->
         <button onclick="returnToLobby()" class="pointer-events-auto absolute right-4 md:right-8 top-[-50px] md:top-auto bg-[#2c3e50] hover:bg-[#1a252f] text-white border border-[#2c3e50] px-4 md:px-6 py-2 md:py-3 rounded-sm shadow-lg font-bold transition tracking-widest uppercase text-xs">
             返回大廳
         </button>
@@ -293,11 +300,8 @@
     <!-- ========================================== -->
     <script>
         // 🌟 【您的專屬作品資料庫】 🌟
-        // 已經將您提供的遊戲清單與網址加入，並配上預設的展示圖片與分類
+        // 移除了佔位的「特展廳」資料，讓「特展廳」能直接隨機抓取下方所有遊戲
         const myPortfolio = [
-            // --- 👑 特展廳 (預留給未來的新遊戲或特別推薦) ---
-            { title: "年度教育作品展", image: "https://placehold.co/600x400/9d174d/fce7f3?text=特展廳", link: "#", category: "特展廳" },
-
             // --- 📜 國語遊戲 ---
             { title: "文字森林", image: "https://placehold.co/600x400/064e3b/a7f3d0?text=文字森林", link: "https://hcsunny-tw.github.io/fun/wordforest.html", category: "國語遊戲" },
             { title: "注音煉金術", image: "https://placehold.co/600x400/4c1d95/ddd6fe?text=注音煉金術", link: "https://hcsunny-tw.github.io/fun/mpsmix.html", category: "國語遊戲" },
@@ -313,14 +317,20 @@
             { title: "英文找找單字", image: "https://placehold.co/600x400/be123c/ffe4e6?text=英文找找單字", link: "https://hcsunny-tw.github.io/fun/wordsearch.html", category: "其他遊戲" }
         ];
 
+        // --- 取得動態間距 (RWD) ---
+        function getSpacing() {
+            if (window.innerWidth < 640) return 360; // 手機版間距
+            if (window.innerWidth < 1024) return 500; // 平板版間距
+            return 800; // 電腦版間距 (畫作變大，間距也變大)
+        }
+
         // --- 系統變數 ---
-        // 動態間距：螢幕小於 768px 時縮減為 400，否則保持 700
-        let X_SPACING = window.innerWidth < 768 ? 400 : 700; 
-        const INITIAL_CAMERA_X = 0; // 初始攝影機位置 (對準第一幅畫)
+        let X_SPACING = getSpacing(); 
+        const INITIAL_CAMERA_X = 0; 
         let currentX = INITIAL_CAMERA_X; 
-        let maxX = 0; // 走廊的盡頭
-        let isGalleryActive = false; // 是否正在逛展
-        let currentViewMode = '3D'; // 紀錄目前的瀏覽模式 ('3D' 或 '2D')
+        let maxX = 0; 
+        let isGalleryActive = false; 
+        let currentViewMode = '3D'; 
 
         const worldEl = document.getElementById('world');
         const lobbyEl = document.getElementById('lobby');
@@ -336,12 +346,11 @@
 
         // 視窗縮放時重新計算間距 (Dynamic Spacing)
         window.addEventListener('resize', () => {
-            const newSpacing = window.innerWidth < 768 ? 400 : 700;
+            const newSpacing = getSpacing();
             if (newSpacing !== X_SPACING) {
                 const oldSpacing = X_SPACING;
                 X_SPACING = newSpacing;
                 
-                // 如果正在 3D 展覽中，需重新更新畫作位置
                 if (isGalleryActive) {
                     const artworks = document.querySelectorAll('.artwork');
                     if(artworks.length > 0) {
@@ -350,7 +359,6 @@
                         });
                         maxX = (artworks.length - 1) * X_SPACING;
                         
-                        // 讓攝影機對準最靠近的畫作
                         const currentIndex = Math.round(currentX / oldSpacing);
                         currentX = currentIndex * X_SPACING;
                         if (currentX > maxX) currentX = maxX;
@@ -382,10 +390,22 @@
             }
         }
 
+        // --- 隨機抽取陣列元素 ---
+        function getRandomItems(arr, num) {
+            const shuffled = [...arr].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, num);
+        }
+
         // --- 進入展區 ---
         function enterGallery(category) {
-            let filteredItems = myPortfolio;
-            if (category !== '全部') {
+            let filteredItems = [];
+            
+            // 隨機抽 3 個放入特展廳
+            if (category === '特展廳') {
+                filteredItems = getRandomItems(myPortfolio, 3);
+            } else if (category === '全部') {
+                filteredItems = myPortfolio;
+            } else {
                 filteredItems = myPortfolio.filter(item => item.category === category);
             }
 
@@ -412,7 +432,6 @@
                 card.className = 'bg-white rounded-sm overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-400 cursor-pointer border border-[#e5e3dc] group';
                 card.onclick = () => window.open(item.link, '_blank');
                 card.innerHTML = `
-                    <!-- 將圖片高度從 h-48 改為 h-32 (手機) 到 h-40 (電腦)，並將 padding 縮小 -->
                     <div class="h-32 sm:h-40 overflow-hidden relative border-b border-[#e5e3dc] p-2 bg-[#fdfbf7]">
                         <div class="w-full h-full border border-stone-300 relative overflow-hidden shadow-inner">
                             <img src="${item.image}" alt="${item.title}" loading="lazy" class="w-full h-full object-cover transition duration-700 group-hover:scale-105">
@@ -421,13 +440,11 @@
                             </div>
                         </div>
                     </div>
-                    <!-- 標題區域稍微縮小字體與內距 -->
                     <div class="p-3 sm:p-4 text-center bg-white relative">
                         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#c5a059]"></div>
                         <h3 class="text-base sm:text-lg font-bold text-[#2c3e50] mb-2 font-serif mt-1 truncate">${item.title}</h3>
                         <span class="inline-block border border-[#c5a059] text-[#8a733f] text-[10px] sm:text-xs px-2 py-0.5 rounded-sm uppercase tracking-wider">${item.category}</span>
                     </div>
-                    <!-- 行動裝置專屬的前往按鈕 (2D列表輔助) -->
                     <div class="md:hidden w-full bg-[#fdfaf4] text-center py-2 text-[#8a733f] text-[10px] font-bold border-t border-[#e5e3dc]">
                         點擊前往觀看
                     </div>
@@ -484,7 +501,6 @@
             if (e.deltaY > 0) moveGallery(1); 
             else moveGallery(-1);
 
-            // 鎖定 0.5 秒 (配合新的 CSS transition)
             setTimeout(() => {
                 isScrolling = false;
             }, 500); 
@@ -512,11 +528,11 @@
         }, { passive: true });
 
         function handleSwipe() {
-            const swipeThreshold = 50; // 必須滑動超過 50px 才算數
+            const swipeThreshold = 50; 
             if (touchStartX - touchEndX > swipeThreshold) {
-                moveGallery(1); // 向左滑 -> 畫面往右移
+                moveGallery(1); 
             } else if (touchEndX - touchStartX > swipeThreshold) {
-                moveGallery(-1); // 向右滑 -> 畫面往左移
+                moveGallery(-1); 
             }
         }
 
