@@ -29,6 +29,8 @@
             perspective: 800px;
             overflow: hidden;
             position: relative;
+            /* 防止 3D 空間的隱形圖層阻擋點擊 */
+            pointer-events: none; 
         }
 
         #world {
@@ -37,6 +39,8 @@
             position: absolute;
             transform-style: preserve-3d;
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            /* 防止 3D 世界容器本身阻擋點擊 */
+            pointer-events: none;
         }
 
         .floor {
@@ -52,6 +56,8 @@
                 repeating-conic-gradient(#ffffff 0% 25%, #e8e6df 0% 50%) 50% / 200px 200px;
             transform: translate3d(0, 250px, -500px) rotateX(90deg);
             box-shadow: inset 0 0 100px rgba(0,0,0,0.05);
+            /* 確保地板不會干擾點擊 */
+            pointer-events: none;
         }
 
         .baseboard {
@@ -65,6 +71,8 @@
             background: linear-gradient(to bottom, #d4af37, #aa8222); 
             transform: translate3d(0, 0, -410px);
             box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            /* 確保踢腳板不會干擾點擊 */
+            pointer-events: none;
         }
 
         /* --- 畫框 RWD 設定 --- */
@@ -79,6 +87,9 @@
             cursor: pointer;
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s;
             border-radius: 2px;
+            
+            /* 確保畫作本身能夠被正常點擊 (覆蓋父層的 none) */
+            pointer-events: auto;
             
             /* 預設：手機版 (較小) */
             width: 280px;
@@ -300,7 +311,6 @@
     <!-- ========================================== -->
     <script>
         // 🌟 【您的專屬作品資料庫】 🌟
-        // 移除了佔位的「特展廳」資料，讓「特展廳」能直接隨機抓取下方所有遊戲
         const myPortfolio = [
             // --- 📜 國語遊戲 ---
             { title: "文字森林", image: "https://placehold.co/600x400/064e3b/a7f3d0?text=文字森林", link: "https://hcsunny-tw.github.io/fun/wordforest.html", category: "國語遊戲" },
@@ -458,19 +468,32 @@
             
             zoneTitleEl.innerText = category === '全部' ? '全區總覽' : category;
             
+            // 將大廳完全隱藏，避免殘留的隱形圖層阻擋中心點擊
             lobbyEl.style.opacity = '0';
             lobbyEl.style.pointerEvents = 'none';
-            hudEl.style.opacity = '1';
             isGalleryActive = true;
             
+            setTimeout(() => {
+                if (isGalleryActive) {
+                    lobbyEl.style.display = 'none';
+                }
+            }, 500);
+            
+            hudEl.style.opacity = '1';
             applyViewMode(); 
         }
 
         // --- 返回大廳 ---
         function returnToLobby() {
             isGalleryActive = false;
-            lobbyEl.style.opacity = '1';
-            lobbyEl.style.pointerEvents = 'auto';
+            
+            // 先恢復大廳的 display，給予極短延遲後再改變透明度以確保動畫觸發
+            lobbyEl.style.display = 'flex';
+            setTimeout(() => {
+                lobbyEl.style.opacity = '1';
+                lobbyEl.style.pointerEvents = 'auto';
+            }, 20);
+            
             hudEl.style.opacity = '0';
             
             currentX = INITIAL_CAMERA_X;
