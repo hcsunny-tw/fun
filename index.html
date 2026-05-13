@@ -41,6 +41,10 @@
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
             /* 防止 3D 世界容器本身阻擋點擊 */
             pointer-events: none;
+            /* 👇 新增以下這三行來防止 3D 閃動 */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: transform;
         }
 
         .floor {
@@ -69,7 +73,7 @@
             margin-left: -15000px;
             margin-top: 234px; 
             background: linear-gradient(to bottom, #d4af37, #aa8222); 
-            transform: translate3d(0, 0, -410px);
+            transform: translate3d(0, 0, -500px);
             box-shadow: 0 5px 10px rgba(0,0,0,0.2);
             /* 確保踢腳板不會干擾點擊 */
             pointer-events: none;
@@ -97,6 +101,10 @@
             margin-left: -140px;
             margin-top: -105px;
             transform: translate3d(var(--x-pos), -40px, -450px);
+            /* 👇 新增以下這三行 */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: transform, box-shadow;
         }
 
         .artwork:hover {
