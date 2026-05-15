@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>像素勇者：文字森林</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入 Bootstrap Icons 以顯示圖示 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
     
@@ -29,16 +31,26 @@
     .wood-btn {
       background-color: #8b5a2b;
       border: 4px solid #5c3a21;
+      border-bottom-width: 6px;
       box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), inset 4px 4px 0px rgba(255,255,255,0.1);
       color: #fff;
       text-shadow: 2px 2px 0px #3e2723;
     }
-    .wood-btn:hover {
-      background-color: #a0522d;
-    }
+    .wood-btn:hover { background-color: #a0522d; }
     .wood-btn:active {
       box-shadow: inset 4px 4px 0px rgba(0,0,0,0.4);
-      transform: translateY(2px);
+      transform: translateY(4px);
+      border-bottom-width: 2px;
+      margin-bottom: 4px;
+    }
+
+    /* 按鈕被選取時的狀態 (多選題用) */
+    .wood-btn-selected {
+      background-color: #633611 !important;
+      border-bottom-width: 2px !important;
+      transform: translateY(4px) !important;
+      box-shadow: inset 4px 4px 8px rgba(0,0,0,0.6) !important;
+      color: #ffd700 !important;
     }
 
     /* 答錯時的震動特效 */
@@ -50,7 +62,7 @@
     }
     .animate-shake { animation: shake 0.4s ease-in-out; }
 
-    /* 答對時的發光特效 (調整為配合牛皮紙的綠色調) */
+    /* 答對時的發光特效 */
     @keyframes glow {
       0% { box-shadow: 0 0 5px #228b22; transform: scale(1); }
       50% { box-shadow: 0 0 20px #228b22; transform: scale(1.05); }
@@ -64,16 +76,6 @@
       50% { transform: translateY(-8px); }
     }
     .animate-float { animation: float 3s ease-in-out infinite; }
-
-    /* 選單按鈕的選取狀態 */
-    .btn-selected {
-      background-color: #2e8b57 !important; /* 森林綠 */
-      border-color: #004d00 !important;
-      color: white !important;
-      transform: translateY(4px);
-      border-bottom-width: 0px !important;
-      box-shadow: 0 0 10px rgba(46, 139, 87, 0.6);
-    }
     
     /* 載入動畫 */
     .loader {
@@ -87,33 +89,39 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* 新增：像素字體特效與容器升級 */
+    /* 像素字體特效 */
     .font-pixel { font-family: 'DotGothic16', sans-serif; }
     .text-pixel-shadow { text-shadow: 3px 3px 0px #2e4f35, 6px 6px 0px rgba(0,0,0,0.5); }
     .rpg-title-box { background: rgba(0,0,0,0.25); border-radius: 12px; padding: 12px; border: 3px dashed #8b5a2b; }
+    
+    /* 頁尾連結樣式 */
+    .footer-link {
+      background-color: rgba(139, 90, 43, 0.85);
+      border: 2px solid #5c3a21;
+      color: #fdf5e6;
+      text-shadow: 1px 1px 0px #3e2723;
+    }
+    .footer-link:hover {
+      background-color: rgba(160, 82, 45, 1);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
   </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen select-none p-4 sm:p-6 md:p-8">
 
-  <!-- 隱藏的開源背景音樂 (CC-BY 授權) -->
+  <!-- 隱藏的開源背景音樂 -->
   <audio id="bgm-player" loop preload="auto" src="https://opengameart.org/sites/default/files/Rolemusic_-_pl4y1ng.mp3"></audio>
 
-  <!-- 右上角控制列 (音效、回首頁) -->
+  <!-- 右上角控制列 -->
   <div class="fixed top-3 right-3 sm:top-5 sm:right-5 flex gap-2 sm:gap-3 z-50">
-    <button onclick="toggleSound()" id="sound-btn" class="wood-btn p-2 sm:p-3 rounded-lg active:translate-y-1 active:border-b-0 transition-all shadow-lg text-xl sm:text-2xl flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14" title="音效開關">
-      🔊
-    </button>
-    <button onclick="showGlobalLeaderboard()" class="wood-btn p-2 sm:p-3 rounded-lg active:translate-y-1 active:border-b-0 transition-all shadow-lg text-xl sm:text-2xl flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14" title="排行榜">
-      🏆
-    </button>
-    <button onclick="promptGoHome()" class="wood-btn p-2 sm:p-3 rounded-lg active:translate-y-1 active:border-b-0 transition-all shadow-lg text-xl sm:text-2xl flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14" title="回首頁">
-      🏠
-    </button>
+    <button onclick="toggleSound()" id="sound-btn" class="wood-btn p-2 sm:p-3 rounded-lg transition-all shadow-lg text-xl sm:text-2xl flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14" title="音效開關">🔊</button>
+    <button onclick="showGlobalLeaderboard()" class="wood-btn p-2 sm:p-3 rounded-lg transition-all shadow-lg text-xl sm:text-2xl flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14" title="排行榜">🏆</button>
+    <button onclick="promptGoHome()" class="wood-btn p-2 sm:p-3 rounded-lg transition-all shadow-lg text-xl sm:text-2xl flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14" title="回首頁">🏠</button>
   </div>
 
-  <!-- 開始畫面 (參數選擇選單) -->
-  <div id="start-screen" class="w-full max-w-md kraft-paper p-6 sm:p-8 flex flex-col items-center justify-center transition-all duration-300 mt-8 sm:mt-0 relative overflow-hidden">
-    <!-- 卷軸裝飾棒 -->
+  <!-- 開始畫面 -->
+  <div id="start-screen" class="w-full max-w-md kraft-paper p-6 sm:p-8 flex flex-col items-center justify-center transition-all duration-300 mt-8 sm:mt-0 relative overflow-hidden z-10">
     <div class="absolute top-0 left-0 w-full h-3 bg-[#5c4033] rounded-t"></div>
     <div class="absolute bottom-0 left-0 w-full h-3 bg-[#5c4033] rounded-b"></div>
     
@@ -122,22 +130,20 @@
       <h2 class="text-2xl sm:text-3xl font-bold text-[#fdf5e6] text-center font-pixel tracking-widest drop-shadow-lg">勇者來挑戰</h2>
     </div>
     
-    <!-- 參數選擇 (雙欄位：難度與題數) -->
+    <!-- 參數選擇 -->
     <div class="grid grid-cols-2 gap-4 w-full mb-8">
-      <!-- 難度選擇 -->
       <div class="flex flex-col items-center">
         <p class="text-[#5c4033] mb-2 text-center text-sm sm:text-base font-bold tracking-wider">🗡️ 難度</p>
-        <select id="difficulty-select" class="w-full bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] text-lg sm:text-xl py-3 px-2 rounded outline-none focus:border-[#004d00] transition-all font-bold cursor-pointer appearance-none text-center shadow-inner" style="background-image: url('data:image/svg+xml;utf8,<svg fill=%22%238b5a2b%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-position: right 8px center; background-repeat: no-repeat;">
+        <select id="difficulty-select" class="w-full bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] text-lg sm:text-xl py-3 px-2 rounded outline-none font-bold cursor-pointer appearance-none text-center shadow-inner" style="background-image: url('data:image/svg+xml;utf8,<svg fill=%22%238b5a2b%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-position: right 8px center; background-repeat: no-repeat;">
           <option value="easy">🌿 初 級</option>
           <option value="medium">🌲 中 級</option>
           <option value="hard">🌋 高 級</option>
         </select>
       </div>
 
-      <!-- 題數選擇 -->
       <div class="flex flex-col items-center">
         <p class="text-[#5c4033] mb-2 text-center text-sm sm:text-base font-bold tracking-wider">📜 挑戰數量</p>
-        <select id="count-select" class="w-full bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] text-lg sm:text-xl py-3 px-2 rounded outline-none focus:border-[#004d00] transition-all font-bold cursor-pointer appearance-none text-center shadow-inner" style="background-image: url('data:image/svg+xml;utf8,<svg fill=%22%238b5a2b%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-position: right 8px center; background-repeat: no-repeat;">
+        <select id="count-select" class="w-full bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] text-lg sm:text-xl py-3 px-2 rounded outline-none font-bold cursor-pointer appearance-none text-center shadow-inner" style="background-image: url('data:image/svg+xml;utf8,<svg fill=%22%238b5a2b%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-position: right 8px center; background-repeat: no-repeat;">
           <option value="5">5 題</option>
           <option value="10">10 題</option>
           <option value="15">15 題</option>
@@ -145,21 +151,19 @@
       </div>
     </div>
     
-    <button onclick="startGame()" class="bg-[#228b22] hover:bg-[#006400] border-4 border-b-8 border-[#004d00] text-white text-2xl sm:text-3xl py-3 rounded-lg active:translate-y-1 active:border-b-4 transition-all w-full font-bold tracking-widest shadow-xl mb-2 font-pixel">
+    <button onclick="startGame()" class="bg-[#228b22] hover:bg-[#006400] border-4 border-b-8 border-[#004d00] text-white text-2xl sm:text-3xl py-3 rounded-lg transition-all w-full font-bold tracking-widest shadow-xl mb-2 font-pixel active:translate-y-1 active:border-b-4">
       開始冒險
     </button>
   </div>
 
-  <!-- 全域排行榜視窗 (預設隱藏) -->
+  <!-- 全域排行榜視窗 -->
   <div id="global-leaderboard-modal" class="fixed inset-0 bg-[#0f2416]/90 z-[70] flex flex-col items-center justify-center hidden p-4 sm:p-6 transition-all">
     <div class="w-full max-w-sm kraft-paper !border-4 !shadow-2xl p-6 relative overflow-hidden">
-      <!-- 卷軸裝飾棒 -->
       <div class="absolute top-0 left-0 w-full h-3 bg-[#5c4033] rounded-t"></div>
       <div class="absolute bottom-0 left-0 w-full h-3 bg-[#5c4033] rounded-b"></div>
       
       <h3 class="text-[#8b5a2b] font-bold text-center mb-4 mt-2 text-2xl border-b-2 border-[#8b5a2b] pb-2 font-pixel tracking-wider">👑 英雄排行榜</h3>
       
-      <!-- 排行榜篩選器 -->
       <div class="flex gap-2 mb-4 justify-center">
         <select id="global-lb-diff" onchange="fetchLeaderboard(false, 'global-leaderboard-list', this.value, document.getElementById('global-lb-cnt').value)" class="bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] px-2 py-1 rounded outline-none font-bold text-sm shadow-inner cursor-pointer">
           <option value="初級">🌿 初級</option>
@@ -174,24 +178,38 @@
       </div>
 
       <div id="global-leaderboard-list" class="space-y-2 text-sm sm:text-base mb-6 max-h-[50vh] overflow-y-auto pr-2">
-        <!-- 動態生成排名 -->
         <div class="text-center text-[#8b5a2b] py-4"><span class="loader"></span> 載入中...</div>
       </div>
 
-      <button onclick="closeGlobalLeaderboard()" class="wood-btn text-lg sm:text-xl py-2 px-8 rounded active:translate-y-1 active:border-b-0 transition-all font-bold tracking-wider w-full mb-1 font-pixel">
-        關閉
-      </button>
+      <button onclick="closeGlobalLeaderboard()" class="wood-btn text-lg sm:text-xl py-2 px-8 rounded transition-all font-bold tracking-wider w-full mb-1 font-pixel">關閉</button>
     </div>
   </div>
 
-  <!-- 遊戲主畫面容器 (預設隱藏) -->
-  <div id="game-container" class="w-full max-w-md kraft-paper p-4 sm:p-5 relative overflow-hidden hidden transition-all duration-300 mt-8 sm:mt-0">
-    <!-- 卷軸裝飾棒 -->
+  <!-- 錯誤回報視窗 -->
+  <div id="report-modal" class="fixed inset-0 bg-[#0f2416]/90 z-[70] flex flex-col items-center justify-center hidden p-4 sm:p-6 transition-all">
+    <div class="w-full max-w-sm kraft-paper !border-4 !shadow-2xl p-6 relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-3 bg-[#5c4033] rounded-t"></div>
+      <div class="absolute bottom-0 left-0 w-full h-3 bg-[#5c4033] rounded-b"></div>
+      
+      <h3 class="text-[#8b5a2b] font-bold text-center mb-2 mt-2 text-2xl font-pixel tracking-wider"><i class="bi bi-envelope-paper"></i> 錯誤回報</h3>
+      <p class="text-[#5c4033] text-sm text-center mb-4 font-bold">如果發現有錯字、選項異常或任何建議，請在這裡告訴村長喔！</p>
+      
+      <textarea id="report-message" rows="4" placeholder="請描述您遇到的問題..." class="w-full bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] p-3 rounded mb-4 focus:outline-none focus:border-[#004d00] font-bold resize-none shadow-inner"></textarea>
+
+      <div class="flex gap-3 justify-center">
+        <button onclick="closeReportModal()" class="wood-btn text-lg py-2 px-4 rounded transition-all font-bold w-1/2">取消</button>
+        <button id="submit-report-btn" onclick="submitReport()" class="bg-[#8b2b2b] hover:bg-[#a53b3b] border-4 border-b-6 border-[#5c1a1a] text-white text-lg py-2 px-4 rounded transition-all font-bold w-1/2 active:translate-y-1 active:border-b-4">送出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 遊戲主畫面容器 -->
+  <div id="game-container" class="w-full max-w-md kraft-paper p-4 sm:p-5 relative overflow-hidden hidden transition-all duration-300 mt-8 sm:mt-0 z-10">
     <div class="absolute top-0 left-0 w-full h-3 bg-[#5c4033] rounded-t"></div>
     <div class="absolute bottom-0 left-0 w-full h-3 bg-[#5c4033] rounded-b"></div>
 
-    <!-- 遊戲結束/通關 遮罩層 (加入計時與排行榜) -->
-    <div id="overlay" class="absolute inset-0 bg-[#0f2416]/90 z-50 flex flex-col items-center justify-start hidden p-4 sm:p-6 overflow-y-auto mt-3 mb-3">
+    <!-- 遊戲結束/通關 遮罩層 -->
+    <div id="overlay" class="absolute inset-0 bg-[#0f2416]/95 z-50 flex flex-col items-center justify-start hidden p-4 sm:p-6 overflow-y-auto mt-3 mb-3">
       <div class="w-full max-w-sm mt-2 sm:mt-4 flex flex-col items-center">
         <h2 id="overlay-title" class="text-3xl sm:text-4xl font-bold mb-2 text-[#fdf5e6] text-center"></h2>
         <p id="overlay-desc" class="text-lg sm:text-xl mb-4 text-[#eaddb5] text-center whitespace-pre-line"></p>
@@ -200,7 +218,7 @@
         <div id="leaderboard-form" class="w-full kraft-paper !border-4 !shadow-md p-4 mb-4 hidden">
           <p class="text-[#004d00] font-bold mb-3 text-center tracking-wider text-lg">🏆 登錄排行榜</p>
           <input type="text" id="player-name" placeholder="輸入你的大名..." maxlength="10" class="w-full bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] px-3 py-3 rounded mb-3 text-center focus:outline-none focus:border-[#004d00] text-lg font-bold">
-          <button id="submit-score-btn" onclick="submitScore()" class="w-full bg-[#228b22] hover:bg-[#006400] border-4 border-b-8 border-[#004d00] text-white font-bold py-3 rounded-lg active:translate-y-1 active:border-b-4 transition-all flex justify-center items-center gap-2 text-xl font-pixel">
+          <button id="submit-score-btn" onclick="submitScore()" class="w-full bg-[#228b22] hover:bg-[#006400] border-4 border-b-8 border-[#004d00] text-white font-bold py-3 rounded-lg transition-all flex justify-center items-center gap-2 text-xl font-pixel active:translate-y-1 active:border-b-4">
             送出成績
           </button>
         </div>
@@ -210,29 +228,22 @@
           <h3 class="text-[#8b5a2b] font-bold text-center mb-1 text-xl border-b-2 border-[#8b5a2b] pb-2 font-pixel tracking-wider">👑 英雄榜 (Top 10)</h3>
           <p id="current-mode-label" class="text-center text-[#5c4033] text-xs mb-3 font-bold"></p>
           <div id="leaderboard-list" class="space-y-2 text-sm sm:text-base">
-            <!-- 動態生成排名 -->
             <div class="text-center text-[#8b5a2b] py-4"><span class="loader"></span> 載入中...</div>
           </div>
         </div>
 
-        <button onclick="goToHome()" class="wood-btn text-lg sm:text-xl py-3 px-8 rounded active:translate-y-1 active:border-b-0 transition-all font-bold tracking-wider mt-auto w-full">
-          回村莊 (首頁)
-        </button>
+        <button onclick="goToHome()" class="wood-btn text-lg sm:text-xl py-3 px-8 rounded transition-all font-bold tracking-wider mt-auto w-full">回村莊 (首頁)</button>
       </div>
     </div>
 
-    <!-- 防呆確認視窗 (回首頁) -->
+    <!-- 防呆確認視窗 -->
     <div id="confirm-modal-overlay" class="absolute inset-0 bg-[#0f2416]/90 z-[60] flex flex-col items-center justify-center hidden p-4 transition-all mt-3 mb-3">
       <div class="kraft-paper !border-4 p-6 w-full max-w-[90%] shadow-2xl">
         <h2 class="text-2xl font-bold mb-3 text-[#8b5a2b] text-center">確定回村莊？</h2>
         <p class="text-base mb-6 text-[#5c4033] text-center font-bold">目前的探險進度將會遺失喔！</p>
         <div class="flex gap-3 justify-center">
-          <button onclick="cancelGoHome()" class="wood-btn text-lg py-2 px-6 rounded active:translate-y-1 active:border-b-0 transition-all font-bold w-1/2">
-            取消
-          </button>
-          <button onclick="goToHome()" class="bg-red-700 hover:bg-red-800 border-b-4 border-red-900 text-white text-lg py-2 px-6 rounded active:translate-y-1 active:border-b-0 transition-all font-bold w-1/2">
-            確定
-          </button>
+          <button onclick="cancelGoHome()" class="wood-btn text-lg py-2 px-6 rounded transition-all font-bold w-1/2">取消</button>
+          <button onclick="goToHome()" class="bg-red-700 hover:bg-red-800 border-b-4 border-red-900 text-white text-lg py-2 px-6 rounded transition-all font-bold w-1/2">確定</button>
         </div>
       </div>
     </div>
@@ -249,11 +260,9 @@
         </div>
       </div>
       <div class="text-right">
-        <p class="text-[#5c4033] font-bold text-xs sm:text-sm mb-1 flex justify-end gap-3" id="level-indicator">
-          <span>關卡: 1/5</span>
-        </p>
+        <p class="text-[#5c4033] font-bold text-xs sm:text-sm mb-1 flex justify-end gap-3" id="level-indicator"><span>關卡: 1/5</span></p>
         <p class="text-[#8b5a2b] font-bold text-base sm:text-lg flex justify-end items-center gap-2">
-          <span class="text-[#2e8b57] font-mono text-sm sm:text-base bg-[#fdf5e6] px-1 rounded border border-[#8b5a2b]">⏱️ <span id="timer-text">00:00</span></span>
+          <span class="text-[#2e8b57] font-mono text-sm sm:text-base bg-[#fdf5e6] px-1 rounded border border-[#8b5a2b] shadow-inner">⏱️ <span id="timer-text">00:00</span></span>
           <span>EXP: <span id="exp-score">0</span></span>
         </p>
       </div>
@@ -261,27 +270,32 @@
 
     <!-- 戰鬥視窗 -->
     <div class="bg-[#fdf5e6] border-2 border-[#8b5a2b] h-56 sm:h-64 flex flex-col items-center justify-center mb-4 sm:mb-5 relative rounded p-2 shadow-inner">
+      <p id="multi-select-hint" class="absolute top-2 left-2 text-[#b8860b] text-xs font-bold hidden bg-[#fdf5e6] px-2 border border-[#b8860b] rounded-full">★ 高級模式：請選出 2 個部件</p>
       
-      <!-- 語詞情境區 (如: 國 [?]) -->
-      <div id="word-context-container" class="flex items-center justify-center gap-2 mb-4 w-full">
-        <!-- 由 JS 動態生成 -->
-      </div>
+      <!-- 語詞情境區 -->
+      <div id="word-context-container" class="flex items-center justify-center gap-2 mb-4 w-full"></div>
       
-      <!-- 怪物本體 (挖空的部首) -->
-      <div id="monster-char" class="text-4xl sm:text-5xl font-bold bg-[#e8d5a6] px-6 py-4 rounded border-2 border-dashed border-[#8b5a2b] animate-float transition-all duration-300 text-center whitespace-nowrap shadow-md text-[#3e2723]">
-        <!-- 由 JS 動態生成 -->
-      </div>
+      <!-- 怪物本體 -->
+      <div id="monster-char" class="text-4xl sm:text-5xl font-bold bg-[#e8d5a6] px-6 py-4 rounded border-2 border-dashed border-[#8b5a2b] animate-float transition-all duration-300 text-center whitespace-nowrap shadow-md text-[#3e2723]"></div>
     </div>
 
     <!-- 技能選單：部首選項 -->
-    <div id="options-container" class="grid grid-cols-3 gap-2 sm:gap-3 mb-2">
-      <!-- 按鈕由 JS 動態生成 -->
-    </div>
+    <!-- 改為 flex wrap 以完美支援高級版的 5 個選項 -->
+    <div id="options-container" class="flex flex-wrap justify-center gap-2 sm:gap-3 mb-2"></div>
 
   </div>
 
+  <!-- 老師的小島連結 & 錯誤回報 (置於畫面底部) -->
+  <div class="mt-8 mb-4 flex flex-col sm:flex-row gap-4 items-center justify-center z-10 w-full px-4">
+    <a href="https://sites.google.com/view/sunnypeng/" target="_blank" class="footer-link inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold transition-all text-sm sm:text-base font-pixel tracking-widest shadow-lg w-full sm:w-auto">
+      <i class="bi bi-house-heart-fill text-lg text-pink-300"></i> 造訪老師的魔法小島
+    </a>
+    <button onclick="showReportModal()" class="footer-link inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold transition-all text-sm sm:text-base font-pixel tracking-widest shadow-lg w-full sm:w-auto !bg-[#8b2b2b] !border-[#5c1a1a] hover:!bg-[#a53b3b]">
+      <i class="bi bi-bug-fill text-lg text-yellow-300"></i> 錯誤回報
+    </button>
+  </div>
+
   <script>
-    // --- 遊戲音效與 BGM 系統 ---
     let audioCtx;
     let isSoundEnabled = true;
     const bgmPlayer = document.getElementById('bgm-player');
@@ -302,24 +316,21 @@
         osc.frequency.setValueAtTime(450, now);
         gainNode.gain.setValueAtTime(0.1, now);
         gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
       } else if (type === 'correct') {
         osc.type = 'square'; 
         osc.frequency.setValueAtTime(523.25, now); 
         osc.frequency.setValueAtTime(659.25, now + 0.1); 
         gainNode.gain.setValueAtTime(0.15, now);
         gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
       } else if (type === 'wrong') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(150, now);
         osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
         gainNode.gain.setValueAtTime(0.2, now);
         gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
       }
     }
 
@@ -327,8 +338,6 @@
       isSoundEnabled = !isSoundEnabled;
       document.getElementById('sound-btn').innerText = isSoundEnabled ? '🔊' : '🔇';
       playSound('click');
-      
-      // 控制背景音樂
       if (isSoundEnabled && !document.getElementById('game-container').classList.contains('hidden')) {
         bgmPlayer.play().catch(e => console.log(e));
       } else {
@@ -336,50 +345,67 @@
       }
     }
 
-    // --- 全域排行榜邏輯 ---
-    function showGlobalLeaderboard() {
+    // --- 錯誤回報邏輯 ---
+    function showReportModal() {
       playSound('click');
-      document.getElementById('global-leaderboard-modal').classList.remove('hidden');
-      const diff = document.getElementById('global-lb-diff').value;
-      const cnt = document.getElementById('global-lb-cnt').value;
-      fetchLeaderboard(false, 'global-leaderboard-list', diff, cnt);
+      document.getElementById('report-message').value = '';
+      document.getElementById('report-modal').classList.remove('hidden');
+    }
+    
+    function closeReportModal() {
+      playSound('click');
+      document.getElementById('report-modal').classList.add('hidden');
     }
 
-    function closeGlobalLeaderboard() {
+    async function submitReport() {
       playSound('click');
-      document.getElementById('global-leaderboard-modal').classList.add('hidden');
-    }
+      const msg = document.getElementById('report-message').value.trim();
+      if (!msg) { alert('請填寫回報內容喔！'); return; }
 
-    // --- 頁面切換與防呆邏輯 ---
-    function promptGoHome() {
-      playSound('click');
-      const gameContainer = document.getElementById('game-container');
-      const isGameOverOverlayVisible = !document.getElementById('overlay').classList.contains('hidden');
-      
-      if (!gameContainer.classList.contains('hidden') && !isGameOverOverlayVisible) {
-        document.getElementById('confirm-modal-overlay').classList.remove('hidden');
-      } else {
-        goToHome();
+      const btn = document.getElementById('submit-report-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader !border-[#eaddb5] !border-t-[#ffffff] w-5 h-5"></span>';
+
+      try {
+        if (!GOOGLE_SCRIPT_URL) throw new Error("No URL");
+        const params = new URLSearchParams({ action: 'report', message: msg }).toString();
+        await fetch(`${GOOGLE_SCRIPT_URL}?${params}`, { mode: 'no-cors' });
+        alert('謝謝你的回報！村長已經收到了！');
+        closeReportModal();
+      } catch (error) {
+        alert('目前為單機模式，尚無法連接試算表回報系統喔！');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '送出';
       }
     }
 
-    function cancelGoHome() {
+    // --- 視窗切換 ---
+    function showGlobalLeaderboard() {
       playSound('click');
-      document.getElementById('confirm-modal-overlay').classList.add('hidden');
+      document.getElementById('global-leaderboard-modal').classList.remove('hidden');
+      fetchLeaderboard(false, 'global-leaderboard-list', document.getElementById('global-lb-diff').value, document.getElementById('global-lb-cnt').value);
     }
-
+    function closeGlobalLeaderboard() { playSound('click'); document.getElementById('global-leaderboard-modal').classList.add('hidden'); }
+    function promptGoHome() {
+      playSound('click');
+      const gameContainer = document.getElementById('game-container');
+      const isGameOverVisible = !document.getElementById('overlay').classList.contains('hidden');
+      if (!gameContainer.classList.contains('hidden') && !isGameOverVisible) document.getElementById('confirm-modal-overlay').classList.remove('hidden');
+      else goToHome();
+    }
+    function cancelGoHome() { playSound('click'); document.getElementById('confirm-modal-overlay').classList.add('hidden'); }
     function goToHome() {
       playSound('click');
-      bgmPlayer.pause();
-      bgmPlayer.currentTime = 0; // 音樂回到開頭
+      bgmPlayer.pause(); bgmPlayer.currentTime = 0;
       document.getElementById('confirm-modal-overlay').classList.add('hidden');
       document.getElementById('game-container').classList.add('hidden');
       document.getElementById('start-screen').classList.remove('hidden');
       document.getElementById('overlay').classList.add('hidden');
+      stopTimer();
     }
 
     // --- 完整題庫資料庫 ---
-    // 格式：context 陣列中的 '？' 代表要填空的字
     const questionBanks = {
       easy: [
         { context: ['國', '？'], target: '語', radical: '言', component: '吾', options: ['氵', '言', '木'] },
@@ -416,41 +442,39 @@
         { context: ['？', '浮'], target: '漂', radical: '氵', component: '票', options: ['口', '氵', '扌'] }
       ],
       hard: [
-        { context: ['煩', '？'], target: '悶', radical: '心', component: '門', options: ['門', '心', '日'] },
-        { context: ['？', '贏'], target: '輸', radical: '車', component: '俞', options: ['貝', '車', '女'] },
-        { context: ['？', '彎'], target: '轉', radical: '車', component: '專', options: ['車', '日', '辶'] },
-        { context: ['？', '生'], target: '醫', radical: '酉', component: '殹', options: ['酉', '匚', '矢'] },
-        { context: ['雜', '？'], target: '誌', radical: '言', component: '志', options: ['言', '心', '士'] },
-        { context: ['豐', '？'], target: '富', radical: '宀', component: '畐', options: ['宀', '口', '田'] },
-        { context: ['領', '？'], target: '導', radical: '道', component: '寸', options: ['道', '口', '寸'] },
-        { context: ['顏', '？'], target: '色', radical: '色', component: '刀', options: ['色', '刀', '巴'] },
-        { context: ['願', '？'], target: '意', radical: '心', component: '音', options: ['心', '音', '日'] },
-        { context: ['顧', '？'], target: '客', radical: '宀', component: '各', options: ['宀', '口', '夂'] },
-        { context: ['顯', '？'], target: '眼', radical: '艮', component: '目', options: ['艮', '良', '青'] },
-        { context: ['驚', '？'], target: '訝', radical: '言', component: '牙', options: ['言', '口', '牙'] },
-        { context: ['測', '？'], target: '驗', radical: '馬', component: '僉', options: ['馬', '木', '口'] },
-        { context: ['身', '？'], target: '體', radical: '骨', component: '豊', options: ['月', '示', '骨'] },
-        { context: ['溫', '？'], target: '暖', radical: '日', component: '爰', options: ['日', '火', '水'] }
+        // 高級版重構：3 個部件的生字，提供 5 選項選 2。
+        { type: 'multi', context: ['感', '？'], target: '謝', display: '？ + 身 + ？', answers: ['言', '寸'], options: ['言', '口', '木', '彳', '寸'] },
+        { type: 'multi', context: ['跌', '？'], target: '倒', display: '？ + 至 + ？', answers: ['亻', '刂'], options: ['亻', '木', '彳', '力', '刂'] },
+        { type: 'multi', context: ['叫', '？'], target: '做', display: '？ + 古 + ？', answers: ['亻', '攵'], options: ['亻', '攵', '彳', '夂', '又'] },
+        { type: 'multi', context: ['？', '家'], target: '搬', display: '？ + 舟 + ？', answers: ['扌', '殳'], options: ['才', '又', '扌', '火', '木殳'] },
+        { type: 'multi', context: ['？', '驗'], target: '測', display: '？ + 貝 + ？', answers: ['氵', '刂'], options: ['氵', '力', '水', '刂', '木'] },
+        { type: 'multi', context: ['？', '蝶'], target: '蝴', display: '？ + 古 + ？', answers: ['虫', '月'], options: ['虫', '月', '日', '木', '口'] },
+        { type: 'multi', context: ['？', '水'], target: '湖', display: '？ + 古 + ？', answers: ['氵', '月'], options: ['氵', '月', '水', '日', '木'] },
+        { type: 'multi', context: ['身', '？'], target: '體', display: '？ + 曲 + ？', answers: ['骨', '豆'], options: ['豆', '阝', '骨', '卩', '木'] },
+        { type: 'multi', context: ['處', '？'], target: '罰', display: '？ + 言 + ？', answers: ['罒', '刂'], options: ['罒', '刂', '目', '力', '木'] },
+        { type: 'multi', context: ['廣', '？'], target: '闊', display: '？ + 氵 + ？', answers: ['門', '舌'], options: ['門', '舌', '口', '木', '戶'] },
+        { type: 'multi', context: ['大', '？'], target: '樹', display: '？ + 壴 + ？', answers: ['木', '寸'], options: ['才', '寸', '禾', '木', '氵'] },
+        { type: 'multi', context: ['？', '燒'], target: '焚', display: '？ + 木 + ？', answers: ['火', '木'], options: ['火', '木', '天', '口', '一'] },
+        { type: 'multi', context: ['？', '道'], target: '街', display: '？ + 圭 + ？', answers: ['彳', '亍'], options: ['彳', '氵', '木', '亍', '口'] },
+        { type: 'multi', context: ['？', '動'], target: '衝', display: '？ + ？ + 亍', answers: ['彳', '重'], options: ['彳', '刂', '重', '木', '口'] },
+        { type: 'multi', context: ['？', '步'], target: '腳', display: '？ + 谷 + ？', answers: ['月', '卩'], options: ['月', '力', '扌', '阝', '卩'] }
       ]
     };
 
-    // --- 遊戲運作變數 ---
-    const MAX_HP = 5; // 給予學生較多容錯空間
+    const MAX_HP = 5;
     const EXP_PER_WIN = 10; 
     let activeQuestions = [];
     let currentHP = MAX_HP;
     let exp = 0;
     let currentLevel = 0; 
     let isAnimating = false; 
+    let selectedMultiAnswers = []; // 用於記錄高級版選擇的部件
 
-    // --- 計時器與後端設定 ---
     let startTime;
     let timerInterval;
-    let timeElapsed = 0; // 秒數
-    // 👇 未來請將這裡替換成你的 Google Apps Script URL
+    let timeElapsed = 0; 
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsEdpsT6iT2myGETEk9JdHOYetehVo20H9XqdPvbw3bhnPMOnDu_RKQfcIdMPjlGSs/exec"; 
 
-    // --- DOM 元素取得 ---
     const hpBar = document.getElementById('hp-bar');
     const hpText = document.getElementById('hp-text');
     const expScore = document.getElementById('exp-score');
@@ -458,86 +482,47 @@
     const wordContextContainer = document.getElementById('word-context-container');
     const monsterChar = document.getElementById('monster-char');
     const optionsContainer = document.getElementById('options-container');
-    const overlay = document.getElementById('overlay');
-    const overlayTitle = document.getElementById('overlay-title');
-    const overlayDesc = document.getElementById('overlay-desc');
-    const gameContainer = document.getElementById('game-container');
-    const startScreen = document.getElementById('start-screen');
     const timerText = document.getElementById('timer-text');
+    const multiSelectHint = document.getElementById('multi-select-hint');
 
-    // --- 計時器邏輯 ---
     function startTimer() {
-      startTime = Date.now();
-      timeElapsed = 0;
-      updateTimerUI();
-      timerInterval = setInterval(() => {
-        timeElapsed = Math.floor((Date.now() - startTime) / 1000);
-        updateTimerUI();
-      }, 1000);
+      startTime = Date.now(); timeElapsed = 0; updateTimerUI();
+      timerInterval = setInterval(() => { timeElapsed = Math.floor((Date.now() - startTime) / 1000); updateTimerUI(); }, 1000);
     }
+    function stopTimer() { clearInterval(timerInterval); }
+    function updateTimerUI() { timerText.innerText = formatTime(timeElapsed); }
+    function formatTime(seconds) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
 
-    function stopTimer() {
-      clearInterval(timerInterval);
-    }
-
-    function updateTimerUI() {
-      const m = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
-      const s = String(timeElapsed % 60).padStart(2, '0');
-      timerText.innerText = `${m}:${s}`;
-    }
-
-    function formatTime(seconds) {
-      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-      const s = String(seconds % 60).padStart(2, '0');
-      return `${m}:${s}`;
-    }
-
-    // --- 啟動遊戲 ---
     function startGame() {
       playSound('click');
-      startScreen.classList.add('hidden');
-      gameContainer.classList.remove('hidden');
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('game-container').classList.remove('hidden');
+      if (isSoundEnabled) bgmPlayer.play().catch(e => console.log(e));
       
-      // 啟動 BGM
-      if (isSoundEnabled) {
-        bgmPlayer.volume = 0.4;
-        bgmPlayer.play().catch(e => console.log("BGM 需要使用者進一步互動才能播放", e));
-      }
-      
-      // 取得下拉式選單難度與題數
-      const difficultySelect = document.getElementById('difficulty-select');
-      const selectedDifficulty = difficultySelect.value;
+      const difficultySelect = document.getElementById('difficulty-select').value;
       const selectedQuestionCount = parseInt(document.getElementById('count-select').value);
       
-      // 依據選擇的難度與題數建立關卡陣列
-      const fullBank = [...questionBanks[selectedDifficulty]].sort(() => Math.random() - 0.5);
+      const fullBank = [...questionBanks[difficultySelect]].sort(() => Math.random() - 0.5);
       activeQuestions = fullBank.slice(0, selectedQuestionCount);
       
-      currentHP = MAX_HP;
-      exp = 0;
-      currentLevel = 0;
-      isAnimating = false;
+      currentHP = MAX_HP; exp = 0; currentLevel = 0; isAnimating = false; selectedMultiAnswers = [];
       
-      // 重置結算畫面狀態
-      overlay.classList.add('hidden'); 
+      document.getElementById('overlay').classList.add('hidden'); 
       document.getElementById('leaderboard-form').classList.add('hidden');
       document.getElementById('leaderboard-display').classList.add('hidden');
       document.getElementById('player-name').value = '';
-      document.getElementById('submit-score-btn').disabled = false;
-      document.getElementById('submit-score-btn').innerHTML = '送出成績';
       
-      updateUI();
-      loadQuestion();
-      startTimer(); // 開始計時
+      updateUI(); loadQuestion(); startTimer();
     }
 
-    // --- 載入題目 ---
     function loadQuestion() {
       const q = activeQuestions[currentLevel];
-      
+      selectedMultiAnswers = []; // 重置多選狀態
       levelIndicator.innerText = `關卡: ${currentLevel + 1}/${activeQuestions.length}`;
       
-      // 渲染上方的語詞情境區
+      if(q.type === 'multi') multiSelectHint.classList.remove('hidden');
+      else multiSelectHint.classList.add('hidden');
+      
       wordContextContainer.innerHTML = '';
       q.context.forEach(char => {
         const charDiv = document.createElement('div');
@@ -551,251 +536,189 @@
         wordContextContainer.appendChild(charDiv);
       });
 
-      // 渲染怪物本體 (部首拼字)
-      monsterChar.innerText = `？ + ${q.component}`;
+      monsterChar.innerText = q.type === 'multi' ? q.display : `？ + ${q.component}`;
       monsterChar.className = 'text-4xl sm:text-5xl font-bold bg-[#fdf5e6] px-6 py-4 rounded border-2 border-dashed border-[#8b5a2b] animate-float transition-all duration-300 text-center whitespace-nowrap shadow-md text-[#3e2723]';
       
-      // 生成選項按鈕
       optionsContainer.innerHTML = '';
       const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
 
       shuffledOptions.forEach(opt => {
         const btn = document.createElement('button');
         btn.innerText = opt;
-        btn.className = 'wood-btn text-3xl sm:text-4xl py-3 sm:py-4 rounded active:translate-y-1 active:border-b-0 transition-all font-bold';
+        // 使用 flex-1 與 min-width 讓高級版 5 個選項也能漂亮排版
+        btn.className = 'wood-btn text-2xl sm:text-3xl py-2 px-3 sm:py-3 sm:px-4 rounded transition-all font-bold flex-grow text-center min-w-[70px] max-w-[100px]';
         btn.onclick = () => checkAnswer(opt, btn);
         optionsContainer.appendChild(btn);
       });
     }
 
-    // --- 檢查答案邏輯 ---
     function checkAnswer(selectedOption, btnElement) {
       if (isAnimating) return; 
-      
       const q = activeQuestions[currentLevel];
-      isAnimating = true; 
 
-      if (selectedOption === q.radical) {
-        playSound('correct');
-        
-        // 怪物動畫
-        monsterChar.innerText = q.target;
-        monsterChar.classList.remove('animate-float', 'border-dashed', 'bg-[#fdf5e6]', 'border-[#8b5a2b]');
-        monsterChar.classList.add('animate-glow', 'border-solid', 'border-[#228b22]', 'bg-[#d4edda]', 'text-[#155724]');
-        
-        // 語詞情境區動畫 (填補空格)
-        const blankBox = document.querySelector('.word-blank');
-        blankBox.innerText = q.target;
-        blankBox.classList.replace('border-dashed', 'border-solid');
-        blankBox.classList.replace('border-[#8b5a2b]', 'border-[#228b22]');
-        blankBox.classList.replace('bg-[#e8d5a6]', 'bg-[#d4edda]');
-        blankBox.classList.replace('text-[#8b5a2b]', 'text-[#155724]');
-        blankBox.classList.add('animate-glow');
-
-        exp += EXP_PER_WIN;
-        updateUI();
-
-        setTimeout(() => {
-          currentLevel++;
-          if (currentLevel >= activeQuestions.length) {
-            showGameOver(true);
-          } else {
-            loadQuestion();
-            isAnimating = false; 
-          }
-        }, 1500); // 留 1.5 秒讓學生看清楚完整的詞語
-
-      } else {
-        playSound('wrong');
-        currentHP--;
-        updateUI();
-
-        gameContainer.classList.add('animate-shake');
-        btnElement.classList.remove('wood-btn');
-        btnElement.classList.add('bg-red-700', 'border-b-4', 'border-red-900', 'text-white');
-
-        if (currentHP <= 0) {
-          setTimeout(() => showGameOver(false), 500); 
-        } else {
-          setTimeout(() => {
-            gameContainer.classList.remove('animate-shake');
-            btnElement.classList.remove('bg-red-700', 'border-b-4', 'border-red-900', 'text-white');
-            btnElement.classList.add('wood-btn');
-            isAnimating = false; 
-          }, 500);
+      // --- 高級多選模式邏輯 ---
+      if (q.type === 'multi') {
+        // 如果已經選過該按鈕，則取消選取
+        if (selectedMultiAnswers.includes(selectedOption)) {
+          playSound('click');
+          selectedMultiAnswers = selectedMultiAnswers.filter(a => a !== selectedOption);
+          btnElement.classList.remove('wood-btn-selected');
+          return;
         }
+
+        // 新增選取
+        playSound('click');
+        selectedMultiAnswers.push(selectedOption);
+        btnElement.classList.add('wood-btn-selected');
+
+        // 當選滿 2 個時，自動進行判定
+        if (selectedMultiAnswers.length === 2) {
+          isAnimating = true;
+          // 檢查選中的兩個是否都在答案陣列內
+          const isCorrect = q.answers.every(ans => selectedMultiAnswers.includes(ans));
+          
+          if (isCorrect) processCorrect(q);
+          else processWrong(true);
+        }
+      } 
+      // --- 初中級單選模式邏輯 ---
+      else {
+        isAnimating = true; 
+        if (selectedOption === q.radical) processCorrect(q);
+        else processWrong(false, btnElement);
       }
     }
 
-    // --- 更新介面數值 ---
+    function processCorrect(q) {
+      playSound('correct');
+      monsterChar.innerText = q.target;
+      monsterChar.classList.remove('animate-float', 'border-dashed', 'bg-[#fdf5e6]', 'border-[#8b5a2b]');
+      monsterChar.classList.add('animate-glow', 'border-solid', 'border-[#228b22]', 'bg-[#d4edda]', 'text-[#155724]');
+      
+      const blankBox = document.querySelector('.word-blank');
+      blankBox.innerText = q.target;
+      blankBox.classList.replace('border-dashed', 'border-solid');
+      blankBox.classList.replace('border-[#8b5a2b]', 'border-[#228b22]');
+      blankBox.classList.replace('bg-[#e8d5a6]', 'bg-[#d4edda]');
+      blankBox.classList.replace('text-[#8b5a2b]', 'text-[#155724]');
+      blankBox.classList.add('animate-glow');
+
+      exp += EXP_PER_WIN; updateUI();
+
+      setTimeout(() => {
+        currentLevel++;
+        if (currentLevel >= activeQuestions.length) document.getElementById('overlay').classList.remove('hidden') ? null : showGameOver(true);
+        else { loadQuestion(); isAnimating = false; }
+      }, 1500);
+    }
+
+    function processWrong(isMulti, btnElement = null) {
+      playSound('wrong'); currentHP--; updateUI();
+      document.getElementById('game-container').classList.add('animate-shake');
+
+      // 針對錯誤的按鈕標示紅色
+      const errorBtns = isMulti 
+        ? Array.from(optionsContainer.children).filter(b => selectedMultiAnswers.includes(b.innerText))
+        : [btnElement];
+      
+      errorBtns.forEach(b => {
+        b.classList.remove('wood-btn-selected', 'wood-btn');
+        b.classList.add('bg-red-700', 'border-4', 'border-b-2', 'border-red-900', 'text-white', 'translate-y-[4px]');
+      });
+
+      if (currentHP <= 0) setTimeout(() => showGameOver(false), 500); 
+      else {
+        setTimeout(() => {
+          document.getElementById('game-container').classList.remove('animate-shake');
+          errorBtns.forEach(b => {
+            b.classList.remove('bg-red-700', 'border-4', 'border-b-2', 'border-red-900', 'text-white', 'translate-y-[4px]');
+            b.classList.add('wood-btn');
+          });
+          selectedMultiAnswers = []; // 清空已選，重來
+          isAnimating = false; 
+        }, 500);
+      }
+    }
+
     function updateUI() {
-      expScore.innerText = exp;
-      hpText.innerText = `${currentHP}/${MAX_HP}`;
-      const hpPercentage = (currentHP / MAX_HP) * 100;
-      hpBar.style.width = `${hpPercentage}%`;
-      
-      // 根據血量改變血條顏色 (綠 -> 黃 -> 紅)
+      expScore.innerText = exp; hpText.innerText = `${currentHP}/${MAX_HP}`;
+      const pct = (currentHP / MAX_HP) * 100; hpBar.style.width = `${pct}%`;
       hpBar.className = 'h-full w-full transition-all duration-300 ';
-      if (hpPercentage > 50) {
-        hpBar.classList.add('bg-green-500');
-      } else if (hpPercentage > 20) {
-        hpBar.classList.add('bg-yellow-500');
-      } else {
-        hpBar.classList.add('bg-red-500');
-      }
+      if (pct > 50) hpBar.classList.add('bg-green-500');
+      else if (pct > 20) hpBar.classList.add('bg-yellow-500');
+      else hpBar.classList.add('bg-red-500');
     }
 
-    // --- 遊戲結束/通關 畫面 ---
     function showGameOver(isWin) {
-      stopTimer(); // 停止計時
-      overlay.classList.remove('hidden');
-      
+      stopTimer(); document.getElementById('overlay').classList.remove('hidden');
+      const title = document.getElementById('overlay-title'), desc = document.getElementById('overlay-desc');
       if (isWin) {
         playSound('correct'); 
-        overlayTitle.innerText = "🎉 森林保衛成功！";
-        overlayTitle.className = "text-3xl sm:text-4xl font-bold mb-4 text-[#2e8b57] text-center px-2";
-        overlayDesc.innerText = `過關時間：${formatTime(timeElapsed)}\n獲得 ${exp} EXP！`;
-        
-        // 通關才顯示登錄排行榜表單
+        title.innerText = "🎉 森林保衛成功！"; title.className = "text-3xl sm:text-4xl font-bold mb-4 text-[#2e8b57] text-center px-2";
+        desc.innerText = `過關時間：${formatTime(timeElapsed)}\n獲得 ${exp} EXP！`;
         document.getElementById('leaderboard-form').classList.remove('hidden');
       } else {
-        overlayTitle.innerText = "💀 勇者倒下了...";
-        overlayTitle.className = "text-3xl sm:text-4xl font-bold mb-4 text-red-700 text-center px-2";
-        overlayDesc.innerText = `存活時間：${formatTime(timeElapsed)}\n部首拼錯太多次了，回村莊休息吧！`;
+        title.innerText = "💀 勇者倒下了..."; title.className = "text-3xl sm:text-4xl font-bold mb-4 text-red-700 text-center px-2";
+        desc.innerText = `存活時間：${formatTime(timeElapsed)}\n部首拼錯太多次了，回村莊休息吧！`;
       }
     }
 
-    // --- 排行榜 API 邏輯 (支援 Google Sheets 與 單機暫存) ---
     async function submitScore() {
-      playSound('click');
-      const playerName = document.getElementById('player-name').value.trim();
-      if (!playerName) {
-        alert('請輸入你的名字喔！');
-        return;
-      }
-
-      const submitBtn = document.getElementById('submit-score-btn');
-      const difficultyMap = { easy: '初級', medium: '中級', hard: '高級' };
-      const selectedDifficulty = document.getElementById('difficulty-select').value;
-      const selectedQuestionCount = parseInt(document.getElementById('count-select').value);
-      
-      // 按鈕載入動畫
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loader"></span> 傳送中...';
-      
-      const payload = {
-        name: playerName,
-        time: timeElapsed,
-        timeStr: formatTime(timeElapsed),
-        difficulty: difficultyMap[selectedDifficulty],
-        count: selectedQuestionCount
-      };
-
+      playSound('click'); const name = document.getElementById('player-name').value.trim();
+      if (!name) return alert('請輸入你的名字喔！');
+      const btn = document.getElementById('submit-score-btn'); btn.disabled = true; btn.innerHTML = '<span class="loader"></span> 傳送中...';
+      const diffMap = { easy: '初級', medium: '中級', hard: '高級' };
+      const payload = { action: 'add', name, time: timeElapsed, timeStr: formatTime(timeElapsed), difficulty: diffMap[document.getElementById('difficulty-select').value], count: parseInt(document.getElementById('count-select').value) };
       try {
-        if (!GOOGLE_SCRIPT_URL) throw new Error("尚未設定 URL");
-        
-        // 傳送給 Google Apps Script (使用 GET 避免 CORS 複雜設定)
-        const params = new URLSearchParams(payload).toString();
-        await fetch(`${GOOGLE_SCRIPT_URL}?action=add&${params}`, { mode: 'no-cors' });
-        
+        if (!GOOGLE_SCRIPT_URL) throw new Error("No URL");
+        await fetch(`${GOOGLE_SCRIPT_URL}?${new URLSearchParams(payload).toString()}`, { mode: 'no-cors' });
         handleSubmitSuccess();
-      } catch (error) {
-        console.warn("使用單機暫存模式:", error);
-        saveLocalScore(payload);
-        handleSubmitSuccess(true);
+      } catch (e) {
+        console.warn("Local Mode"); saveLocalScore(payload); handleSubmitSuccess(true);
       }
     }
 
     function handleSubmitSuccess(isLocal = false) {
-      document.getElementById('leaderboard-form').classList.add('hidden');
-      document.getElementById('leaderboard-display').classList.remove('hidden');
-      
-      const difficultyMap = { easy: '初級', medium: '中級', hard: '高級' };
-      const diff = difficultyMap[document.getElementById('difficulty-select').value];
+      document.getElementById('leaderboard-form').classList.add('hidden'); document.getElementById('leaderboard-display').classList.remove('hidden');
+      const diff = { easy: '初級', medium: '中級', hard: '高級' }[document.getElementById('difficulty-select').value];
       const cnt = document.getElementById('count-select').value;
-      
       document.getElementById('current-mode-label').innerText = `目前顯示：${diff} / ${cnt}題`;
       fetchLeaderboard(isLocal, 'leaderboard-list', diff, cnt);
     }
 
     async function fetchLeaderboard(isLocal, targetListId = 'leaderboard-list', filterDiff = '初級', filterCnt = '5') {
-      const listEl = document.getElementById(targetListId);
-      listEl.innerHTML = '<div class="text-center text-[#8b5a2b] py-4"><span class="loader"></span> 載入中...</div>';
-
+      const listEl = document.getElementById(targetListId); listEl.innerHTML = '<div class="text-center text-[#8b5a2b] py-4"><span class="loader"></span> 載入中...</div>';
       try {
         if (!GOOGLE_SCRIPT_URL || isLocal) throw new Error("Use local");
-        
-        // 加上查詢參數供後端過濾
-        const url = `${GOOGLE_SCRIPT_URL}?action=getTop10&difficulty=${encodeURIComponent(filterDiff)}&count=${encodeURIComponent(filterCnt)}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) throw new Error("網路回應異常");
-        const data = await response.json();
-        renderLeaderboard(data, targetListId);
-      } catch (error) {
-        console.warn("讀取排行榜失敗，切換單機模式：", error);
-        // 單機模擬排序邏輯與過濾
-        const localData = JSON.parse(localStorage.getItem('pixelHeroScores') || '[]');
-        
-        // 依據選擇的模式過濾
-        const filteredData = localData.filter(d => d.difficulty === filterDiff && String(d.count) === String(filterCnt));
-        
-        filteredData.sort((a, b) => a.time - b.time); // 只比時間
-        
-        renderLeaderboard(filteredData.slice(0, 10), targetListId);
-        
-        if (!GOOGLE_SCRIPT_URL) {
-          const msg = document.createElement('div');
-          msg.className = 'text-xs text-[#8b5a2b] font-bold text-center mt-3 border-t border-[#8b5a2b] pt-2';
-          msg.innerText = '💡 目前為單機暫存模式，未綁定 Google 試算表';
-          listEl.appendChild(msg);
-        }
+        const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=getTop10&difficulty=${encodeURIComponent(filterDiff)}&count=${encodeURIComponent(filterCnt)}`);
+        if (!res.ok) throw new Error("Net Err"); renderLeaderboard(await res.json(), targetListId);
+      } catch (e) {
+        const filtered = JSON.parse(localStorage.getItem('pixelHeroScores') || '[]').filter(d => d.difficulty === filterDiff && String(d.count) === String(filterCnt)).sort((a, b) => a.time - b.time);
+        renderLeaderboard(filtered.slice(0, 10), targetListId);
+        if (!GOOGLE_SCRIPT_URL) listEl.innerHTML += '<div class="text-xs text-[#8b5a2b] font-bold text-center mt-3 border-t border-[#8b5a2b] pt-2">💡 目前為單機暫存模式</div>';
       }
     }
 
-    function renderLeaderboard(data, targetListId = 'leaderboard-list') {
-      const listEl = document.getElementById(targetListId);
-      listEl.innerHTML = '';
-      
-      if (!data || data.length === 0) {
-        listEl.innerHTML = '<div class="text-center text-[#5c4033] py-2 font-bold">目前還沒有人挑戰成功喔！</div>';
-        return;
-      }
-
-      data.forEach((entry, index) => {
-        const item = document.createElement('div');
-        // 前三名給予特別的底色
-        item.className = `flex justify-between items-center p-2 rounded ${index === 0 ? 'bg-[#d4b886] border-2 border-[#b8860b] shadow-sm' : (index % 2 === 0 ? 'bg-[#eaddb5]/50' : 'bg-transparent')}`;
-        
-        let medal = `${index + 1}.`;
-        if (index === 0) medal = '🥇';
-        if (index === 1) medal = '🥈';
-        if (index === 2) medal = '🥉';
-
-        // 🛡️ 終極防護：無視試算表自動轉換的時間戳記，直接用寫入的「秒數 (entry.time)」重新轉換！
-        const displayTime = entry.time ? formatTime(entry.time) : entry.timeStr;
-
-        // 優化排版：只顯示名次、姓名、標籤、時間，並強制左右對齊
-        item.innerHTML = `
-          <div class="flex items-center gap-2 overflow-hidden w-[55%]">
-            <span class="w-6 text-center font-bold text-[#b8860b] text-lg">${medal}</span>
-            <span class="font-bold text-[#3e2723] truncate text-base sm:text-lg" title="${entry.name}">${entry.name}</span>
-          </div>
-          <div class="flex items-center justify-end gap-2 w-[45%]">
-            <span class="bg-[#d4b886] px-1.5 py-0.5 rounded text-[11px] sm:text-xs border border-[#8b5a2b] text-[#5c4033] font-bold whitespace-nowrap shadow-inner">${entry.difficulty[0]}${entry.count}</span>
-            <span class="text-[#004d00] font-mono w-14 text-right font-bold text-base sm:text-lg">${displayTime}</span>
-          </div>
-        `;
-        listEl.appendChild(item);
+    function renderLeaderboard(data, targetListId) {
+      const listEl = document.getElementById(targetListId); listEl.innerHTML = '';
+      if (!data || data.length === 0) return listEl.innerHTML = '<div class="text-center text-[#5c4033] py-2 font-bold">目前還沒有人挑戰成功喔！</div>';
+      data.forEach((entry, idx) => {
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+        listEl.innerHTML += `
+          <div class="flex justify-between items-center p-2 rounded ${idx === 0 ? 'bg-[#d4b886] border-2 border-[#b8860b] shadow-sm' : (idx % 2 === 0 ? 'bg-[#eaddb5]/50' : 'bg-transparent')}">
+            <div class="flex items-center gap-2 overflow-hidden w-[55%]">
+              <span class="w-6 text-center font-bold text-[#b8860b] text-lg">${medal}</span>
+              <span class="font-bold text-[#3e2723] truncate text-base sm:text-lg" title="${entry.name}">${entry.name}</span>
+            </div>
+            <div class="flex items-center justify-end gap-2 w-[45%]">
+              <span class="bg-[#d4b886] px-1.5 py-0.5 rounded text-[11px] sm:text-xs border border-[#8b5a2b] text-[#5c4033] font-bold shadow-inner">${entry.difficulty[0]}${entry.count}</span>
+              <span class="text-[#004d00] font-mono w-14 text-right font-bold text-base sm:text-lg">${entry.time ? formatTime(entry.time) : entry.timeStr}</span>
+            </div>
+          </div>`;
       });
     }
 
-    // --- 單機測試用儲存 ---
-    function saveLocalScore(payload) {
-      const scores = JSON.parse(localStorage.getItem('pixelHeroScores') || '[]');
-      scores.push(payload);
-      localStorage.setItem('pixelHeroScores', JSON.stringify(scores));
-    }
+    function saveLocalScore(p) { const s = JSON.parse(localStorage.getItem('pixelHeroScores') || '[]'); s.push(p); localStorage.setItem('pixelHeroScores', JSON.stringify(s)); }
   </script>
 </body>
 </html>
