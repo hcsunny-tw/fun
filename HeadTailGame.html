@@ -66,7 +66,9 @@
     <!-- 狀態訊息提示 -->
     <div class="flex items-center justify-center min-h-[2.5rem] mb-4">
       <div id="messageBox" class="hidden items-center space-x-2 font-bold px-4 py-2 rounded-full animate-bounce text-sm text-center">
-        <i id="msgIcon" data-lucide="info" class="w-[18px] h-[18px] shrink-0"></i>
+        <span id="msgIconContainer" class="shrink-0 flex items-center justify-center">
+          <i data-lucide="info" class="w-[18px] h-[18px]"></i>
+        </span>
         <span id="msgText">準備好開始了嗎！</span>
       </div>
     </div>
@@ -85,7 +87,9 @@
         type="submit"
         class="absolute right-2 top-2 bottom-2 aspect-square rounded-full flex items-center justify-center text-white transition-transform active-scale bg-[#34A853]"
       >
-        <i id="submitIcon" data-lucide="send" class="w-6 h-6 ml-1"></i>
+        <span id="submitIconContainer" class="flex items-center justify-center">
+          <i data-lucide="send" class="w-6 h-6 ml-1"></i>
+        </span>
       </button>
     </form>
 
@@ -145,15 +149,14 @@
       lastL: document.getElementById('lastLetter'),
       wordBlocks: document.getElementById('wordBlocks'),
       msgBox: document.getElementById('messageBox'),
-      msgIcon: document.getElementById('msgIcon'),
+      msgIconContainer: document.getElementById('msgIconContainer'),
       msgText: document.getElementById('msgText'),
       form: document.getElementById('wordForm'),
       input: document.getElementById('wordInput'),
       submitBtn: document.getElementById('submitBtn'),
-      submitIcon: document.getElementById('submitIcon'),
+      submitIconContainer: document.getElementById('submitIconContainer'),
       skipBtn: document.getElementById('skipBtn'),
       hintBtn: document.getElementById('hintBtn'),
-      hintIcon: document.getElementById('hintIcon'),
       hintText: document.getElementById('hintText'),
       historyCount: document.getElementById('historyCount'),
       historyList: document.getElementById('historyList'),
@@ -192,21 +195,16 @@
       if (type === 'error') {
         els.msgBox.classList.add('bg-[#FCE8E6]', 'text-[#EA4335]');
         els.input.style.borderColor = "#EA4335";
-        updateIcon(els.msgIcon, 'alert-circle');
+        els.msgIconContainer.innerHTML = '<i data-lucide="alert-circle" class="w-[18px] h-[18px]"></i>';
       } else if (type === 'success') {
         els.msgBox.classList.add('bg-[#CEEAD6]', 'text-[#34A853]');
         els.input.style.borderColor = "#34A853";
-        updateIcon(els.msgIcon, 'star');
+        els.msgIconContainer.innerHTML = '<i data-lucide="star" class="w-[18px] h-[18px]"></i>';
       } else { // info
         els.msgBox.classList.add('bg-[#E8F0FE]', 'text-[#4285F4]');
-        updateIcon(els.msgIcon, 'info');
+        els.msgIconContainer.innerHTML = '<i data-lucide="info" class="w-[18px] h-[18px]"></i>';
       }
-    }
-
-    // 3. 更新 Lucide Icon 的輔助函式
-    function updateIcon(element, iconName) {
-      element.setAttribute('data-lucide', iconName);
-      lucide.createIcons({ attrs: { class: element.className } });
+      lucide.createIcons();
     }
 
     // 4. 設定處理狀態 (禁用按鈕)
@@ -221,14 +219,13 @@
       }
 
       if (processing) {
-        updateIcon(els.submitIcon, 'refresh-cw');
-        els.submitIcon.classList.add('animate-spin');
+        els.submitIconContainer.innerHTML = '<i data-lucide="refresh-cw" class="w-6 h-6 animate-spin"></i>';
         els.submitBtn.classList.add('opacity-50');
       } else {
-        updateIcon(els.submitIcon, 'send');
-        els.submitIcon.classList.remove('animate-spin');
+        els.submitIconContainer.innerHTML = '<i data-lucide="send" class="w-6 h-6 ml-1"></i>';
         els.submitBtn.classList.remove('opacity-50');
       }
+      lucide.createIcons();
     }
 
     // 5. 語音發音
@@ -345,7 +342,8 @@
           if (hintsLeft <= 0) {
             // 禁用提示按鈕樣式
             els.hintBtn.className = "flex items-center space-x-2 font-bold px-4 py-2 rounded-full transition-colors text-gray-400 bg-gray-100 cursor-not-allowed";
-            els.hintIcon.classList.remove('text-[#FBBC05]');
+            const currentHintIcon = document.querySelector('#hintBtn svg');
+            if (currentHintIcon) currentHintIcon.classList.remove('text-[#FBBC05]');
           }
           
           showMessage('試試看這個單字！(直接送出即可)', 'success');
