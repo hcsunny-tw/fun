@@ -270,15 +270,18 @@
 
         if (data.length > 0 && data[0].word === word) {
           
-          // 2. 查翻譯
+          // 2. 查翻譯 (改用更穩定的 Google Translate API)
           showMessage('翻譯中...', 'info');
           let zhTranslation = "無翻譯";
           try {
-            const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|zh-TW`);
+            const transRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-TW&dt=t&q=${word}`);
             const transData = await transRes.json();
-            zhTranslation = transData.responseData.translatedText;
-            if (zhTranslation.toLowerCase() === word.toLowerCase() || !zhTranslation) {
-              zhTranslation = "無翻譯";
+            if (transData && transData[0] && transData[0][0] && transData[0][0][0]) {
+              zhTranslation = transData[0][0][0];
+              // 如果翻譯出來還是原本的英文字，就判定為無翻譯
+              if (zhTranslation.toLowerCase() === word.toLowerCase()) {
+                zhTranslation = "無翻譯";
+              }
             }
           } catch (e) { console.warn("翻譯失敗", e); }
 
