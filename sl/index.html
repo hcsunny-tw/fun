@@ -27,7 +27,7 @@
         
         /* 🌟 優化 2：Logo 放大並增加互動效果 */
         .school-logo { 
-            width: 300px; /* 放大 Logo */
+            width: 220px; /* 放大 Logo */
             max-width: 80%; 
             height: auto; 
             margin-bottom: 15px; 
@@ -167,6 +167,8 @@
 
 <div class="container">
     <img src="./logo.png" alt="松林雙語Fun Logo" class="school-logo" id="school-logo" onclick="window.backToLogin()" title="回首頁">
+    <h1>松林雙語Fun</h1>
+
     <!-- 1. 登入區塊 -->
     <div id="login-section">
         <div class="login-box">
@@ -180,7 +182,7 @@
             </div>
             <button class="btn" onclick="window.loginAndFetchTask()">🚀 進入挑戰大廳</button>
         </div>
-        <p style="color: gray; font-size: 1em;">提示：老師可測試備用帳號 601 班 30 號</p>
+        <p style="color: gray; font-size: 1em;">提示：如果載入失敗，可測試備用帳號 601 班 5 號</p>
     </div>
 
     <!-- 2. 關卡選擇區塊 -->
@@ -225,7 +227,6 @@
             <div class="stars-display" id="stars-display"></div>
             <div id="combo-display" class="combo-text">🔥 0 Combo 連擊！</div>
             <p style="font-size: 1.8em; font-weight: bold; margin-top: 10px;">準確率：<span id="score-text">0</span>%</p>
-            <p id="upload-status" class="upload-status">🔊 完美達成！已將這關的聲音上傳給老師！</p>
         </div>
     </div>
 </div>
@@ -361,9 +362,6 @@
     let recognition;
     let isRecognizing = false;
     let finalTranscript = '';
-    let mediaRecorder;
-    let audioChunks = [];
-    let audioBlob = null;
 
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
@@ -397,11 +395,7 @@
 
         recognition.onend = function() {
             isRecognizing = false;
-            if(mediaRecorder && mediaRecorder.state === "recording") {
-                mediaRecorder.stop(); 
-            } else {
-                processResult(); 
-            }
+            processResult(); 
         };
     }
 
@@ -547,40 +541,21 @@
     window.startRecordingAndRecognition = async function() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel(); 
         resetResultUI();
-        audioChunks = [];
-        audioBlob = null;
 
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            
-            mediaRecorder.ondataavailable = event => {
-                if (event.data.size > 0) audioChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                stream.getTracks().forEach(track => track.stop());
-                if(!isRecognizing) processResult();
-            };
-
-            mediaRecorder.start();
-            
-            if (recognition) {
+        if (recognition) {
+            try {
                 recognition.start();
-            } else {
-                alert("瀏覽器不支援語音辨識。");
+            } catch (e) {
+                console.error("語音辨識啟動錯誤", e);
             }
-        } catch (err) {
-            console.error("麥克風權限被拒絕", err);
-            alert("請允許網頁使用麥克風才能開始練習喔！");
+        } else {
+            alert("瀏覽器不支援語音辨識。");
         }
     };
 
     window.stopRecordingAndRecognition = function() {
         updateUIForRecording(false);
         if (recognition && isRecognizing) recognition.stop(); 
-        if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
     };
 
     function updateUIForRecording(isRecording) {
@@ -599,7 +574,6 @@
         document.getElementById('stars-display').innerText = "";
         document.getElementById('combo-display').style.display = "none";
         document.getElementById('score-text').innerText = "0";
-        document.getElementById('upload-status').style.display = "none";
     }
 
     async function processResult() {
@@ -665,10 +639,6 @@
             
             updateScoreToGoogleSheet(currentStudentId, currentLevelIndex, score);
         }
-
-        if (score >= 90 && audioBlob) {
-            uploadAudioToGoogleDrive(audioBlob, score, currentStudentTasks[currentLevelIndex].title);
-        }
     }
 
     // 🚀 優化 3：使用 no-cors 模式，解決跨域阻擋導致無法寫入試算表的問題
@@ -692,49 +662,6 @@
         }).then(() => {
             console.log("分數寫入請求已傳送至背景");
         }).catch(error => console.error("分數寫入請求發送失敗:", error));
-    }
-
-    // 🚀 上傳音檔功能 (同樣加上 no-cors 保護傳輸)
-    function uploadAudioToGoogleDrive(blob, score, levelTitle) {
-        if (!GAS_URL) return;
-
-        const reader = new FileReader();
-        reader.readAsDataURL(blob); 
-        reader.onloadend = async function() {
-            const base64Audio = reader.result.split(',')[1]; 
-            const statusEl = document.getElementById('upload-status');
-            
-            statusEl.innerText = "⏳ 正在將音檔傳送到老師的雲端硬碟...";
-            statusEl.style.color = "#FF8C00";
-            statusEl.style.display = "block";
-
-            const payload = {
-                action: "upload_audio", 
-                student_id: currentStudentId,
-                level_title: levelTitle,
-                score: score,
-                mime_type: blob.type,
-                audio_base64: base64Audio
-            };
-
-            try {
-                await fetch(GAS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // 忽略跨域警告
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                // 因為 no-cors 無法讀取回傳值，只要沒報錯就當作成功
-                statusEl.innerText = "🔊 完美達成！已將這關的聲音上傳給老師！";
-                statusEl.style.color = "#C71585";
-            } catch (error) {
-                console.error("上傳音檔失敗:", error);
-                statusEl.innerText = "❌ 哎呀，上傳雲端失敗了，請檢查網路連線。";
-                statusEl.style.color = "red";
-            }
-        }
     }
 </script>
 
