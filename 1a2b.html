@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>👾 1A2B 數字大解密 👾</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        /* 避免 iOS Safari 點擊放大與拖曳時的螢幕滾動 */
+        body {
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 復古字體 */
+        .retro-font { font-family: 'VT323', monospace; }
+        .pixel-title { font-family: 'ZCOOL KuaiLe', sans-serif; text-shadow: 2px 2px 0px #000; }
+        
+        /* 復古邊框按鈕 */
+        .retro-border {
+            border: 3px solid #1e293b;
+            box-shadow: 3px 3px 0px 0px #1e293b;
+            transition: all 0.1s ease;
+        }
+        .retro-btn-active:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px 0px #1e293b;
+        }
+        
+        /* 鎖定觸控，讓按鍵可以直接被拖曳而不觸發畫面捲動 */
+        .keypad-btn { touch-action: none; user-select: none; }
+        
+        /* 歷史紀錄區塊自訂滾動條 */
+        .history-scroll::-webkit-scrollbar { width: 8px; }
+        .history-scroll::-webkit-scrollbar-track { background: transparent; }
+        .history-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; border: 1px solid #1e293b; }
+        html { scroll-behavior: smooth; }
+        
+        /* 提示動畫 */
+        @keyframes highlight {
+            0%, 100% { background-color: #f8fafc; }
+            50% { background-color: #fef08a; }
+        }
+        .animate-highlight { animation: highlight 1.5s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-slate-800 flex justify-center items-center h-[100dvh] m-0 overflow-hidden md:p-6 lg:p-10 text-slate-800 select-none">
+
+    <!-- 響應式主容器：手機滿版，電腦/平板則顯示為立體機台 -->
+    <main class="w-full h-full max-w-5xl md:h-[90dvh] md:max-h-[850px] bg-[#F0E6D2] flex flex-col relative md:shadow-[12px_12px_0px_0px_rgba(0,0,0,0.8)] md:rounded-2xl md:border-4 border-slate-800 overflow-hidden transition-all">
+        
+        <!-- ================= 頂部標題列 ================= -->
+        <header class="shrink-0 bg-[#FF6B6B] border-b-4 border-slate-800 p-3 md:p-4 flex justify-between items-center text-white z-20">
+            <h1 class="text-xl md:text-3xl font-bold pixel-title flex items-center gap-1 tracking-widest">
+                <span>👾</span> 1A2B <span class="hidden sm:inline text-xl text-red-200">邏輯助教</span>
+            </h1>
+            <div class="flex gap-1.5 md:gap-2">
+                <!-- 重新開始按鈕移至上方安全區 -->
+                <button onclick="confirmRestart()" class="bg-slate-100 text-slate-800 px-2 py-1.5 md:px-3 md:py-2 rounded retro-border retro-btn-active text-xs md:text-sm font-bold flex items-center gap-1 shadow-sm hover:bg-slate-200">
+                    🔄 重啟
+                </button>
+                <button onclick="toggleSound()" id="sound-btn" class="bg-[#FFE66D] text-slate-800 px-2.5 py-1.5 md:px-3 md:py-2 rounded retro-border retro-btn-active text-xs md:text-sm font-bold flex items-center gap-1">
+                    🔊
+                </button>
+                <button onclick="openSettingsModal()" class="bg-[#4D96FF] px-2.5 py-1.5 md:px-3 md:py-2 rounded retro-border retro-btn-active text-xs md:text-sm font-bold shadow-sm flex items-center gap-1">
+                    ⚙️ <span class="hidden sm:inline">設定</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ================= 內容區：RWD 分欄排版 ================= -->
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+            
+            <!-- ====== 左側/上方欄：狀態列與歷史紀錄 ====== -->
+            <div class="flex-1 flex flex-col bg-[#F9F7F1] relative overflow-hidden md:border-r-4 border-slate-800 z-10">
+                
+                <!-- 狀態列 -->
+                <div class="shrink-0 bg-white border-b-4 border-slate-800 px-4 py-3 flex justify-between items-center font-bold text-slate-700 shadow-sm z-10">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] md:text-xs uppercase text-slate-400 font-black" id="time-label">耗時</span>
+                        <span id="timer-display" class="retro-font text-2xl md:text-3xl text-blue-600 leading-none mt-0.5 md:mt-1">00:00</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] md:text-xs uppercase text-slate-400 font-black" id="count-label">嘗試次數</span>
+                        <span class="retro-font text-2xl md:text-3xl text-slate-800 leading-none mt-0.5 md:mt-1"><span id="guess-count">0</span><span id="limit-display" class="text-lg text-slate-400 hidden">/10</span></span>
+                    </div>
+                    <button onclick="useHint()" id="hint-btn" class="bg-[#FFE66D] text-slate-800 px-3 md:px-4 py-1.5 md:py-2 rounded retro-border retro-btn-active text-xs md:text-sm font-black flex flex-col items-center justify-center relative hover:bg-[#ffd11a]">
+                        <span>💡 引導提示</span>
+                        <span id="hint-count-badge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center text-[10px] md:text-xs border-2 border-slate-800 shadow-sm">3</span>
+                    </button>
+                </div>
+
+                <!-- 歷史紀錄滾動區 (由上往下長) -->
+                <div id="history-container" class="flex-1 p-4 md:p-6 overflow-y-auto history-scroll flex flex-col gap-3 relative scroll-smooth bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
+                    <div id="empty-history-msg" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 text-sm md:text-base font-bold bg-[#F9F7F1]/80 backdrop-blur-sm z-0">
+                        <span class="text-5xl md:text-6xl mb-3 animate-bounce" id="empty-icon">🕵️‍♂️</span>
+                        <span class="bg-white px-4 py-2 rounded-lg border-2 border-slate-300 shadow-sm" id="empty-text">準備好就開始解密吧！</span>
+                    </div>
+                    <!-- 歷史列表會渲染在這裡 -->
+                </div>
+            </div>
+
+            <!-- ====== 右側/下方欄 (A)：玩家解謎控制區 (兼用於出題輸入) ====== -->
+            <div id="player-control-panel" class="shrink-0 w-full md:w-[380px] lg:w-[420px] bg-slate-50 border-t-4 md:border-t-0 border-slate-800 p-4 md:p-6 z-20 flex flex-col gap-4 justify-end md:justify-center transition-all">
+                
+                <p id="panel-instruction" class="text-xs font-bold text-slate-400 text-center mb-[-10px] uppercase tracking-widest hidden md:block">直接點擊 或 拖曳數字到格子裡</p>
+
+                <!-- 輸入槽與送出按鈕 -->
+                <div class="flex justify-between items-center mb-2 gap-2">
+                    <div id="input-slots-container" class="flex justify-center gap-2 md:gap-3 flex-1 px-1">
+                        <!-- 動態生成輸入框 (每個都是 drop target) -->
+                    </div>
+                    <button onclick="handleMainSubmit()" class="text-xl md:text-2xl bg-[#6BCB77] p-3 rounded-xl retro-border retro-btn-active text-white hover:bg-green-500 transition-colors shadow-md h-14 md:h-16 w-14 md:w-16 flex items-center justify-center" title="確認送出">
+                        🚀
+                    </button>
+                </div>
+
+                <!-- 虛擬鍵盤 (可點擊可拖曳) -->
+                <div class="w-full">
+                    <div class="grid grid-cols-5 gap-2 md:gap-3 mb-2 md:mb-3">
+                        <button id="key-1" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">1</button>
+                        <button id="key-2" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">2</button>
+                        <button id="key-3" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">3</button>
+                        <button id="key-4" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">4</button>
+                        <button id="key-5" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">5</button>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2 md:gap-3">
+                        <button id="key-6" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">6</button>
+                        <button id="key-7" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">7</button>
+                        <button id="key-8" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">8</button>
+                        <button id="key-9" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">9</button>
+                        <button id="key-0" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">0</button>
+                    </div>
+                    <!-- 刪除鍵 -->
+                    <button onclick="pressBackspace()" class="w-full mt-3 md:mt-4 bg-orange-200 text-orange-900 font-bold py-3 md:py-4 rounded retro-border retro-btn-active text-sm md:text-base hover:bg-orange-300">
+                        ⌫ 倒退刪除最後一個數字
+                    </button>
+                </div>
+            </div>
+
+            <!-- ====== 右側/下方欄 (B)：電腦解謎(出題)控制區 ====== -->
+            <div id="host-control-panel" class="hidden shrink-0 w-full md:w-[380px] lg:w-[420px] bg-slate-50 border-t-4 md:border-t-0 border-slate-800 p-4 md:p-6 z-20 flex flex-col gap-4 justify-end md:justify-center">
+                <div class="bg-blue-100 p-3 rounded-lg border-2 border-blue-300 text-sm font-bold text-blue-900 mb-2 shadow-sm leading-relaxed">
+                    🤖 <span class="text-blue-700">邏輯訓練出題模式：</span><br>
+                    你的密碼是：<span id="host-secret-display" class="text-lg px-2 font-black text-emerald-700 bg-white border border-emerald-300 rounded shadow-inner tracking-widest mx-1"></span><br>
+                    請根據電腦的猜測，給予正確的 A 與 B！
+                </div>
+
+                <div class="bg-white border-2 border-slate-800 p-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-center relative overflow-hidden">
+                    <span class="text-xs font-black text-slate-400 uppercase tracking-widest block mb-2">電腦目前的推論猜測</span>
+                    <div id="comp-guess-display" class="retro-font text-4xl md:text-5xl text-slate-800 tracking-widest font-extrabold flex justify-center gap-2">
+                        <!-- e.g. <span>1</span><span>2</span><span>3</span><span>4</span> -->
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 mt-1">
+                    <div class="flex items-center justify-between bg-emerald-50 p-2 rounded-lg border-2 border-emerald-200">
+                        <span class="font-bold text-emerald-700 w-16 text-center leading-tight">A <span class="text-[10px] block font-normal">位置對</span></span>
+                        <div class="flex flex-1 justify-around gap-1" id="host-a-btns">
+                            <!-- JS 生成 -->
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between bg-orange-50 p-2 rounded-lg border-2 border-orange-200">
+                        <span class="font-bold text-orange-600 w-16 text-center leading-tight">B <span class="text-[10px] block font-normal">數字對</span></span>
+                        <div class="flex flex-1 justify-around gap-1" id="host-b-btns">
+                            <!-- JS 生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="submitHostFeedback()" class="w-full mt-2 bg-[#6BCB77] text-slate-900 font-black py-3 md:py-4 rounded retro-border retro-btn-active text-lg hover:bg-green-500 transition-colors shadow-md">
+                    📤 送出提示給電腦
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ================= 彈出視窗：設定與規則 ================= -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center p-4 z-[60]">
+        <div class="bg-white border-4 border-slate-800 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full p-5 rounded-xl max-h-[90dvh] overflow-y-auto">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 border-b-2 border-slate-200 pb-2 flex justify-between items-center">
+                <span>⚙️ 設定與規則</span>
+                <button onclick="closeSettingsModal()" class="text-red-500 hover:scale-110 transition-transform text-2xl">✖</button>
+            </h2>
+
+            <div class="space-y-4 text-sm font-bold text-slate-700">
+                <!-- 遊玩角色 (新增) -->
+                <div>
+                    <label class="block text-xs text-blue-600 mb-1 uppercase tracking-wider font-black">🕹️ 遊玩角色 (模式選擇)</label>
+                    <div class="flex gap-2">
+                        <button onclick="tempSetting('role', 'player')" id="set-role-player" class="flex-1 setting-role-btn bg-[#FFE66D] border-2 border-slate-800 p-2 rounded">玩家解謎</button>
+                        <button onclick="tempSetting('role', 'host')" id="set-role-host" class="flex-1 setting-role-btn bg-slate-100 border-2 border-slate-800 p-2 rounded">電腦出題解謎</button>
+                    </div>
+                </div>
+                <!-- 難度 -->
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 uppercase tracking-wider">密碼長度</label>
+                    <div class="flex gap-2">
+                        <button onclick="tempSetting('diff', 3)" id="set-diff-3" class="flex-1 setting-diff-btn bg-slate-100 border-2 border-slate-800 p-2 rounded">3位數</button>
+                        <button onclick="tempSetting('diff', 4)" id="set-diff-4" class="flex-1 setting-diff-btn bg-[#FFE66D] border-2 border-slate-800 p-2 rounded">4位數</button>
+                        <button onclick="tempSetting('diff', 5)" id="set-diff-5" class="flex-1 setting-diff-btn bg-slate-100 border-2 border-slate-800 p-2 rounded">5位數</button>
+                    </div>
+                </div>
+                <!-- 挑戰模式 -->
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 uppercase tracking-wider">機會限制 (僅玩家解謎有效)</label>
+                    <div class="flex gap-2">
+                        <button onclick="tempSetting('mode', 'endless')" id="set-mode-endless" class="flex-1 setting-mode-btn bg-[#FFE66D] border-2 border-slate-800 p-2 rounded">無限次數</button>
+                        <button onclick="tempSetting('mode', 'challenge')" id="set-mode-challenge" class="flex-1 setting-mode-btn bg-slate-100 border-2 border-slate-800 p-2 rounded">次數限制</button>
+                    </div>
+                </div>
+                <!-- 輔助顯示 -->
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 uppercase tracking-wider">顏色輔助 (僅玩家解謎有效)</label>
+                    <div class="flex gap-2">
+                        <button onclick="tempSetting('level', 'basic')" id="set-level-basic" class="flex-1 setting-level-btn bg-[#FFE66D] border-2 border-slate-800 p-2 rounded flex flex-col items-center">
+                            <span>基礎版</span><span class="text-[10px] font-normal text-slate-500">標示正確A</span>
+                        </button>
+                        <button onclick="tempSetting('level', 'advanced')" id="set-level-advanced" class="flex-1 setting-level-btn bg-slate-100 border-2 border-slate-800 p-2 rounded flex flex-col items-center">
+                            <span>進階版</span><span class="text-[10px] font-normal text-slate-500">無顏色盲猜</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="applySettingsAndRestart()" class="mt-5 w-full bg-[#6BCB77] text-slate-900 font-black py-3 rounded retro-border retro-btn-active text-lg shadow-sm">
+                儲存設定並開新局
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= 彈出視窗：重新開始確認 ================= -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-70 flex justify-center items-center p-4 z-[70]">
+        <div class="bg-white border-4 border-slate-800 max-w-xs w-full p-6 rounded-xl text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h3 class="text-xl md:text-2xl font-bold mb-2">放棄這局？</h3>
+            <p class="text-sm md:text-base text-slate-600 mb-6 font-semibold">目前的進度將會遺失，確定要重新開始嗎？</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-300 text-slate-800 font-bold py-2.5 rounded retro-border retro-btn-active">繼續玩</button>
+                <button onclick="forceRestart()" class="flex-1 bg-red-500 text-white font-bold py-2.5 rounded retro-border retro-btn-active">重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 彈出視窗：遊戲結束 ================= -->
+    <div id="game-over-modal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center p-4 z-[80]">
+        <div class="bg-white border-4 border-slate-800 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full p-6 rounded-xl text-center">
+            <div id="game-over-icon" class="text-6xl md:text-7xl mb-4 drop-shadow-md">🏆</div>
+            <h3 id="game-over-title" class="text-2xl md:text-3xl font-black mb-2">恭喜答對！</h3>
+            <p id="game-over-msg" class="text-sm md:text-base font-bold text-slate-500 mb-6">太厲害了，邏輯大師！</p>
+            
+            <div class="bg-slate-100 border-2 border-slate-300 p-4 rounded-lg mb-6 text-sm font-bold flex flex-col gap-3">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-2" id="end-answer-container">
+                    <span class="text-slate-600">🔑 正確答案</span>
+                    <span id="revealed-answer" class="text-2xl font-mono tracking-widest text-emerald-600 bg-white border border-slate-400 px-3 py-1 rounded shadow-inner">0123</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">⏱️ 花費時間</span>
+                    <span id="final-time" class="retro-font text-xl text-blue-600">01:30</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">📊 總共猜測</span>
+                    <span id="final-guesses" class="text-xl text-slate-800">8 次</span>
+                </div>
+            </div>
+
+            <button onclick="closeGameOverModalAndReset()" class="w-full bg-[#4D96FF] text-white font-bold py-3 md:py-4 rounded retro-border retro-btn-active text-lg md:text-xl">
+                🌟 再挑戰一局！
+            </button>
+        </div>
+    </div>
+
+    <!-- 短暫提示浮動氣泡 -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-full text-sm font-bold transition-opacity duration-300 opacity-0 pointer-events-none z-[90] flex items-center gap-2 shadow-2xl border-2 border-slate-600">
+        <span id="toast-icon">💡</span>
+        <span id="toast-msg">提示訊息</span>
+    </div>
+
+    <!-- ================= JavaScript 邏輯 ================= -->
+    <script>
+        // --- 核心狀態 ---
+        let role = 'player';          // 'player' (玩家猜) or 'host' (電腦猜)
+        let difficulty = 4;           // 長度
+        let mode = 'endless';         // endless, challenge
+        let gameLevel = 'basic';      // basic, advanced
+        
+        // 共用變數
+        let answer = [];              
+        let currentInput = [];        
+        let history = [];             
+        let eliminatedNumbers = [];   
+        let hintsLeft = 3;            
+        let usedHints = { sum: false, parity: false, magnitude: false };
+
+        // 出題(電腦猜)模式變數
+        let hostPhase = 'setup';      // 'setup' (出題中) or 'playing' (電腦推論中)
+        let hostSecret = [];          // 使用者設定的解答
+        let compPool = [];
+        let compCurrentGuess = [];
+        let hostSelectedA = 0;
+        let hostSelectedB = 0;
+
+        let timerInterval = null;
+        let seconds = 0;
+        let isGameOver = false;
+        let isSoundEnabled = true;
+
+        const CHALLENGE_LIMITS = { 3: 8, 4: 10, 5: 12 };
+        let pendingSettings = { role: 'player', diff: 4, mode: 'endless', level: 'basic' };
+
+        // --- 音效系統 ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playBeep(type) {
+            if (!isSoundEnabled) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                if (type === 'click') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'success') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                }
+            } catch (e) {}
+        }
+        function toggleSound() {
+            initAudio();
+            isSoundEnabled = !isSoundEnabled;
+            const btn = document.getElementById('sound-btn');
+            btn.innerHTML = isSoundEnabled ? '🔊' : '🔇';
+            btn.className = isSoundEnabled 
+                ? "bg-[#FFE66D] text-slate-800 px-2.5 py-1.5 md:px-3 md:py-2 rounded retro-border retro-btn-active text-xs md:text-sm font-bold flex items-center gap-1"
+                : "bg-slate-300 text-slate-500 px-2.5 py-1.5 md:px-3 md:py-2 rounded border-2 border-slate-400 text-xs md:text-sm font-bold flex items-center gap-1";
+            if(isSoundEnabled) playBeep('click');
+        }
+
+        function showToast(msg, icon = '💡') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icon;
+            toast.classList.remove('opacity-0'); toast.classList.add('opacity-100');
+            setTimeout(() => { toast.classList.remove('opacity-100'); toast.classList.add('opacity-0'); }, 2500);
+        }
+
+        // --- 設定視窗 ---
+        function openSettingsModal() {
+            playBeep('click');
+            tempSetting('role', role); tempSetting('diff', difficulty);
+            tempSetting('mode', mode); tempSetting('level', gameLevel);
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+        function closeSettingsModal() { playBeep('click'); document.getElementById('settings-modal').classList.add('hidden'); }
+        function tempSetting(type, val) {
+            playBeep('click');
+            pendingSettings[type] = val;
+            document.querySelectorAll(`.setting-${type}-btn`).forEach(b => { b.classList.remove('bg-[#FFE66D]'); b.classList.add('bg-slate-100'); });
+            document.getElementById(`set-${type}-${val}`).classList.remove('bg-slate-100');
+            document.getElementById(`set-${type}-${val}`).classList.add('bg-[#FFE66D]');
+        }
+        function applySettingsAndRestart() {
+            role = pendingSettings.role; difficulty = pendingSettings.diff;
+            mode = pendingSettings.mode; gameLevel = pendingSettings.level;
+            closeSettingsModal(); resetGame();
+        }
+
+        function confirmRestart() {
+            playBeep('click');
+            const guessCount = history.filter(h => h.type === 'guess').length;
+            const inputCount = currentInput.filter(v => v !== null).length;
+            if (guessCount === 0 && inputCount === 0) return resetGame(); 
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+        function closeConfirmModal() { playBeep('click'); document.getElementById('confirm-modal').classList.add('hidden'); }
+        function forceRestart() { closeConfirmModal(); resetGame(); }
+
+        // --- 拖曳與點擊系統 ---
+        let dragKey = null;
+        let dragGhost = null;
+        let dragSourceBtn = null; // 用來釋放 pointer capture，確保不當機
+
+        function initPointerEvents() {
+            const keys = document.querySelectorAll('.keypad-btn');
+            keys.forEach(k => {
+                k.addEventListener('pointerdown', handlePointerDown);
+            });
+            document.addEventListener('pointermove', handlePointerMove, {passive: false});
+            document.addEventListener('pointerup', handlePointerUp);
+            // 避免觸控取消時當掉
+            document.addEventListener('pointercancel', handlePointerUp);
+        }
+
+        function handlePointerDown(e) {
+            if (isGameOver || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            const btn = e.target.closest('.keypad-btn');
+            if (!btn || btn.classList.contains('opacity-40')) return;
+
+            const val = btn.innerText;
+            if (currentInput.includes(val)) return;
+
+            initAudio(); // 確保解鎖音效
+            dragKey = val;
+            dragSourceBtn = btn;
+            
+            try { btn.setPointerCapture(e.pointerId); } catch(err){}
+            
+            createGhost(val, e.clientX, e.clientY);
+        }
+
+        function createGhost(val, x, y) {
+            if (dragGhost) return;
+            dragGhost = document.createElement('div');
+            dragGhost.innerText = val;
+            dragGhost.className = "w-14 h-16 flex items-center justify-center text-4xl font-extrabold retro-font rounded-lg bg-[#FFE66D] border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] z-[9999]";
+            dragGhost.style.position = 'fixed';
+            dragGhost.style.pointerEvents = 'none'; // 讓它不阻擋事件傳遞
+            dragGhost.style.left = (x - 28) + 'px'; 
+            dragGhost.style.top = (y - 32) + 'px';
+            document.body.appendChild(dragGhost);
+        }
+
+        function handlePointerMove(e) {
+            if (!dragKey || !dragGhost) return;
+            if(e.pointerType === 'touch') e.preventDefault(); 
+            dragGhost.style.left = (e.clientX - 28) + 'px';
+            dragGhost.style.top = (e.clientY - 32) + 'px';
+        }
+
+        function handlePointerUp(e) {
+            if (!dragKey) return;
+            
+            // 強制釋放事件，避免鎖住 UI
+            if (dragSourceBtn) {
+                try { dragSourceBtn.releasePointerCapture(e.pointerId); } catch(err){}
+                dragSourceBtn = null;
+            }
+            
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const slot = target ? target.closest('.input-slot') : null;
+
+            if (slot) {
+                const idx = parseInt(slot.dataset.index);
+                currentInput[idx] = dragKey;
+                playBeep('click');
+            } else {
+                const emptyIdx = currentInput.indexOf(null);
+                if (emptyIdx !== -1) {
+                    currentInput[emptyIdx] = dragKey;
+                    playBeep('click');
+                } else {
+                    playBeep('error');
+                }
+            }
+
+            if(dragGhost) { dragGhost.remove(); dragGhost = null; }
+            dragKey = null;
+            
+            updateInputSlots();
+            updateKeypadState();
+        }
+
+        // --- 主遊戲流程邏輯 ---
+        function resetGame() {
+            isGameOver = false; 
+            history = [];
+            
+            clearInterval(timerInterval); 
+            seconds = 0; 
+            updateTimerDisplay();
+            timerInterval = setInterval(() => { seconds++; updateTimerDisplay(); }, 1000);
+
+            if (role === 'player') {
+                hostPhase = null;
+                document.getElementById('player-control-panel').classList.remove('hidden');
+                document.getElementById('host-control-panel').classList.add('hidden');
+                document.getElementById('hint-btn').classList.remove('hidden');
+                document.getElementById('empty-text').innerText = "準備好就開始解密吧！";
+                document.getElementById('empty-icon').innerText = "🕵️‍♂️";
+                document.getElementById('time-label').innerText = "耗時";
+                document.getElementById('count-label').innerText = "你的嘗試";
+                
+                const panelInst = document.getElementById('panel-instruction');
+                panelInst.innerText = "直接點擊 或 拖曳數字到格子裡";
+                panelInst.className = "text-xs font-bold text-slate-400 text-center mb-[-10px] uppercase tracking-widest hidden md:block";
+
+                const pool = ['0','1','2','3','4','5','6','7','8','9'];
+                answer = [];
+                for (let i = 0; i < difficulty; i++) {
+                    const r = Math.floor(Math.random() * pool.length);
+                    answer.push(pool[r]); pool.splice(r, 1);
+                }
+                
+                currentInput = Array(difficulty).fill(null);
+                eliminatedNumbers = []; hintsLeft = 3; 
+                usedHints = { sum: false, parity: false, magnitude: false };
+
+            } else {
+                // 出題模式 - 完全重啟至 setup 階段
+                hostPhase = 'setup';
+                hostSecret = [];
+                compPool = [];
+                compCurrentGuess = [];
+                
+                document.getElementById('player-control-panel').classList.remove('hidden');
+                // 添加高亮提示讓使用者知道現在要幹嘛
+                document.getElementById('player-control-panel').classList.add('animate-highlight');
+                document.getElementById('host-control-panel').classList.add('hidden');
+                document.getElementById('hint-btn').classList.add('hidden');
+                document.getElementById('empty-text').innerText = "請先設定密碼，讓電腦來猜！";
+                document.getElementById('empty-icon').innerText = "✍️";
+                document.getElementById('time-label').innerText = "經過時間";
+                document.getElementById('count-label').innerText = "電腦推論次數";
+                
+                document.getElementById('limit-display').classList.add('hidden');
+                
+                const panelInst = document.getElementById('panel-instruction');
+                panelInst.innerText = "🔒 遊戲重啟！請設定新的一組密碼";
+                panelInst.className = "text-sm font-bold text-blue-600 text-center mb-2 uppercase tracking-widest block";
+
+                currentInput = Array(difficulty).fill(null);
+                eliminatedNumbers = [];
+            }
+            
+            updateInputSlots(); 
+            updateKeypadState(); 
+            updateStatsUI();
+            updateHistoryList();
+        }
+
+        // --- 點擊按鈕結束視窗，必須保證完全復原 ---
+        function closeGameOverModalAndReset() {
+            playBeep('click');
+            document.getElementById('game-over-modal').classList.add('hidden');
+            // 保證延遲一點執行，避免與觸發事件衝突
+            setTimeout(() => resetGame(), 50);
+        }
+
+        // --- 輸入控制分流 ---
+        function handleMainSubmit() {
+            if (role === 'player') submitGuess();
+            else if (role === 'host' && hostPhase === 'setup') submitHostSecret();
+        }
+
+        function submitHostSecret() {
+            if (isGameOver) return;
+            if (currentInput.includes(null)) {
+                playBeep('error'); showToast(`請先填滿 ${difficulty} 個數字作為密碼！`, '⚠️'); return;
+            }
+            playBeep('success');
+            
+            // 儲存密碼，切換至電腦推論階段
+            hostSecret = [...currentInput];
+            hostPhase = 'playing';
+            
+            // 移除高亮提示
+            document.getElementById('player-control-panel').classList.remove('animate-highlight');
+            document.getElementById('player-control-panel').classList.add('hidden');
+            document.getElementById('host-control-panel').classList.remove('hidden');
+            document.getElementById('host-secret-display').innerText = hostSecret.join('');
+            document.getElementById('empty-text').innerText = "等待電腦推論中...";
+            document.getElementById('empty-icon').innerText = "🤖";
+
+            compPool = generateAllCombinations(difficulty);
+            hostSelectedA = 0; hostSelectedB = 0;
+            
+            setTimeout(() => compMakeGuess(), 600);
+        }
+
+        // --- [玩家模式] 邏輯 ---
+        function clearSlot(idx) {
+            if (isGameOver || currentInput[idx] === null) return;
+            currentInput[idx] = null;
+            playBeep('click');
+            updateInputSlots(); updateKeypadState();
+        }
+
+        function pressBackspace() {
+            if (isGameOver) return;
+            for (let i = difficulty - 1; i >= 0; i--) {
+                if (currentInput[i] !== null) {
+                    currentInput[i] = null;
+                    playBeep('click'); updateInputSlots(); updateKeypadState();
+                    return;
+                }
+            }
+        }
+
+        function updateInputSlots() {
+            const container = document.getElementById('input-slots-container');
+            container.innerHTML = '';
+            for (let i = 0; i < difficulty; i++) {
+                const val = currentInput[i];
+                const slot = document.createElement('div');
+                slot.className = `input-slot w-12 h-14 md:w-14 md:h-16 flex items-center justify-center text-3xl md:text-4xl font-extrabold retro-font rounded-lg border-2 border-slate-800 transition-colors cursor-pointer select-none ${val !== null ? 'bg-[#FFE66D] shadow-[2px_2px_0px_0px_#1e293b] text-slate-800 hover:bg-[#ffd11a]' : 'bg-slate-200 border-dashed text-transparent hover:bg-slate-300'}`;
+                slot.innerText = val !== null ? val : '-';
+                slot.dataset.index = i;
+                slot.onclick = () => clearSlot(i);
+                container.appendChild(slot);
+            }
+        }
+
+        function updateKeypadState() {
+            for (let i = 0; i <= 9; i++) {
+                const btn = document.getElementById(`key-${i}`);
+                const numStr = String(i);
+                
+                btn.className = "keypad-btn text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-font transition-all";
+                
+                if (eliminatedNumbers.includes(numStr)) {
+                    btn.classList.add('bg-slate-700', 'text-slate-500', 'opacity-40');
+                    btn.style.textDecoration = "line-through";
+                    btn.style.border = "2px solid #334155";
+                    btn.style.boxShadow = "none"; btn.style.transform = "translate(2px, 2px)";
+                } else if (currentInput.includes(numStr)) {
+                    btn.classList.add('bg-slate-300', 'text-slate-400', 'border-2', 'border-slate-400');
+                    btn.style.textDecoration = "none";
+                    btn.style.boxShadow = "none"; btn.style.transform = "none";
+                } else {
+                    btn.classList.add('bg-white', 'text-slate-800', 'retro-border', 'retro-btn-active', 'cursor-grab');
+                    btn.style.textDecoration = "none";
+                }
+            }
+        }
+
+        function submitGuess() {
+            if (isGameOver) return;
+            if (currentInput.includes(null)) {
+                playBeep('error'); showToast(`請先填滿 ${difficulty} 個格子！`, '⚠️'); return;
+            }
+
+            let aCount = 0, bCount = 0;
+            for (let i = 0; i < difficulty; i++) {
+                if (currentInput[i] === answer[i]) aCount++;
+                else if (answer.includes(currentInput[i])) bCount++;
+            }
+
+            history.push({ type: 'guess', guess: [...currentInput], a: aCount, b: bCount });
+            currentInput = Array(difficulty).fill(null);
+            
+            updateInputSlots(); updateKeypadState(); updateHistoryList(); updateStatsUI();
+            
+            const guessCount = history.filter(h => h.type === 'guess').length;
+            if (aCount === difficulty) return endGame(true, 'player-win');
+            if (mode === 'challenge' && guessCount >= CHALLENGE_LIMITS[difficulty]) return endGame(false, 'player-lose');
+            
+            playBeep('click');
+        }
+
+        function useHint() {
+            initAudio(); if (isGameOver) return;
+            if (hintsLeft <= 0) { playBeep('error'); showToast('提示次數已用完！', '🚫'); return; }
+
+            let hintMsg = '';
+            let zeroAB_Guesses = history.filter(h => h.type === 'guess' && h.a === 0 && h.b === 0);
+            let numbersToEliminate = [];
+            zeroAB_Guesses.forEach(h => { h.guess.forEach(n => { if (!eliminatedNumbers.includes(n)) numbersToEliminate.push(n); }); });
+            numbersToEliminate = [...new Set(numbersToEliminate)];
+
+            if (numbersToEliminate.length > 0) {
+                numbersToEliminate.forEach(n => eliminatedNumbers.push(n));
+                hintMsg = `觀察到你有 0A0B 紀錄！已幫你劃掉：${numbersToEliminate.join(', ')}。`;
+                updateKeypadState();
+            } else {
+                let availableHints = [];
+                if (!usedHints.sum) availableHints.push('sum');
+                if (!usedHints.parity) availableHints.push('parity');
+                if (!usedHints.magnitude) availableHints.push('magnitude');
+
+                if (availableHints.length > 0) {
+                    let picked = availableHints[Math.floor(Math.random() * availableHints.length)];
+                    usedHints[picked] = true;
+                    if (picked === 'sum') {
+                        let sum = answer.reduce((a, b) => a + parseInt(b), 0);
+                        hintMsg = `引導線索：密碼數字相加總和為 ${sum}！`;
+                    } else if (picked === 'parity') {
+                        let odd = answer.filter(n => parseInt(n) % 2 !== 0).length;
+                        hintMsg = `引導線索：密碼中有 ${odd} 個奇數、${answer.length - odd} 個偶數！`;
+                    } else if (picked === 'magnitude') {
+                        let big = answer.filter(n => parseInt(n) >= 5).length;
+                        hintMsg = `引導線索：大於或等於 5 的數字共有 ${big} 個！`;
+                    }
+                } else {
+                    let safeToKill = ['0','1','2','3','4','5','6','7','8','9'].filter(n => !answer.includes(n) && !eliminatedNumbers.includes(n));
+                    if (safeToKill.length > 0) {
+                        let killNum = safeToKill[Math.floor(Math.random() * safeToKill.length)];
+                        eliminatedNumbers.push(killNum);
+                        hintMsg = `偷偷幫你把 ${killNum} 劃掉，它絕對不在密碼裡！`;
+                        updateKeypadState();
+                    } else {
+                        showToast('所有線索都給你了，靠自己的實力吧！', '🎯'); return;
+                    }
+                }
+            }
+            hintsLeft--; playBeep('success');
+            history.push({ type: 'hint', msg: hintMsg });
+            updateHistoryList(); updateStatsUI();
+        }
+
+        // --- [出題/電腦模式] 邏輯 ---
+        function generateAllCombinations(len) {
+            const results = [];
+            const digits = ['0','1','2','3','4','5','6','7','8','9'];
+            function permute(arr, memo) {
+                if(memo.length === len) { results.push(memo); return; }
+                for(let i=0; i<arr.length; i++) {
+                    let curr = arr.slice(); let next = curr.splice(i, 1);
+                    permute(curr, memo.concat(next));
+                }
+            }
+            permute(digits, []);
+            return results;
+        }
+
+        function compMakeGuess() {
+            if (compPool.length === 0) {
+                endGame(false, 'comp-contradiction'); return;
+            }
+            const randIdx = Math.floor(Math.random() * compPool.length);
+            compCurrentGuess = compPool[randIdx];
+
+            const display = document.getElementById('comp-guess-display');
+            display.innerHTML = compCurrentGuess.map(n => `<span class="bg-[#FFE66D] px-2.5 md:px-3 py-1 rounded shadow-sm border border-slate-400 mx-0.5">${n}</span>`).join('');
+            
+            selectHostA(0); selectHostB(0); 
+            playBeep('click');
+        }
+
+        function selectHostA(val) { hostSelectedA = val; updateHostSelectors(); }
+        function selectHostB(val) { hostSelectedB = val; updateHostSelectors(); }
+        
+        function updateHostSelectors() {
+            const aContainer = document.getElementById('host-a-btns');
+            const bContainer = document.getElementById('host-b-btns');
+            aContainer.innerHTML = ''; bContainer.innerHTML = '';
+
+            for(let i=0; i<=difficulty; i++) {
+                const btnA = document.createElement('button');
+                btnA.innerText = i;
+                btnA.className = `w-8 h-8 md:w-10 md:h-10 rounded font-black text-sm md:text-lg transition-all ${hostSelectedA === i ? 'bg-emerald-500 text-white shadow-inner scale-110' : 'bg-white text-slate-600 border border-slate-300'}`;
+                if (i + hostSelectedB > difficulty) btnA.classList.add('opacity-30', 'cursor-not-allowed');
+                else btnA.onclick = () => { playBeep('click'); selectHostA(i); };
+                aContainer.appendChild(btnA);
+
+                const btnB = document.createElement('button');
+                btnB.innerText = i;
+                btnB.className = `w-8 h-8 md:w-10 md:h-10 rounded font-black text-sm md:text-lg transition-all ${hostSelectedB === i ? 'bg-orange-500 text-white shadow-inner scale-110' : 'bg-white text-slate-600 border border-slate-300'}`;
+                if (i + hostSelectedA > difficulty) btnB.classList.add('opacity-30', 'cursor-not-allowed');
+                else btnB.onclick = () => { playBeep('click'); selectHostB(i); };
+                bContainer.appendChild(btnB);
+            }
+        }
+
+        function submitHostFeedback() {
+            if (hostSelectedA + hostSelectedB > difficulty) { showToast('A與B總和超過長度啦！', '⚠️'); return; }
+            
+            let realA = 0, realB = 0;
+            for(let i=0; i < difficulty; i++) {
+                if(compCurrentGuess[i] === hostSecret[i]) realA++;
+                else if(hostSecret.includes(compCurrentGuess[i])) realB++;
+            }
+
+            if (hostSelectedA !== realA || hostSelectedB !== realB) {
+                playBeep('error');
+                showToast(`提示給錯囉！請再仔細對照一下密碼吧！`, '🤔');
+                return; 
+            }
+
+            playBeep('success');
+
+            history.push({ type: 'guess', guess: compCurrentGuess, a: hostSelectedA, b: hostSelectedB, isComp: true });
+            updateHistoryList(); updateStatsUI();
+
+            if (hostSelectedA === difficulty) {
+                endGame(true, 'comp-win'); return;
+            }
+
+            compPool = compPool.filter(possibleAns => {
+                let tempA = 0, tempB = 0;
+                for(let i=0; i<difficulty; i++) {
+                    if(compCurrentGuess[i] === possibleAns[i]) tempA++;
+                    else if(possibleAns.includes(compCurrentGuess[i])) tempB++;
+                }
+                return tempA === hostSelectedA && tempB === hostSelectedB;
+            });
+
+            document.getElementById('comp-guess-display').innerHTML = '<span class="text-xl md:text-2xl text-slate-400 font-normal animate-pulse">電腦推論中...</span>';
+            setTimeout(() => compMakeGuess(), 600);
+        }
+
+        // --- 共用介面更新 ---
+        function updateStatsUI() {
+            const guessCount = history.filter(h => h.type === 'guess').length;
+            document.getElementById('guess-count').innerText = guessCount;
+            if (role === 'player') {
+                const limitEl = document.getElementById('limit-display');
+                if (mode === 'challenge') { limitEl.innerText = `/${CHALLENGE_LIMITS[difficulty]}`; limitEl.classList.remove('hidden'); } 
+                else { limitEl.classList.add('hidden'); }
+                const hintBtn = document.getElementById('hint-btn');
+                document.getElementById('hint-count-badge').innerText = hintsLeft;
+                if(hintsLeft === 0) hintBtn.classList.add('opacity-60', 'grayscale'); else hintBtn.classList.remove('opacity-60', 'grayscale');
+            }
+        }
+        
+        function updateTimerDisplay() {
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+        }
+
+        function updateHistoryList() {
+            const container = document.getElementById('history-container');
+            const emptyMsg = document.getElementById('empty-history-msg');
+            
+            if (history.length === 0) {
+                emptyMsg.style.display = 'flex';
+                Array.from(container.children).forEach(c => { if(c.id !== 'empty-history-msg') c.remove() });
+                return;
+            }
+            
+            emptyMsg.style.display = 'none';
+            Array.from(container.children).forEach(c => { if(c.id !== 'empty-history-msg') c.remove() });
+
+            let guessIndex = 1;
+
+            history.forEach((item) => {
+                const row = document.createElement('div');
+                
+                if (item.type === 'hint') {
+                    row.className = "bg-[#FFF9C4] p-3 md:p-4 rounded-xl border-2 border-[#FBC02D] flex items-start gap-3 shadow-sm my-1 mx-2 w-11/12 self-end rounded-tr-sm";
+                    row.innerHTML = `<span class="text-2xl mt-1">🤖</span><div class="text-sm md:text-base font-bold text-[#F57F17] leading-relaxed">${item.msg}</div>`;
+                } else {
+                    row.className = `p-3 md:p-4 rounded-xl border-2 flex justify-between items-center shadow-sm w-full ${item.isComp ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`;
+                    
+                    let digitsHtml = '';
+                    item.guess.forEach((num, i) => {
+                        let isA = (role === 'player' && gameLevel === 'basic' && num === answer[i]);
+                        let colorClass = isA ? 'text-emerald-700 bg-emerald-100 px-1 md:px-1.5 rounded border border-emerald-300 shadow-inner' : 'text-slate-600 bg-slate-50 px-1 md:px-1.5 rounded border border-transparent';
+                        digitsHtml += `<span class="retro-font text-2xl md:text-3xl tracking-widest ${colorClass}">${num}</span>`;
+                    });
+
+                    let badgeClass = "bg-slate-200 text-slate-700 border-2 border-slate-300";
+                    if(item.a === difficulty) badgeClass = "bg-emerald-500 text-white shadow-md border-2 border-emerald-700 animate-pulse";
+                    else if (item.a > 0) badgeClass = "bg-green-100 text-green-700 border-2 border-green-400";
+                    else if (item.b > 0) badgeClass = "bg-orange-100 text-orange-700 border-2 border-orange-400";
+
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3 md:gap-4">
+                            <span class="text-xs md:text-sm font-black text-slate-400 bg-slate-100 rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center border border-slate-200 shadow-inner">${guessIndex}</span>
+                            <div class="flex gap-1 md:gap-2">${digitsHtml}</div>
+                        </div>
+                        <span class="px-2 md:px-3 py-1 rounded text-sm md:text-base font-black ${badgeClass}">${item.a}A${item.b}B</span>
+                    `;
+                    guessIndex++;
+                }
+                container.appendChild(row);
+            });
+            setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+        }
+
+        // --- 結算 ---
+        function endGame(isWin, resultType) {
+            isGameOver = true; clearInterval(timerInterval);
+            const title = document.getElementById('game-over-title');
+            const icon = document.getElementById('game-over-icon');
+            const msg = document.getElementById('game-over-msg');
+            const ansContainer = document.getElementById('end-answer-container');
+            
+            document.getElementById('final-time').innerText = document.getElementById('timer-display').innerText;
+            const guessCount = history.filter(h => h.type === 'guess').length;
+            document.getElementById('final-guesses').innerText = `${guessCount} 次`;
+            document.getElementById('revealed-answer').innerText = (role === 'player') ? answer.join('') : history[history.length-1].guess.join('');
+            
+            if (resultType === 'player-win') {
+                playBeep('success'); icon.innerText = '🏆'; title.innerText = '成功破解！';
+                title.className = "text-2xl md:text-3xl font-black text-emerald-600 mb-2"; msg.innerText = "太神啦，邏輯大師！";
+                ansContainer.style.display = "flex";
+            } else if (resultType === 'player-lose') {
+                playBeep('error'); icon.innerText = '💀'; title.innerText = '挑戰失敗...';
+                title.className = "text-2xl md:text-3xl font-black text-red-500 mb-2"; msg.innerText = "次數用盡，下次再來！";
+                ansContainer.style.display = "flex";
+            } else if (resultType === 'comp-win') {
+                playBeep('success'); icon.innerText = '🤖'; title.innerText = '電腦猜中了！';
+                title.className = "text-2xl md:text-3xl font-black text-blue-600 mb-2"; msg.innerText = `你的大腦給出完美提示，電腦只花 ${guessCount} 次！`;
+                ansContainer.style.display = "flex";
+            } else if (resultType === 'comp-contradiction') {
+                playBeep('error'); icon.innerText = '😵‍💫'; title.innerText = '邏輯大混亂！';
+                title.className = "text-2xl md:text-3xl font-black text-red-500 mb-2"; msg.innerText = "你給的提示前後矛盾喔！電腦被你弄死機了！";
+                ansContainer.style.display = "none";
+            }
+
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
+        // 初始化與鍵盤支援
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver || document.getElementById('settings-modal').classList.contains('hidden') === false) return;
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+            
+            if (role === 'player' || (role === 'host' && hostPhase === 'setup')) {
+                if (e.key >= '0' && e.key <= '9') {
+                    // 電腦實體鍵盤對應
+                    const emptyIdx = currentInput.indexOf(null);
+                    if(!currentInput.includes(e.key) && emptyIdx !== -1) {
+                        currentInput[emptyIdx] = e.key; updateInputSlots(); updateKeypadState(); playBeep('click');
+                    }
+                }
+                else if (e.key === 'Backspace') pressBackspace();
+                else if (e.key === 'Enter') handleMainSubmit();
+            }
+        });
+
+        window.onload = () => {
+            initPointerEvents(); // 初始化拖曳事件
+            resetGame();
+        };
+    </script>
+</body>
+</html>
