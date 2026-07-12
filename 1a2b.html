@@ -103,16 +103,16 @@
             </div>
 
             <!-- ====== 右側/下方欄 (A)：玩家解謎控制區 (兼用於出題輸入) ====== -->
-            <div id="player-control-panel" class="shrink-0 w-full md:w-[380px] lg:w-[420px] bg-slate-50 border-t-4 md:border-t-0 border-slate-800 p-4 md:p-6 z-20 flex flex-col gap-4 justify-end md:justify-center transition-all">
+            <div id="player-control-panel" class="shrink-0 w-full md:w-[380px] lg:w-[420px] bg-slate-50 border-t-4 md:border-t-0 border-slate-800 p-3 md:p-6 z-20 flex flex-col gap-3 md:gap-4 justify-end md:justify-center transition-all pb-2 md:pb-6">
                 
                 <p id="panel-instruction" class="text-xs font-bold text-slate-400 text-center mb-[-10px] uppercase tracking-widest hidden md:block">直接點擊 或 拖曳數字到格子裡</p>
 
                 <!-- 輸入槽與送出按鈕 -->
-                <div class="flex justify-between items-center mb-2 gap-2">
+                <div class="flex justify-between items-center gap-2">
                     <div id="input-slots-container" class="flex justify-center gap-2 md:gap-3 flex-1 px-1">
                         <!-- 動態生成輸入框 (每個都是 drop target) -->
                     </div>
-                    <button onclick="handleMainSubmit()" class="text-xl md:text-2xl bg-[#6BCB77] p-3 rounded-xl retro-border retro-btn-active text-white hover:bg-green-500 transition-colors shadow-md h-14 md:h-16 w-14 md:w-16 flex items-center justify-center" title="確認送出">
+                    <button onclick="handleMainSubmit()" class="text-xl md:text-2xl bg-[#6BCB77] p-3 rounded-xl retro-border retro-btn-active text-white hover:bg-green-500 transition-colors shadow-md h-14 md:h-16 w-14 md:w-16 flex items-center justify-center shrink-0" title="確認送出">
                         🚀
                     </button>
                 </div>
@@ -120,29 +120,38 @@
                 <!-- 虛擬鍵盤 (可點擊可拖曳) -->
                 <div class="w-full">
                     <div class="grid grid-cols-5 gap-2 md:gap-3 mb-2 md:mb-3">
-                        <button id="key-1" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">1</button>
-                        <button id="key-2" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">2</button>
-                        <button id="key-3" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">3</button>
-                        <button id="key-4" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">4</button>
-                        <button id="key-5" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">5</button>
+                        <button id="key-1" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">1</button>
+                        <button id="key-2" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">2</button>
+                        <button id="key-3" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">3</button>
+                        <button id="key-4" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">4</button>
+                        <button id="key-5" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">5</button>
                     </div>
                     <div class="grid grid-cols-5 gap-2 md:gap-3">
-                        <button id="key-6" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">6</button>
-                        <button id="key-7" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">7</button>
-                        <button id="key-8" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">8</button>
-                        <button id="key-9" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">9</button>
-                        <button id="key-0" class="keypad-btn bg-white text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-border retro-btn-active">0</button>
+                        <button id="key-6" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">6</button>
+                        <button id="key-7" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">7</button>
+                        <button id="key-8" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">8</button>
+                        <button id="key-9" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">9</button>
+                        <button id="key-0" class="keypad-btn bg-white text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-border retro-btn-active">0</button>
                     </div>
                     <!-- 刪除鍵 -->
-                    <button onclick="pressBackspace()" class="w-full mt-3 md:mt-4 bg-orange-200 text-orange-900 font-bold py-3 md:py-4 rounded retro-border retro-btn-active text-sm md:text-base hover:bg-orange-300">
+                    <button onclick="pressBackspace()" class="w-full mt-2 md:mt-4 bg-orange-200 text-orange-900 font-bold py-2.5 md:py-4 rounded retro-border retro-btn-active text-sm md:text-base hover:bg-orange-300">
                         ⌫ 倒退刪除最後一個數字
                     </button>
+                </div>
+
+                <!-- 🏆 頁尾版權與連結 (玩家模式) -->
+                <div class="text-[10px] text-slate-400 text-center mt-1 font-bold flex justify-center items-center gap-2">
+                    <span>&copy; 2026 彭彭老師</span>
+                    <span>|</span>
+                    <a href="https://hcsunny-tw.github.io/fun/" target="_blank" class="text-blue-500 hover:text-blue-600 underline underline-offset-2 flex items-center gap-1 transition-colors pointer-events-auto">
+                        🎮 更多小遊戲
+                    </a>
                 </div>
             </div>
 
             <!-- ====== 右側/下方欄 (B)：電腦解謎(出題)控制區 ====== -->
-            <div id="host-control-panel" class="hidden shrink-0 w-full md:w-[380px] lg:w-[420px] bg-slate-50 border-t-4 md:border-t-0 border-slate-800 p-4 md:p-6 z-20 flex flex-col gap-4 justify-end md:justify-center">
-                <div class="bg-blue-100 p-3 rounded-lg border-2 border-blue-300 text-sm font-bold text-blue-900 mb-2 shadow-sm leading-relaxed">
+            <div id="host-control-panel" class="hidden shrink-0 w-full md:w-[380px] lg:w-[420px] bg-slate-50 border-t-4 md:border-t-0 border-slate-800 p-3 md:p-6 z-20 flex flex-col gap-3 md:gap-4 justify-end md:justify-center pb-2 md:pb-6">
+                <div class="bg-blue-100 p-3 rounded-lg border-2 border-blue-300 text-sm font-bold text-blue-900 mb-1 shadow-sm leading-relaxed">
                     🤖 <span class="text-blue-700">邏輯訓練出題模式：</span><br>
                     你的密碼是：<span id="host-secret-display" class="text-lg px-2 font-black text-emerald-700 bg-white border border-emerald-300 rounded shadow-inner tracking-widest mx-1"></span><br>
                     請根據電腦的猜測，給予正確的 A 與 B！
@@ -155,24 +164,33 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3 mt-1">
+                <div class="flex flex-col gap-2 md:gap-3 mt-1">
                     <div class="flex items-center justify-between bg-emerald-50 p-2 rounded-lg border-2 border-emerald-200">
-                        <span class="font-bold text-emerald-700 w-16 text-center leading-tight">A <span class="text-[10px] block font-normal">位置對</span></span>
+                        <span class="font-bold text-emerald-700 w-14 md:w-16 text-center leading-tight">A <span class="text-[10px] block font-normal">位置對</span></span>
                         <div class="flex flex-1 justify-around gap-1" id="host-a-btns">
                             <!-- JS 生成 -->
                         </div>
                     </div>
                     <div class="flex items-center justify-between bg-orange-50 p-2 rounded-lg border-2 border-orange-200">
-                        <span class="font-bold text-orange-600 w-16 text-center leading-tight">B <span class="text-[10px] block font-normal">數字對</span></span>
+                        <span class="font-bold text-orange-600 w-14 md:w-16 text-center leading-tight">B <span class="text-[10px] block font-normal">數字對</span></span>
                         <div class="flex flex-1 justify-around gap-1" id="host-b-btns">
                             <!-- JS 生成 -->
                         </div>
                     </div>
                 </div>
 
-                <button onclick="submitHostFeedback()" class="w-full mt-2 bg-[#6BCB77] text-slate-900 font-black py-3 md:py-4 rounded retro-border retro-btn-active text-lg hover:bg-green-500 transition-colors shadow-md">
+                <button onclick="submitHostFeedback()" class="w-full mt-1 md:mt-2 bg-[#6BCB77] text-slate-900 font-black py-3 md:py-4 rounded retro-border retro-btn-active text-lg hover:bg-green-500 transition-colors shadow-md">
                     📤 送出提示給電腦
                 </button>
+
+                <!-- 🏆 頁尾版權與連結 (出題模式) -->
+                <div class="text-[10px] text-slate-400 text-center mt-1 font-bold flex justify-center items-center gap-2">
+                    <span>&copy; 2026 你的名字</span>
+                    <span>|</span>
+                    <a href="https://你的網址.com" target="_blank" class="text-blue-500 hover:text-blue-600 underline underline-offset-2 flex items-center gap-1 transition-colors pointer-events-auto">
+                        🎮 更多小遊戲
+                    </a>
+                </div>
             </div>
 
         </div>
@@ -392,7 +410,7 @@
         // --- 拖曳與點擊系統 ---
         let dragKey = null;
         let dragGhost = null;
-        let dragSourceBtn = null; // 用來釋放 pointer capture，確保不當機
+        let dragSourceBtn = null;
 
         function initPointerEvents() {
             const keys = document.querySelectorAll('.keypad-btn');
@@ -401,7 +419,6 @@
             });
             document.addEventListener('pointermove', handlePointerMove, {passive: false});
             document.addEventListener('pointerup', handlePointerUp);
-            // 避免觸控取消時當掉
             document.addEventListener('pointercancel', handlePointerUp);
         }
 
@@ -413,12 +430,11 @@
             const val = btn.innerText;
             if (currentInput.includes(val)) return;
 
-            initAudio(); // 確保解鎖音效
+            initAudio();
             dragKey = val;
             dragSourceBtn = btn;
             
             try { btn.setPointerCapture(e.pointerId); } catch(err){}
-            
             createGhost(val, e.clientX, e.clientY);
         }
 
@@ -428,7 +444,7 @@
             dragGhost.innerText = val;
             dragGhost.className = "w-14 h-16 flex items-center justify-center text-4xl font-extrabold retro-font rounded-lg bg-[#FFE66D] border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] z-[9999]";
             dragGhost.style.position = 'fixed';
-            dragGhost.style.pointerEvents = 'none'; // 讓它不阻擋事件傳遞
+            dragGhost.style.pointerEvents = 'none';
             dragGhost.style.left = (x - 28) + 'px'; 
             dragGhost.style.top = (y - 32) + 'px';
             document.body.appendChild(dragGhost);
@@ -444,7 +460,6 @@
         function handlePointerUp(e) {
             if (!dragKey) return;
             
-            // 強制釋放事件，避免鎖住 UI
             if (dragSourceBtn) {
                 try { dragSourceBtn.releasePointerCapture(e.pointerId); } catch(err){}
                 dragSourceBtn = null;
@@ -510,14 +525,12 @@
                 usedHints = { sum: false, parity: false, magnitude: false };
 
             } else {
-                // 出題模式 - 完全重啟至 setup 階段
                 hostPhase = 'setup';
                 hostSecret = [];
                 compPool = [];
                 compCurrentGuess = [];
                 
                 document.getElementById('player-control-panel').classList.remove('hidden');
-                // 添加高亮提示讓使用者知道現在要幹嘛
                 document.getElementById('player-control-panel').classList.add('animate-highlight');
                 document.getElementById('host-control-panel').classList.add('hidden');
                 document.getElementById('hint-btn').classList.add('hidden');
@@ -542,11 +555,9 @@
             updateHistoryList();
         }
 
-        // --- 點擊按鈕結束視窗，必須保證完全復原 ---
         function closeGameOverModalAndReset() {
             playBeep('click');
             document.getElementById('game-over-modal').classList.add('hidden');
-            // 保證延遲一點執行，避免與觸發事件衝突
             setTimeout(() => resetGame(), 50);
         }
 
@@ -563,11 +574,9 @@
             }
             playBeep('success');
             
-            // 儲存密碼，切換至電腦推論階段
             hostSecret = [...currentInput];
             hostPhase = 'playing';
             
-            // 移除高亮提示
             document.getElementById('player-control-panel').classList.remove('animate-highlight');
             document.getElementById('player-control-panel').classList.add('hidden');
             document.getElementById('host-control-panel').classList.remove('hidden');
@@ -619,7 +628,7 @@
                 const btn = document.getElementById(`key-${i}`);
                 const numStr = String(i);
                 
-                btn.className = "keypad-btn text-xl md:text-2xl font-black py-3 md:py-4 rounded retro-font transition-all";
+                btn.className = "keypad-btn text-xl md:text-2xl font-black py-2.5 md:py-4 rounded retro-font transition-all";
                 
                 if (eliminatedNumbers.includes(numStr)) {
                     btn.classList.add('bg-slate-700', 'text-slate-500', 'opacity-40');
