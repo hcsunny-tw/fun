@@ -11,7 +11,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 載入 Tone.js (音效) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-  <script src="questions.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
@@ -68,7 +67,7 @@
   <div id="app" class="w-full max-w-5xl mx-auto min-h-screen p-2 sm:p-4 flex flex-col justify-between">
     
     <!-- 頁首標題 -->
-    <header class="text-center my-3 relative">
+    <header v-if="gameState === 'start' || gameState === 'gameover'" class="text-center my-3 relative">
       <h1 class="text-3xl sm:text-5xl font-black text-green-600 tracking-wider drop-shadow-sm flex items-center justify-center gap-2">
         <span>ㄅㄆㄇ</span>
         <span class="bg-green-500 text-white px-3 py-1 rounded-2xl text-xl sm:text-3xl">成語打字王</span>
@@ -281,7 +280,7 @@
     </main>
 
     <!-- 頁尾 -->
-    <footer class="mt-4 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-sm pb-2">
+    <footer v-if="gameState === 'start' || gameState === 'gameover'" class="mt-4 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-sm pb-2">
       <span class="text-gray-400 font-bold text-xs sm:text-sm tracking-wide">設計與製作：筱晴老師</span>
       <div class="flex gap-2 sm:gap-4 flex-wrap justify-center">
         <a href="https://www.facebook.com/profile.php?id=61578088267283" target="_blank" class="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 transition bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
