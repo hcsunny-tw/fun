@@ -339,28 +339,42 @@
           }
         };
 
+        // --- 自動注音鍵盤轉換引擎 ---
+        const zhuyinKeyMap = {
+          'ㄅ':'1', 'ㄉ':'2', 'ˇ':'3', 'ˋ':'4', 'ㄓ':'5', 'ˊ':'6', '˙':'7', 'ㄚ':'8', 'ㄞ':'9', 'ㄢ':'0', 'ㄦ':'-',
+          'ㄆ':'q', 'ㄊ':'w', 'ㄍ':'e', 'ㄐ':'r', 'ㄔ':'t', 'ㄗ':'y', 'ㄧ':'u', 'ㄛ':'i', 'ㄟ':'o', 'ㄣ':'p',
+          'ㄇ':'a', 'ㄋ':'s', 'ㄎ':'d', 'ㄑ':'f', 'ㄕ':'g', 'ㄘ':'h', 'ㄨ':'j', 'ㄜ':'k', 'ㄠ':'l', 'ㄤ':';',
+          'ㄈ':'z', 'ㄌ':'x', 'ㄏ':'c', 'ㄒ':'v', 'ㄖ':'b', 'ㄙ':'n', 'ㄩ':'m', 'ㄝ':',', 'ㄡ':'.', 'ㄥ':'/'
+        };
+
+        const processIdioms = (rawList) => {
+          return rawList.map(item => {
+            // 如果是舊版複雜格式，直接回傳
+            if (item.characters) return item; 
+            
+            // 如果是新版簡化格式，自動生成對應鍵盤按鍵
+            const characters = item.word.split('').map((char, index) => {
+              const zhuyinStr = item.zhuyin[index];
+              const keys = [];
+              let hasTone = false;
+              for (let charZ of zhuyinStr) {
+                 if (zhuyinKeyMap[charZ]) keys.push(zhuyinKeyMap[charZ]);
+                 if (['ˊ', 'ˇ', 'ˋ', '˙'].includes(charZ)) hasTone = true;
+              }
+              if (!hasTone) keys.push(' '); // 第一聲補空白鍵
+              
+              return { char, zhuyin: zhuyinStr, keys };
+            });
+            return { word: item.word, characters };
+          });
+        };
+
         // --- 題庫與進度 ---
         const idioms = ref([]);
-        // 預設內建題庫，以防 questions.js 沒載入
+        // 預設內建題庫 (改為新版極簡格式)
         const defaultIdioms = [
-          {
-            word: "一鳴驚人",
-            characters: [
-              { char: "一", zhuyin: "ㄧ", keys: ["u", " "] },
-              { char: "鳴", zhuyin: "ㄇㄧㄥˊ", keys: ["a", "u", "/", "6"] },
-              { char: "驚", zhuyin: "ㄐㄧㄥ", keys: ["r", "u", "/", " "] },
-              { char: "人", zhuyin: "ㄖㄣˊ", keys: ["b", "p", "6"] }
-            ]
-          },
-          {
-            word: "五花八門",
-            characters: [
-              { char: "五", zhuyin: "ㄨˇ", keys: ["j", "3"] },
-              { char: "花", zhuyin: "ㄏㄨㄚ", keys: ["c", "j", "8", " "] },
-              { char: "八", zhuyin: "ㄅㄚ", keys: ["1", "8", " "] },
-              { char: "門", zhuyin: "ㄇㄣˊ", keys: ["a", "p", "6"] }
-            ]
-          }
+          { word: "一鳴驚人", zhuyin: ["ㄧ", "ㄇㄧㄥˊ", "ㄐㄧㄥ", "ㄖㄣˊ"] },
+          { word: "五花八門", zhuyin: ["ㄨˇ", "ㄏㄨㄚ", "ㄅㄚ", "ㄇㄣˊ"] }
         ];
 
         const currentIdiomIndex = ref(0);
@@ -401,11 +415,16 @@
         const startGame = async () => {
           await initAudio(); // 確保音效啟動
           
+          let loadedIdioms = [];
           if(window.globalIdiomData && window.globalIdiomData.length > 0) {
-              idioms.value = window.globalIdiomData;
+              // 套用自動轉換引擎
+              loadedIdioms = processIdioms(window.globalIdiomData);
           } else {
-              idioms.value = defaultIdioms;
+              loadedIdioms = processIdioms(defaultIdioms);
           }
+
+          // 🌟 將題庫隨機洗牌 (打亂順序)
+          idioms.value = loadedIdioms.sort(() => Math.random() - 0.5);
 
           score.value = 0;
           combo.value = 0;
