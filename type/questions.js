@@ -1,5 +1,3 @@
-// 宣告一個全域變數 globalIdiomData，讓 index.html 可以讀取到它。
-// 💡 升級提示：現在你不需要自己輸入鍵盤按鍵了！只要打正常注音，系統會自動轉換。
 // 注意：輕聲請用 '˙'，一聲不用打符號。
 
 window.globalIdiomData = [
