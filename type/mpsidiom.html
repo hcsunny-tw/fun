@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ㄅㄆㄇ 成語打字王</title>
+  
+  <!-- 載入 Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- 載入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 載入 Tone.js (音效) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+    
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      touch-action: manipulation;
+      overflow-x: hidden;
+      background-color: #f0fdf4; /* 柔和的淺綠色背景 */
+    }
+
+    /* 3D 按鍵樣式 */
+    .key-3d {
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+      transition: all 0.1s ease;
+      user-select: none;
+    }
+    .key-3d.pressed, .key-3d:active {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0.1);
+    }
+
+    /* 目標按鍵提示動畫 */
+    .active-hint {
+      animation: keyPulse 1s infinite alternate;
+      z-index: 10;
+    }
+    @keyframes keyPulse {
+      0% { transform: scale(1); box-shadow: 0 4px 10px rgba(255, 200, 0, 0.4); }
+      100% { transform: scale(1.1); box-shadow: 0 8px 20px rgba(255, 200, 0, 0.8); }
+    }
+
+    /* 彈跳動畫 (COMBO) */
+    .bounce-enter-active {
+      animation: bounce-in 0.4s;
+    }
+    @keyframes bounce-in {
+      0% { transform: scale(0) rotate(10deg); opacity: 0; }
+      50% { transform: scale(1.2) rotate(-5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    /* 隱藏滾動條但可滾動 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="text-gray-800">
+  <div id="app" class="w-full max-w-5xl mx-auto min-h-screen p-2 sm:p-4 flex flex-col justify-between">
+    
+    <!-- 頁首標題 -->
+    <header class="text-center my-3 relative">
+      <h1 class="text-3xl sm:text-5xl font-black text-green-600 tracking-wider drop-shadow-sm flex items-center justify-center gap-2">
+        <span>ㄅㄆㄇ</span>
+        <span class="bg-green-500 text-white px-3 py-1 rounded-2xl text-xl sm:text-3xl">成語打字王</span>
+      </h1>
+      <!-- 好站連結 -->
+      <a href="https://contest.hlc.edu.tw/typing/content_bpmf.asp?lang=1" target="_blank" class="absolute top-0 right-0 hidden md:flex items-center gap-1 bg-teal-100 text-teal-700 hover:bg-teal-200 px-3 py-1.5 rounded-full font-bold text-sm transition shadow-sm border border-teal-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+        打字好站推薦
+      </a>
+    </header>
+
+    <!-- 主遊戲區域 -->
+    <main class="flex-1 w-full flex flex-col relative max-w-full">
+      
+      <!-- ===== 開始畫面 ===== -->
+      <div v-if="gameState === 'start'" class="flex-1 flex flex-col items-center justify-center">
+        <div class="bg-white p-6 sm:p-10 rounded-3xl shadow-xl text-center max-w-lg w-full border-4 border-green-100">
+          <h2 class="text-2xl sm:text-3xl font-black text-gray-700 mb-2">準備好挑戰了嗎？</h2>
+          <p class="text-gray-500 mb-4 font-bold">限時 180 秒，看看你能拿幾分！</p>
+          <p class="text-red-500 mb-6 font-black text-sm sm:text-base animate-pulse bg-red-50 p-2 rounded-lg border border-red-100">
+            👉 溫馨提醒：請依照指法提示，不要一指「慢」功喔！
+          </p>
+          
+          <div class="mb-6 flex flex-col gap-2 text-left bg-gray-50 p-4 rounded-xl">
+            <label class="font-bold text-gray-700 text-sm">請選擇你的年級 (影響給分標準)：</label>
+            <select v-model="selectedGrade" class="bg-white border-2 border-green-200 text-green-700 font-bold py-2 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 cursor-pointer text-lg w-full text-center">
+              <option :value="3">三年級 (入門)</option>
+              <option :value="4">四年級 (基礎)</option>
+              <option :value="5">五年級 (進階)</option>
+              <option :value="6">六年級 (挑戰)</option>
+            </select>
+          </div>
+
+          <button @click="startGame" class="w-full key-3d bg-green-500 hover:bg-green-400 text-white font-black py-4 rounded-2xl text-2xl tracking-widest border-b-4 border-green-600">
+            開始遊戲
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== 遊戲進行 / 暫停畫面 ===== -->
+      <div v-if="gameState === 'playing' || gameState === 'paused'" class="flex-1 flex flex-col w-full h-full max-h-full">
+        
+        <!-- 頂部資訊板 -->
+        <div class="w-full flex flex-wrap justify-between items-center mb-3 sm:mb-4 gap-2 bg-white p-2 sm:p-3 rounded-2xl shadow-sm border border-gray-100">
+          
+          <!-- 年級與計分 -->
+          <div class="flex gap-2 sm:gap-4 flex-1">
+            <div class="bg-blue-50 px-3 py-1 rounded-xl border border-blue-100 flex flex-col items-center justify-center min-w-[70px]">
+              <span class="text-[10px] text-blue-500 font-bold">目前年級</span>
+              <span class="text-sm sm:text-lg font-black text-blue-700">{{ selectedGrade }} 年級</span>
+            </div>
+            <div class="bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-100 flex flex-col items-center justify-center min-w-[80px]">
+              <span class="text-[10px] text-yellow-600 font-bold">SCORE</span>
+              <span class="text-xl sm:text-2xl font-black text-yellow-500 leading-none">{{ score }}</span>
+            </div>
+            <div class="bg-orange-50 px-3 py-1 rounded-xl border border-orange-100 flex flex-col items-center justify-center min-w-[70px]">
+              <span class="text-[10px] text-orange-500 font-bold">COMBO</span>
+              <span class="text-xl sm:text-2xl font-black text-orange-500 leading-none">{{ combo }}</span>
+            </div>
+          </div>
+
+          <!-- 計時器與控制按鈕 -->
+          <div class="flex items-center gap-2">
+            <div class="bg-red-50 px-4 py-1.5 rounded-xl border border-red-100 flex flex-col items-center justify-center min-w-[80px]" :class="{'animate-pulse bg-red-100': timeLeft <= 10}">
+              <span class="text-[10px] text-red-500 font-bold">TIME</span>
+              <span class="text-xl sm:text-2xl font-black text-red-600 leading-none">{{ formattedTime }}</span>
+            </div>
+            <button v-if="gameState === 'playing'" @click="pauseGame" class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 sm:p-3 rounded-xl border border-gray-200 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </button>
+            <button @click="backToMenu" class="bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-500 p-2 sm:p-3 rounded-xl border border-gray-200 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 遊戲互動區 -->
+        <div class="flex-1 w-full bg-white rounded-3xl shadow-lg border border-green-50 p-3 sm:p-6 flex flex-col relative overflow-hidden">
+          
+          <!-- 連擊特效 -->
+          <transition name="bounce">
+            <div v-if="combo > 2" class="absolute top-4 right-4 sm:top-8 sm:right-8 transform rotate-12 text-center pointer-events-none z-20">
+              <span class="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-400 to-orange-500 drop-shadow-md italic">{{ combo }}</span>
+              <span class="block text-sm sm:text-xl font-bold text-orange-400 -mt-1">COMBO!</span>
+            </div>
+          </transition>
+
+          <!-- 暫停遮罩 -->
+          <div v-if="gameState === 'paused'" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-30 rounded-3xl">
+            <h2 class="text-4xl font-black text-gray-700 mb-6 drop-shadow-sm">遊戲暫停</h2>
+            <button @click="resumeGame" class="key-3d bg-blue-500 hover:bg-blue-400 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-lg border-b-4 border-blue-700">
+              繼續遊戲
+            </button>
+          </div>
+
+          <!-- 當前成語顯示 (中間卡片區) -->
+          <div class="w-full flex justify-center items-center gap-1.5 sm:gap-4 my-2 sm:my-6 flex-wrap">
+            <div v-for="(charObj, charIndex) in currentIdiom.characters" :key="charIndex"
+                 class="relative flex flex-col items-center justify-center w-[4.5rem] h-[6rem] sm:w-[6rem] sm:h-[8rem] md:w-[7.5rem] md:h-[9.5rem] rounded-2xl sm:rounded-3xl border-4 transition-all duration-300 flex-shrink-0"
+                 :class="[
+                    charIndex < currentCharIndex ? 'bg-green-50 border-green-300' : 
+                    charIndex === currentCharIndex ? 'bg-blue-50 border-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.4)] scale-105 z-10' : 
+                    'bg-gray-50 border-gray-200'
+                 ]">
+              
+              <!-- 狀態標籤 -->
+              <div v-if="charIndex === currentCharIndex" class="absolute -top-3 sm:-top-4 bg-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                輸入中
+              </div>
+              <div v-if="charIndex < currentCharIndex" class="absolute -top-3 sm:-top-4 bg-green-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                完成
+              </div>
+
+              <!-- 國字顯示 -->
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black"
+                    :class="[
+                      charIndex < currentCharIndex ? 'text-green-600' : 
+                      charIndex === currentCharIndex ? 'text-blue-600' : 
+                      'text-gray-300'
+                    ]">
+                {{ charObj.char }}
+              </span>
+
+              <!-- 注音符號 (垂直顯示於右側，並修正聲調位置) -->
+              <div class="absolute right-1.5 sm:right-2.5 top-1/2 transform -translate-y-1/2 flex flex-col items-center justify-center">
+                <div v-for="(symbol, zIndex) in formatZhuyin(charObj.zhuyin).symbols" :key="zIndex"
+                     class="relative leading-none mb-0.5">
+                  <span class="text-[12px] sm:text-sm font-bold block"
+                        :class="charIndex === currentCharIndex ? 'text-blue-500' : 'text-gray-400'">
+                    {{ symbol }}
+                  </span>
+                  <!-- 聲調顯示 (絕對定位在最後一個符號右上角) -->
+                  <span v-if="zIndex === formatZhuyin(charObj.zhuyin).symbols.length - 1 && formatZhuyin(charObj.zhuyin).tone"
+                        class="absolute -right-2.5 sm:-right-3 -top-1.5 text-[10px] sm:text-xs font-black"
+                        :class="charIndex === currentCharIndex ? 'text-blue-500' : 'text-gray-400'">
+                    {{ formatZhuyin(charObj.zhuyin).tone }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 虛擬鍵盤區 -->
+          <div class="mt-auto w-full max-w-4xl mx-auto flex flex-col gap-1 sm:gap-2 pb-2">
+            <div v-for="(row, rowIndex) in keyboardLayout" :key="rowIndex" class="flex justify-center gap-1 sm:gap-2 w-full">
+              <div v-for="keyInfo in row" :key="keyInfo.key"
+                   class="flex-1 flex flex-col items-center justify-center rounded-lg sm:rounded-xl md:rounded-2xl relative transition-all duration-200 min-w-0"
+                   :class="[
+                     rowIndex === 4 ? 'max-w-xl' : 'max-w-[2.5rem] sm:max-w-[3.5rem] md:max-w-[4rem]',
+                     keyInfo.zhuyin === '空白鍵(一聲)' ? 'h-10 sm:h-12 md:h-14' : 'h-12 sm:h-14 md:h-16',
+                     (nextExpectedKey === keyInfo.key) ? keyInfo.activeClass + ' active-hint key-3d' : 'bg-gray-100 text-gray-400 border border-gray-200 opacity-60',
+                     { 'pressed': pressedKeyId === keyInfo.key }
+                   ]"
+              >
+                <span v-if="keyInfo.zhuyin === '空白鍵(一聲)'" class="flex flex-col items-center justify-center text-sm sm:text-base font-black">
+                  空白鍵 <span class="text-[10px] sm:text-xs font-bold opacity-80">(一聲)</span>
+                </span>
+                <span v-else class="text-base sm:text-xl md:text-2xl font-black">{{ keyInfo.zhuyin }}</span>
+                
+                <!-- 手指提示標籤 (僅在目標按鍵上顯示) -->
+                <span v-if="nextExpectedKey === keyInfo.key && keyInfo.finger" class="absolute -bottom-1.5 sm:-bottom-2 bg-white text-gray-700 text-[9px] sm:text-[10px] px-1 rounded-sm shadow-sm border border-gray-200 whitespace-nowrap">
+                  {{ keyInfo.finger }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== 遊戲結束結算畫面 ===== -->
+      <div v-else-if="gameState === 'gameover'" class="flex-1 flex flex-col items-center justify-center w-full p-2">
+        <div class="bg-white p-6 sm:p-10 rounded-[30px] shadow-2xl border-4 border-yellow-300 text-center max-w-md w-full relative">
+          <div class="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 rounded-t-[26px]"></div>
+          
+          <h2 class="text-4xl sm:text-5xl font-black text-yellow-500 mb-2 mt-4 drop-shadow-sm">時間到！</h2>
+          <p class="text-gray-500 font-bold mb-6">{{ selectedGrade }} 年級 測驗結果</p>
+          
+          <div class="bg-orange-50 rounded-3xl p-6 mb-6 border-2 border-orange-100">
+            <p class="text-gray-500 font-bold mb-1 text-sm">最終總分 (滿分基準 200)</p>
+            <p class="text-6xl font-black text-orange-500 mb-6 drop-shadow-md">{{ score }}</p>
+            
+            <div class="grid grid-cols-2 gap-3 text-left bg-white p-4 rounded-2xl border border-orange-100 shadow-sm">
+              <div>
+                <p class="text-[10px] text-gray-400 font-bold">打字速度</p>
+                <p class="text-lg font-black text-gray-700">{{ cpm }} <span class="text-xs text-gray-500">字/分</span></p>
+              </div>
+              <div>
+                <p class="text-[10px] text-gray-400 font-bold">答錯次數</p>
+                <p class="text-lg font-black text-red-500">{{ totalWrongKeys }} <span class="text-xs text-gray-500">次</span></p>
+              </div>
+              <div class="col-span-2 border-t border-gray-100 pt-2 mt-1">
+                <p class="text-[10px] text-gray-400 font-bold">最高連擊</p>
+                <p class="text-xl font-black text-yellow-500">{{ maxCombo }} <span class="text-xs text-gray-500">Combo</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <button @click="backToMenu" class="flex-1 key-3d bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-2xl border-b-4 border-gray-400">
+              回首頁
+            </button>
+            <button @click="startGame" class="flex-1 key-3d bg-green-500 hover:bg-green-400 text-white font-bold py-3 rounded-2xl border-b-4 border-green-600">
+              重新測驗
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="mt-4 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-sm pb-2">
+      <span class="text-gray-400 font-bold text-xs sm:text-sm tracking-wide">設計與製作：筱晴老師</span>
+      <div class="flex gap-2 sm:gap-4 flex-wrap justify-center">
+        <a href="https://www.facebook.com/profile.php?id=61578088267283" target="_blank" class="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 transition bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+          晴光科技實驗室
+        </a>
+        <a href="https://sites.google.com/view/sunnypeng/" target="_blank" class="text-green-600 hover:text-green-800 font-bold flex items-center gap-1 transition bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          筱晴老師的網站
+        </a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 遊戲邏輯腳本 -->
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+
+    createApp({
+      setup() {
+        // --- 遊戲狀態 ---
+        const gameState = ref('start'); // 'start', 'playing', 'paused', 'gameover'
+        const score = ref(0);
+        const combo = ref(0);
+        const maxCombo = ref(0);
+        const timeLeft = ref(180);
+        let timer = null;
+        const selectedGrade = ref(3); // 預設 3 年級
+        
+        // --- 統計數據 ---
+        const totalCorrectKeys = ref(0);
+        const totalWrongKeys = ref(0);
+        
+        // --- 音效系統 (Tone.js) ---
+        let synth = null;
+        let errorSynth = null;
+        let completeSynth = null;
+
+        const initAudio = async () => {
+          await Tone.start();
+          if(!synth) {
+            synth = new Tone.Synth({
+              oscillator: { type: "triangle" },
+              envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+            
+            errorSynth = new Tone.MembraneSynth({
+              pitchDecay: 0.05, octaves: 2, oscillator: { type: "square" },
+              envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 }
+            }).toDestination();
+
+            completeSynth = new Tone.PolySynth(Tone.Synth, {
+              oscillator: { type: "sine" },
+              envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 1 }
+            }).toDestination();
+          }
+        };
+
+        // --- 題庫與進度 ---
+        const idioms = ref([]);
+        // 預設內建題庫，以防 questions.js 沒載入
+        const defaultIdioms = [
+          {
+            word: "一鳴驚人",
+            characters: [
+              { char: "一", zhuyin: "ㄧ", keys: ["u", " "] },
+              { char: "鳴", zhuyin: "ㄇㄧㄥˊ", keys: ["a", "u", "/", "6"] },
+              { char: "驚", zhuyin: "ㄐㄧㄥ", keys: ["r", "u", "/", " "] },
+              { char: "人", zhuyin: "ㄖㄣˊ", keys: ["b", "p", "6"] }
+            ]
+          },
+          {
+            word: "五花八門",
+            characters: [
+              { char: "五", zhuyin: "ㄨˇ", keys: ["j", "3"] },
+              { char: "花", zhuyin: "ㄏㄨㄚ", keys: ["c", "j", "8", " "] },
+              { char: "八", zhuyin: "ㄅㄚ", keys: ["1", "8", " "] },
+              { char: "門", zhuyin: "ㄇㄣˊ", keys: ["a", "p", "6"] }
+            ]
+          }
+        ];
+
+        const currentIdiomIndex = ref(0);
+        const currentCharIndex = ref(0);
+        const currentKeyIndex = ref(0);
+        const pressedKeyId = ref(null);
+
+        // --- 輔助計算 ---
+        const currentIdiom = computed(() => idioms.value[currentIdiomIndex.value] || defaultIdioms[0]);
+        const currentChar = computed(() => currentIdiom.value.characters[currentCharIndex.value] || defaultIdioms[0].characters[0]);
+        const nextExpectedKey = computed(() => currentChar.value.keys[currentKeyIndex.value]);
+
+        const formattedTime = computed(() => {
+          const m = Math.floor(timeLeft.value / 60);
+          const s = timeLeft.value % 60;
+          return `${m}:${s.toString().padStart(2, '0')}`;
+        });
+
+        // 根據總輸入正確按鍵數計算 CPM (每分鐘輸入字元數)
+        const cpm = computed(() => {
+          const minutesPassed = (180 - timeLeft.value) / 60;
+          if (minutesPassed === 0) return 0;
+          return Math.round(totalCorrectKeys.value / minutesPassed);
+        });
+
+        // --- 計分系統 (依照年級設定權重) ---
+        // 目標：3分鐘打完，各年級達標大約為 200 分。
+        const getPointsPerKey = () => {
+          const g = Number(selectedGrade.value);
+          if (g === 3) return 4.5;
+          if (g === 4) return 2.7;
+          if (g === 5) return 1.9;
+          if (g === 6) return 1.5;
+          return 2;
+        };
+
+        // --- 遊戲控制 ---
+        const startGame = async () => {
+          await initAudio(); // 確保音效啟動
+          
+          if(window.globalIdiomData && window.globalIdiomData.length > 0) {
+              idioms.value = window.globalIdiomData;
+          } else {
+              idioms.value = defaultIdioms;
+          }
+
+          score.value = 0;
+          combo.value = 0;
+          maxCombo.value = 0;
+          timeLeft.value = 180;
+          totalCorrectKeys.value = 0;
+          totalWrongKeys.value = 0;
+          currentIdiomIndex.value = 0;
+          currentCharIndex.value = 0;
+          currentKeyIndex.value = 0;
+          gameState.value = 'playing';
+          
+          clearInterval(timer);
+          timer = setInterval(() => {
+            if (timeLeft.value > 0) {
+              timeLeft.value--;
+            } else {
+              endGame();
+            }
+          }, 1000);
+        };
+
+        const pauseGame = () => {
+          gameState.value = 'paused';
+          clearInterval(timer);
+        };
+
+        const resumeGame = () => {
+          gameState.value = 'playing';
+          timer = setInterval(() => {
+            if (timeLeft.value > 0) timeLeft.value--;
+            else endGame();
+          }, 1000);
+        };
+
+        const endGame = () => {
+          gameState.value = 'gameover';
+          clearInterval(timer);
+        };
+
+        const backToMenu = () => {
+          gameState.value = 'start';
+          clearInterval(timer);
+        };
+
+        // 注音符號與聲調拆解邏輯
+        const formatZhuyin = (zhuyinStr) => {
+          const tones = ['ˊ', 'ˇ', 'ˋ', '˙'];
+          let symbols = [];
+          let tone = '';
+          for (let char of zhuyinStr) {
+            if (tones.includes(char)) {
+              tone = char;
+            } else {
+              symbols.push(char);
+            }
+          }
+          return { symbols, tone };
+        };
+
+        // --- 鍵盤監聽與邏輯 ---
+        const handleKeydown = (event) => {
+          if (gameState.value !== 'playing') return;
+
+          const ignoreKeys = ['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Enter', 'Backspace', 'Escape', 'CapsLock'];
+          if (ignoreKeys.includes(event.key)) return;
+
+          const pressedKey = event.key.toLowerCase();
+          pressedKeyId.value = pressedKey;
+          
+          setTimeout(() => { pressedKeyId.value = null; }, 150);
+
+          if (pressedKey === nextExpectedKey.value) {
+            // 答對了
+            if(synth) {
+              // 音高會隨連擊微微上升
+              const baseNotes = ["C4", "D4", "E4", "G4", "A4"];
+              const note = baseNotes[Math.min(Math.floor(combo.value / 3), baseNotes.length - 1)];
+              synth.triggerAttackRelease(note, "16n");
+            }
+
+            currentKeyIndex.value++;
+            totalCorrectKeys.value++;
+            combo.value++;
+            if (combo.value > maxCombo.value) maxCombo.value = combo.value;
+            
+            // 計算得分，一律轉為整數
+            const basePoint = getPointsPerKey();
+            const comboBonus = Math.floor(combo.value / 10) * 0.5; 
+            score.value = Math.round(score.value + basePoint + comboBonus);
+            
+            // 檢查字是否打完
+            if (currentKeyIndex.value >= currentChar.value.keys.length) {
+              currentKeyIndex.value = 0;
+              currentCharIndex.value++;
+              
+              if(completeSynth) completeSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+              
+              // 檢查成語是否打完
+              if (currentCharIndex.value >= currentIdiom.value.characters.length) {
+                currentCharIndex.value = 0;
+                currentIdiomIndex.value = (currentIdiomIndex.value + 1) % idioms.value.length;
+              }
+            }
+          } else {
+            // 答錯了
+            if (event.key.length === 1) { // 確保是有效的單字符輸入
+              if(errorSynth) errorSynth.triggerAttackRelease("C2", "16n");
+              combo.value = 0;
+              totalWrongKeys.value++;
+              
+              // 答錯倒扣 (權重的 0.8 倍，保證整數)
+              const penalty = getPointsPerKey() * 0.8;
+              score.value = Math.max(0, Math.round(score.value - penalty)); 
+            }
+          }
+        };
+
+        onMounted(() => {
+          window.addEventListener('keydown', handleKeydown);
+        });
+        onUnmounted(() => {
+          window.removeEventListener('keydown', handleKeydown);
+          clearInterval(timer);
+        });
+
+        // --- 虛擬鍵盤版面設定 ---
+        // 定義手指顏色與樣式
+        const c_lPinky = 'bg-green-100 text-green-700 border-green-300';
+        const c_lRing = 'bg-purple-100 text-purple-700 border-purple-300';
+        const c_lMiddle = 'bg-yellow-100 text-yellow-700 border-yellow-300';
+        const c_lIndex = 'bg-orange-100 text-orange-700 border-orange-300';
+        const c_rIndex = 'bg-orange-100 text-orange-700 border-orange-300';
+        const c_rMiddle = 'bg-yellow-100 text-yellow-700 border-yellow-300';
+        const c_rRing = 'bg-purple-100 text-purple-700 border-purple-300';
+        const c_rPinky = 'bg-green-100 text-green-700 border-green-300';
+
+        const keyboardLayout = [
+          [
+            { key: '1', zhuyin: 'ㄅ', activeClass: c_lPinky, finger: '小指' },
+            { key: '2', zhuyin: 'ㄉ', activeClass: c_lRing, finger: '無名指' },
+            { key: '3', zhuyin: 'ˇ', activeClass: c_lMiddle, finger: '中指' },
+            { key: '4', zhuyin: 'ˋ', activeClass: c_lIndex, finger: '食指' },
+            { key: '5', zhuyin: 'ㄓ', activeClass: c_lIndex, finger: '食指' },
+            { key: '6', zhuyin: 'ˊ', activeClass: c_rIndex, finger: '食指' },
+            { key: '7', zhuyin: '˙', activeClass: c_rIndex, finger: '食指' },
+            { key: '8', zhuyin: 'ㄚ', activeClass: c_rMiddle, finger: '中指' },
+            { key: '9', zhuyin: 'ㄞ', activeClass: c_rRing, finger: '無名指' },
+            { key: '0', zhuyin: 'ㄢ', activeClass: c_rPinky, finger: '小指' },
+            { key: '-', zhuyin: 'ㄦ', activeClass: c_rPinky, finger: '小指' }
+          ],
+          [
+            { key: 'q', zhuyin: 'ㄆ', activeClass: c_lPinky, finger: '小指' },
+            { key: 'w', zhuyin: 'ㄊ', activeClass: c_lRing, finger: '無名指' },
+            { key: 'e', zhuyin: 'ㄍ', activeClass: c_lMiddle, finger: '中指' },
+            { key: 'r', zhuyin: 'ㄐ', activeClass: c_lIndex, finger: '食指' },
+            { key: 't', zhuyin: 'ㄔ', activeClass: c_lIndex, finger: '食指' },
+            { key: 'y', zhuyin: 'ㄗ', activeClass: c_rIndex, finger: '食指' },
+            { key: 'u', zhuyin: 'ㄧ', activeClass: c_rIndex, finger: '食指' },
+            { key: 'i', zhuyin: 'ㄛ', activeClass: c_rMiddle, finger: '中指' },
+            { key: 'o', zhuyin: 'ㄟ', activeClass: c_rRing, finger: '無名指' },
+            { key: 'p', zhuyin: 'ㄣ', activeClass: c_rPinky, finger: '小指' }
+          ],
+          [
+            { key: 'a', zhuyin: 'ㄇ', activeClass: c_lPinky, finger: '小指' },
+            { key: 's', zhuyin: 'ㄋ', activeClass: c_lRing, finger: '無名指' },
+            { key: 'd', zhuyin: 'ㄎ', activeClass: c_lMiddle, finger: '中指' },
+            { key: 'f', zhuyin: 'ㄑ', activeClass: c_lIndex, finger: '食指' },
+            { key: 'g', zhuyin: 'ㄕ', activeClass: c_lIndex, finger: '食指' },
+            { key: 'h', zhuyin: 'ㄘ', activeClass: c_rIndex, finger: '食指' },
+            { key: 'j', zhuyin: 'ㄨ', activeClass: c_rIndex, finger: '食指' },
+            { key: 'k', zhuyin: 'ㄜ', activeClass: c_rMiddle, finger: '中指' },
+            { key: 'l', zhuyin: 'ㄠ', activeClass: c_rRing, finger: '無名指' },
+            { key: ';', zhuyin: 'ㄤ', activeClass: c_rPinky, finger: '小指' }
+          ],
+          [
+            { key: 'z', zhuyin: 'ㄈ', activeClass: c_lPinky, finger: '小指' },
+            { key: 'x', zhuyin: 'ㄌ', activeClass: c_lRing, finger: '無名指' },
+            { key: 'c', zhuyin: 'ㄏ', activeClass: c_lMiddle, finger: '中指' },
+            { key: 'v', zhuyin: 'ㄒ', activeClass: c_lIndex, finger: '食指' },
+            { key: 'b', zhuyin: 'ㄖ', activeClass: c_lIndex, finger: '食指' },
+            { key: 'n', zhuyin: 'ㄙ', activeClass: c_rIndex, finger: '食指' },
+            { key: 'm', zhuyin: 'ㄩ', activeClass: c_rIndex, finger: '食指' },
+            { key: ',', zhuyin: 'ㄝ', activeClass: c_rMiddle, finger: '中指' },
+            { key: '.', zhuyin: 'ㄡ', activeClass: c_rRing, finger: '無名指' },
+            { key: '/', zhuyin: 'ㄥ', activeClass: c_rPinky, finger: '小指' }
+          ],
+          [
+            { key: ' ', zhuyin: '空白鍵(一聲)', activeClass: 'bg-blue-100 text-blue-600 border-blue-300', finger: '大拇指' }
+          ]
+        ];
+
+        return {
+          gameState, score, combo, maxCombo, formattedTime, timeLeft, selectedGrade,
+          currentIdiom, currentCharIndex, nextExpectedKey, pressedKeyId, keyboardLayout,
+          totalCorrectKeys, totalWrongKeys, cpm,
+          startGame, pauseGame, resumeGame, backToMenu, formatZhuyin
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
