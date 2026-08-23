@@ -185,23 +185,6 @@
     </div>
   </div>
 
-  <!-- 錯誤回報視窗 -->
-  <div id="report-modal" class="fixed inset-0 bg-[#0f2416]/90 z-[70] flex flex-col items-center justify-center hidden p-4 sm:p-6 transition-all">
-    <div class="w-full max-w-sm kraft-paper !border-4 !shadow-2xl p-6 relative overflow-hidden">
-      <div class="absolute top-0 left-0 w-full h-3 bg-[#5c4033] rounded-t"></div>
-      <div class="absolute bottom-0 left-0 w-full h-3 bg-[#5c4033] rounded-b"></div>
-      
-      <h3 class="text-[#8b5a2b] font-bold text-center mb-2 mt-2 text-2xl font-pixel tracking-wider"><i class="bi bi-envelope-paper"></i> 錯誤回報</h3>
-      <p class="text-[#5c4033] text-sm text-center mb-4 font-bold">如果發現有錯字、選項異常或任何建議，請在這裡告訴村長喔！</p>
-      
-      <textarea id="report-message" rows="4" placeholder="請描述您遇到的問題..." class="w-full bg-[#fdf5e6] border-2 border-[#8b5a2b] text-[#3e2723] p-3 rounded mb-4 focus:outline-none focus:border-[#004d00] font-bold resize-none shadow-inner"></textarea>
-
-      <div class="flex gap-3 justify-center">
-        <button onclick="closeReportModal()" class="wood-btn text-lg py-2 px-4 rounded transition-all font-bold w-1/2">取消</button>
-        <button id="submit-report-btn" onclick="submitReport()" class="bg-[#8b2b2b] hover:bg-[#a53b3b] border-4 border-b-6 border-[#5c1a1a] text-white text-lg py-2 px-4 rounded transition-all font-bold w-1/2 active:translate-y-1 active:border-b-4">送出</button>
-      </div>
-    </div>
-  </div>
 
   <!-- 遊戲主畫面容器 -->
   <div id="game-container" class="w-full max-w-md kraft-paper p-4 sm:p-5 relative overflow-hidden hidden transition-all duration-300 mt-8 sm:mt-0 z-10">
@@ -290,7 +273,7 @@
     <a href="https://sites.google.com/view/sunnypeng/" target="_blank" class="footer-link inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold transition-all text-sm sm:text-base font-pixel tracking-widest shadow-lg w-full sm:w-auto">
       <i class="bi bi-house-heart-fill text-lg text-pink-300"></i> 造訪老師的魔法小島
     </a>
-    <a href="https://sites.google.com/view/sunnypeng/" target="_blank" class="footer-link inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold transition-all text-sm sm:text-base font-pixel tracking-widest shadow-lg w-full sm:w-auto !bg-[#8b2b2b] !border-[#5c1a1a] hover:!bg-[#a53b3b]">
+    <a href="https://forms.gle/u8XGoFkEc8QqARcYA" target="_blank" class="footer-link inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold transition-all text-sm sm:text-base font-pixel tracking-widest shadow-lg w-full sm:w-auto !bg-[#8b2b2b] !border-[#5c1a1a] hover:!bg-[#a53b3b]">
       <i class="bi bi-bug-fill text-lg text-yellow-300"></i> 錯誤回報
     </a>
   </div>
