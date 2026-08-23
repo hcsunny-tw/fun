@@ -1,137 +1,137 @@
 [
-{
-"title": "文字森林",
-"image": "https://hcsunny-tw.github.io/fun/img/wordforest.png",
-"link": "https://hcsunny-tw.github.io/fun/wordforest.html",
-"category": "國語遊戲",
-"description": "在森林情境中認識生字與詞語，透過關卡收集道具方式練習國語詞彙。",
-"tags": ["國語", "生字", "遊戲"],
-"date": "2026-05"
-},
-{
-"title": "注音煉金術",
-"image": "https://hcsunny-tw.github.io/fun/img/mpsmix.jpg",
-"link": "https://hcsunny-tw.github.io/fun/mpsmix.html",
-"category": "國語遊戲",
-"description": "以煉金合成玩法練習注音符號拼讀，將聲符與韻符組合成正確發音。",
-"tags": ["注音", "拼讀", "遊戲"],
-"date": "2025-12"
-},
-{
-"title": "夜市遊戲(注音)",
-"image": "https://hcsunny-tw.github.io/fun/img/nightmarketmps.jpg",
-"link": "https://hcsunny-tw.github.io/fun/nightmarketmps.html",
-"category": "國語遊戲",
-"description": "在台灣傳統夜市攤位的情境中，練習注音符號的辨識與拼讀。",
-"tags": ["注音", "情境", "遊戲"],
-"date": "2025-12"
-},
-{
-"title": "聲調跑酷",
-"image": "https://hcsunny-tw.github.io/fun/img/toneparkour.jpg",
-"link": "https://hcsunny-tw.github.io/fun/toneparkour.html",
-"category": "國語遊戲",
-"description": "節奏明快的聲調辨識遊戲，看準聲調快速反應，享受跑酷樂趣。",
-"tags": ["聲調", "反應力", "注音"],
-"date": "2025-12"
-},
-{
-"title": "同音字宇宙",
-"image": "https://hcsunny-tw.github.io/fun/img/worduniverse.jpg",
-"link": "https://hcsunny-tw.github.io/fun/worduniverse.html",
-"category": "國語遊戲",
-"description": "探索廣闊的同音字宇宙，辨識並收集正確的國字星體。",
-"tags": ["字音字形", "探索"],
-"date": "2026-01"
-},
-{
-"title": "九九乘法占地遊戲",
-"image": "https://hcsunny-tw.github.io/fun/img/99.jpg",
-"link": "https://hcsunny-tw.github.io/fun/99/",
-"category": "數學遊戲",
-"description": "兩人對戰的陣地佔領遊戲，透過熟練九九乘法來擴張自己的領地。",
-"tags": ["乘法", "對戰策略"],
-"date": "2025-11"
-},
-{
-"title": "1A2B邏輯王",
-"image": "https://hcsunny-tw.github.io/fun/img/1a2b.jpg",
-"link": "https://hcsunny-tw.github.io/fun/1a2b.html",
-"category": "數學遊戲",
-"description": "你能不能成為推理邏輯大師呢？快來挑戰。",
-"tags": ["數字推理", "燒腦"],
-"date": "2026-07"
-},
-{
-"title": "胡麻小廚神",
-"image": "https://hcsunny-tw.github.io/fun/img/sesame-chef.jpg",
-"link": "https://hcsunny-tw.github.io/fun/sesame-chef.html",
-"category": "其他遊戲",
-"description": "化身小廚師，依照顧客需求快速備料，考驗記憶力與手眼協調。",
-"tags": ["校訂", "反應"],
-"date": "2025-12"
-},
-{
-"title": "英文找找單字",
-"image": "https://hcsunny-tw.github.io/fun/img/img_wordsearch.png",
-"link": "https://hcsunny-tw.github.io/fun/wordsearch.html",
-"category": "其他遊戲",
-"description": "經典的英文單字搜尋遊戲 (Word Search)，在字母矩陣中找出隱藏詞彙。",
-"tags": ["英文", "觀察力"],
-"date": "2025-11"
-},
-{
-"title": "字首字尾單字遊戲",
-"image": "https://hcsunny-tw.github.io/fun/img/img_HeadTailGame.PNG",
-"link": "https://hcsunny-tw.github.io/fun/HeadTailGame.html",
-"category": "其他遊戲",
-"description": "接龍式的英文單字挑戰，利用前一個字的字尾作為下一個字的字首。",
-"tags": ["英文", "字彙量"],
-"date": "2026-05"
-},
-{
-"title": "跳跳Tempo",
-"image": "https://hcsunny-tw.github.io/fun/img/jumptempo.jpg",
-"link": "https://hcsunny-tw.github.io/tools/jumptempo.html",
-"category": "工具區",
-"description": "課堂破冰小工具，類似綜藝節目的二選一跳躍節奏遊戲板。",
-"tags": ["課堂互動", "破冰"],
-"date": "2026-01"
-},
-{
-"title": "英文找找單生成器",
-"image": "https://hcsunny-tw.github.io/fun/img/word-search-generator.jpg",
-"link": "https://hcsunny-tw.github.io/tools/word-search-generator.html",
-"category": "工具區",
-"description": "教師實用工具，輸入單字列表即可一鍵生成 Word Search 學習單。",
-"tags": ["教師工具", "學習單"],
-"date": "2026-03"
-},
-{
-"title": "班級音量小精靈",
-"image": "https://hcsunny-tw.github.io/fun/img/dbtracker.jpg",
-"link": "https://hcsunny-tw.github.io/tools/dbtracker.html",
-"category": "工具區",
-"description": "視覺化班級音量管理工具，音量過大時小精靈會有對應提示。",
-"tags": ["班級經營", "音量控制"],
-"date": "2026-04"
-},
-{
-"title": "考試看板",
-"image": "https://hcsunny-tw.github.io/fun/img/examtime.PNG",
-"link": "https://hcsunny-tw.github.io/tools/examtime.html",
-"category": "工具區",
-"description": "考試專用的大時鐘與資訊看板，清楚顯示剩餘時間與注意事項。",
-"tags": ["考試", "計時器"],
-"date": "2025-08"
-},
-{
-"title": "作業管理系統",
-"image": "https://hcsunny-tw.github.io/fun/img/hwcheck.JPG",
-"link": "https://hcsunny906.blogspot.com/2026/02/30-g.html",
-"category": "工具區",
-"description": "簡單明瞭的作業缺交登記與查詢系統，方便教師追蹤繳交進度。",
-"tags": ["班務", "追蹤"],
-"date": "2025-08"
-}
+  {
+    "title": "1A2B邏輯王",
+    "image": "https://hcsunny-tw.github.io/fun/img/1a2b.jpg",
+    "link": "https://hcsunny-tw.github.io/fun/1a2b.html",
+    "category": "數學遊戲",
+    "description": "你能不能成為推理邏輯大師呢？快來挑戰。",
+    "tags": ["數字推理", "燒腦"],
+    "date": "2026-07"
+  },
+  {
+    "title": "文字森林",
+    "image": "https://hcsunny-tw.github.io/fun/img/wordforest.png",
+    "link": "https://hcsunny-tw.github.io/fun/wordforest.html",
+    "category": "國語遊戲",
+    "description": "在森林情境中認識生字與詞語，透過關卡收集道具方式練習國語詞彙。",
+    "tags": ["國語", "生字", "遊戲"],
+    "date": "2026-05"
+  },
+  {
+    "title": "字首字尾單字遊戲",
+    "image": "https://hcsunny-tw.github.io/fun/img/img_HeadTailGame.PNG",
+    "link": "https://hcsunny-tw.github.io/fun/HeadTailGame.html",
+    "category": "其他遊戲",
+    "description": "接龍式的英文單字挑戰，利用前一個字的字尾作為下一個字的字首。",
+    "tags": ["英文", "字彙量"],
+    "date": "2026-05"
+  },
+  {
+    "title": "班級音量小精靈",
+    "image": "https://hcsunny-tw.github.io/fun/img/dbtracker.jpg",
+    "link": "https://hcsunny-tw.github.io/tools/dbtracker.html",
+    "category": "工具區",
+    "description": "視覺化班級音量管理工具，音量過大時小精靈會有對應提示。",
+    "tags": ["班級經營", "音量控制"],
+    "date": "2026-04"
+  },
+  {
+    "title": "英文找找單生成器",
+    "image": "https://hcsunny-tw.github.io/fun/img/word-search-generator.jpg",
+    "link": "https://hcsunny-tw.github.io/tools/word-search-generator.html",
+    "category": "工具區",
+    "description": "教師實用工具，輸入單字列表即可一鍵生成 Word Search 學習單。",
+    "tags": ["教師工具", "學習單"],
+    "date": "2026-03"
+  },
+  {
+    "title": "同音字宇宙",
+    "image": "https://hcsunny-tw.github.io/fun/img/worduniverse.jpg",
+    "link": "https://hcsunny-tw.github.io/fun/worduniverse.html",
+    "category": "國語遊戲",
+    "description": "探索廣闊的同音字宇宙，辨識並收集正確的國字星體。",
+    "tags": ["字音字形", "探索"],
+    "date": "2026-01"
+  },
+  {
+    "title": "跳跳Tempo",
+    "image": "https://hcsunny-tw.github.io/fun/img/jumptempo.jpg",
+    "link": "https://hcsunny-tw.github.io/tools/jumptempo.html",
+    "category": "工具區",
+    "description": "課堂破冰小工具，類似綜藝節目的二選一跳躍節奏遊戲板。",
+    "tags": ["課堂互動", "破冰"],
+    "date": "2026-01"
+  },
+  {
+    "title": "注音煉金術",
+    "image": "https://hcsunny-tw.github.io/fun/img/mpsmix.jpg",
+    "link": "https://hcsunny-tw.github.io/fun/mpsmix.html",
+    "category": "國語遊戲",
+    "description": "以煉金合成玩法練習注音符號拼讀，將聲符與韻符組合成正確發音。",
+    "tags": ["注音", "拼讀", "遊戲"],
+    "date": "2025-12"
+  },
+  {
+    "title": "夜市遊戲(注音)",
+    "image": "https://hcsunny-tw.github.io/fun/img/nightmarketmps.jpg",
+    "link": "https://hcsunny-tw.github.io/fun/nightmarketmps.html",
+    "category": "國語遊戲",
+    "description": "在台灣傳統夜市攤位的情境中，練習注音符號的辨識與拼讀。",
+    "tags": ["注音", "情境", "遊戲"],
+    "date": "2025-12"
+  },
+  {
+    "title": "聲調跑酷",
+    "image": "https://hcsunny-tw.github.io/fun/img/toneparkour.jpg",
+    "link": "https://hcsunny-tw.github.io/fun/toneparkour.html",
+    "category": "國語遊戲",
+    "description": "節奏明快的聲調辨識遊戲，看準聲調快速反應，享受跑酷樂趣。",
+    "tags": ["聲調", "反應力", "注音"],
+    "date": "2025-12"
+  },
+  {
+    "title": "胡麻小廚神",
+    "image": "https://hcsunny-tw.github.io/fun/img/sesame-chef.jpg",
+    "link": "https://hcsunny-tw.github.io/fun/sesame-chef.html",
+    "category": "其他遊戲",
+    "description": "化身小廚師，依照顧客需求快速備料，考驗記憶力與手眼協調。",
+    "tags": ["校訂", "反應"],
+    "date": "2025-12"
+  },
+  {
+    "title": "九九乘法占地遊戲",
+    "image": "https://hcsunny-tw.github.io/fun/img/99.jpg",
+    "link": "https://hcsunny-tw.github.io/fun/99/",
+    "category": "數學遊戲",
+    "description": "兩人對戰的陣地佔領遊戲，透過熟練九九乘法來擴張自己的領地。",
+    "tags": ["乘法", "對戰策略"],
+    "date": "2025-11"
+  },
+  {
+    "title": "英文找找單字",
+    "image": "https://hcsunny-tw.github.io/fun/img/img_wordsearch.png",
+    "link": "https://hcsunny-tw.github.io/fun/wordsearch.html",
+    "category": "其他遊戲",
+    "description": "經典的英文單字搜尋遊戲 (Word Search)，在字母矩陣中找出隱藏詞彙。",
+    "tags": ["英文", "觀察力"],
+    "date": "2025-11"
+  },
+  {
+    "title": "考試看板",
+    "image": "https://hcsunny-tw.github.io/fun/img/examtime.PNG",
+    "link": "https://hcsunny-tw.github.io/tools/examtime.html",
+    "category": "工具區",
+    "description": "考試專用的大時鐘與資訊看板，清楚顯示剩餘時間與注意事項。",
+    "tags": ["考試", "計時器"],
+    "date": "2025-08"
+  },
+  {
+    "title": "作業管理系統",
+    "image": "https://hcsunny-tw.github.io/fun/img/hwcheck.JPG",
+    "link": "https://hcsunny906.blogspot.com/2026/02/30-g.html",
+    "category": "工具區",
+    "description": "簡單明瞭的作業缺交登記與查詢系統，方便教師追蹤繳交進度。",
+    "tags": ["班務", "追蹤"],
+    "date": "2025-08"
+  }
 ]
