@@ -56,7 +56,7 @@
   {
     "title": "1A2B邏輯王",
     "image": "https://hcsunny-tw.github.io/fun/img/1a2b.jpg",
-    "link": "https://hcsunny-tw.github.io/fun/1a2b.html",
+    "link": "https://hcsunny-tw.github.io/fun/math/1a2b.html",
     "category": "數學遊戲",
     "description": "你能不能成為推理邏輯大師呢？快來挑戰。",
     "tags": ["數字推理", "燒腦"],
@@ -65,7 +65,7 @@
   {
     "title": "文字森林",
     "image": "https://hcsunny-tw.github.io/fun/img/wordforest.png",
-    "link": "https://hcsunny-tw.github.io/fun/wordforest.html",
+    "link": "https://hcsunny-tw.github.io/fun/zh/wordforest.html",
     "category": "國語遊戲",
     "description": "在森林情境中認識生字與詞語，透過關卡收集道具方式練習國語詞彙。",
     "tags": ["國語", "生字", "遊戲"],
@@ -74,7 +74,7 @@
   {
     "title": "字首字尾單字遊戲",
     "image": "https://hcsunny-tw.github.io/fun/img/img_HeadTailGame.PNG",
-    "link": "https://hcsunny-tw.github.io/fun/HeadTailGame.html",
+    "link": "https://hcsunny-tw.github.io/fun/en/HeadTailGame.html",
     "category": "其他遊戲",
     "description": "接龍式的英文單字挑戰，利用前一個字的字尾作為下一個字的字首。",
     "tags": ["英文", "字彙量"],
@@ -101,7 +101,7 @@
   {
     "title": "同音字宇宙",
     "image": "https://hcsunny-tw.github.io/fun/img/worduniverse.jpg",
-    "link": "https://hcsunny-tw.github.io/fun/worduniverse.html",
+    "link": "https://hcsunny-tw.github.io/fun/zh/worduniverse.html",
     "category": "國語遊戲",
     "description": "探索廣闊的同音字宇宙，辨識並收集正確的國字星體。",
     "tags": ["字音字形", "探索"],
@@ -119,7 +119,7 @@
   {
     "title": "注音煉金術",
     "image": "https://hcsunny-tw.github.io/fun/img/mpsmix.jpg",
-    "link": "https://hcsunny-tw.github.io/fun/mpsmix.html",
+    "link": "https://hcsunny-tw.github.io/fun/mps/mpsmix.html",
     "category": "國語遊戲",
     "description": "以煉金合成玩法練習注音符號拼讀，將聲符與韻符組合成正確發音。",
     "tags": ["注音", "拼讀", "遊戲"],
@@ -128,7 +128,7 @@
   {
     "title": "夜市遊戲(注音)",
     "image": "https://hcsunny-tw.github.io/fun/img/nightmarketmps.jpg",
-    "link": "https://hcsunny-tw.github.io/fun/nightmarketmps.html",
+    "link": "https://hcsunny-tw.github.io/fun/mps/nightmarket.html",
     "category": "國語遊戲",
     "description": "在台灣傳統夜市攤位的情境中，練習注音符號的辨識與拼讀。",
     "tags": ["注音", "情境", "遊戲"],
@@ -137,7 +137,7 @@
   {
     "title": "聲調跑酷",
     "image": "https://hcsunny-tw.github.io/fun/img/toneparkour.jpg",
-    "link": "https://hcsunny-tw.github.io/fun/toneparkour.html",
+    "link": "https://hcsunny-tw.github.io/fun/mps/toneparkour.html",
     "category": "國語遊戲",
     "description": "節奏明快的聲調辨識遊戲，看準聲調快速反應，享受跑酷樂趣。",
     "tags": ["聲調", "反應力", "注音"],
@@ -146,7 +146,7 @@
   {
     "title": "胡麻小廚神",
     "image": "https://hcsunny-tw.github.io/fun/img/sesame-chef.jpg",
-    "link": "https://hcsunny-tw.github.io/fun/sesame-chef.html",
+    "link": "https://hcsunny-tw.github.io/fun/sl/sesame-chef.html",
     "category": "其他遊戲",
     "description": "化身小廚師，依照顧客需求快速備料，考驗記憶力與手眼協調。",
     "tags": ["校訂", "反應"],
@@ -164,7 +164,7 @@
   {
     "title": "英文找找單字",
     "image": "https://hcsunny-tw.github.io/fun/img/wordsearch.png",
-    "link": "https://hcsunny-tw.github.io/fun/wordsearch.html",
+    "link": "https://hcsunny-tw.github.io/fun/en/wordsearch.html",
     "category": "其他遊戲",
     "description": "經典的英文單字搜尋遊戲 (Word Search)，在字母矩陣中找出隱藏詞彙。",
     "tags": ["英文", "觀察力"],
