@@ -117,12 +117,14 @@
         /* 敵人單詞樣式 */
         .enemy-word {
             position: absolute;
-            font-size: 1.8rem;
+            font-size: 2.5rem; /* 將原本 1.8rem 放大到 2.5rem */
+            font-weight: bold; /* 加上粗體讓字母更清晰 */
             transition: top 0.1s linear;
-            padding: 5px 10px;
+            padding: 5px 15px;
             background: rgba(0, 0, 0, 0.75);
             border: 1px solid transparent;
-            border-radius: 4px;
+            border-radius: 8px; /* 圓角調整 */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6); /* 加上陰影增加立體感 */
         }
 
         .typed-char {
@@ -144,17 +146,7 @@
             border-color: var(--neon-blue);
         }
 
-        /* Boss、Combo 與 Hint 樣式 */
-        .boss-enemy {
-            color: #ff00ff;
-            text-shadow: 0 0 20px #ff00ff;
-            font-size: 2.5rem;
-            font-weight: 900;
-            border: 2px dashed #ff00ff;
-            padding: 10px 20px;
-            white-space: nowrap;
-        }
-
+        /* Combo 與 Hint 樣式 */
         .combo-shield-active {
             box-shadow: inset 0 0 50px var(--neon-yellow) !important;
             border: 2px solid var(--neon-yellow) !important;
@@ -295,15 +287,16 @@
         <div class="mb-6 text-center">
             <p class="text-lg text-white font-bold mb-2">⏱️ 任務時間限制：</p>
             <div class="flex gap-3 justify-center" id="time-options">
+                <button class="time-select-btn" data-time="30">30 秒 (極速挑戰)</button>
                 <button class="time-select-btn active" data-time="60">1 分鐘 (快速防護)</button>
-                <button class="time-select-btn" data-time="120">2 分鐘 (標準防禦)</button>
                 <button class="time-select-btn" data-time="180">3 分鐘 (極限生存)</button>
                 <button class="time-select-btn" data-time="0">無限制 (無盡模式)</button>
             </div>
         </div>
 
         <p class="text-2xl mb-4 text-white font-bold">🎯 選擇你的防護等級：</p>
-        <div class="flex gap-4">
+        <div class="flex gap-4 flex-wrap justify-center">
+            <button class="btn diff-btn" data-level="rookie">菜鳥防護員<br><span class="text-sm">(1字)</span></button>
             <button class="btn diff-btn" data-level="easy">初級防護員<br><span class="text-sm">(3-4字)</span></button>
             <button class="btn diff-btn" data-level="medium">中級防護員<br><span class="text-sm">(5-6字)</span></button>
             <button class="btn diff-btn" data-level="hard">高級防護員<br><span class="text-sm">(7字以上)</span></button>
@@ -362,6 +355,11 @@
     <script>
         // 題庫：針對中高年級設計的分級單字庫
         const wordBanks = {
+            rookie: [
+                "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+                "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+                "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+            ],
             easy: [
                 "me", "you", "he", "she", "it", "we", "they",
                 "one", "two", "six", "ten", "red", "dog", "cat",
@@ -378,11 +376,6 @@
                 "dinosaur", "keyboard", "internet"
             ]
         };
-
-        const bossPhrases = [
-            "how are you", "i love you", "good morning", 
-            "see you later", "thank you", "nice to meet you"
-        ];
 
         let currentQuestionBank = wordBanks.easy;
 
@@ -407,8 +400,6 @@
         let comboBuffActive = false;
         let comboBuffTimer = null;
         let hintTimer = null;
-        let bossesDefeated = 0;
-        let isBossActive = false;
 
         // DOM 元素
         const battlefield = document.getElementById('battlefield');
@@ -493,8 +484,6 @@
             traceRate = 0;
             keystrokes = 0;
             comboCount = 0;
-            bossesDefeated = 0;
-            isBossActive = false;
             comboBuffActive = false;
             timeRemaining = selectedTimeLimit;
             totalElapsedSeconds = 0;
@@ -525,7 +514,7 @@
             timerIntervalId = setInterval(updateGameTimer, 1000);
 
             clearInterval(spawnIntervalId);
-            spawnIntervalId = setInterval(spawnEnemy, 1800);
+            spawnIntervalId = setInterval(spawnEnemy, 2000); // 生成間隔調整為 2 秒 (2000ms)
             gameLoopId = requestAnimationFrame(gameLoop);
         }
 
@@ -674,7 +663,7 @@
 
         // 生成敵人
         function spawnEnemy() {
-            if (!isGameRunning || isBossActive) return;
+            if (!isGameRunning) return;
 
             let word = "";
             let type = "normal";
@@ -714,19 +703,14 @@
                 y: -50,
                 progress: 0,
                 type: type,
-                speed: ((type === 'elite-guard' ? 1.0 : 0.5) * difficultyMultiplier) + (traceRate * 0.008)
+                /* 微調掉落速度：基礎 0.35，菁英怪 0.7 */
+                speed: ((type === 'elite-guard' ? 0.7 : 0.35) * difficultyMultiplier) + (traceRate * 0.004)
             });
         }
 
         // 遊戲主迴圈
         function gameLoop() {
             if (!isGameRunning) return;
-
-            // 檢查 Boss
-            if (score >= (bossesDefeated + 1) * 300 && !isBossActive) {
-                spawnBoss();
-                return;
-            }
 
             // 移動敵人
             for (let i = enemies.length - 1; i >= 0; i--) {
@@ -849,14 +833,6 @@
 
             if (specialCommands[enemy.word]) {
                 specialCommands[enemy.word]();
-            } else if (enemy.type === 'boss') {
-                score += 100;
-                isBossActive = false;
-                bossesDefeated++;
-                traceRate = 0;
-                updateHUD();
-                createFloatingText("SYSTEM SECURED! VIRUS CLEARED.", "0f0");
-                spawnIntervalId = setInterval(spawnEnemy, 1800);
             } else {
                 score += enemy.type === 'elite-guard' ? 50 : 10;
             }
@@ -948,42 +924,6 @@
                 utterance.pitch = 1.1; 
                 window.speechSynthesis.speak(utterance);
             }
-        }
-
-        function spawnBoss() {
-            isBossActive = true;
-            enemies.forEach(e => e.element.remove());
-            enemies = [];
-            activeTarget = null;
-            currentInputDisplay.innerText = "_";
-            
-            clearInterval(spawnIntervalId);
-
-            const phrase = bossPhrases[bossesDefeated % bossPhrases.length];
-            
-            const el = document.createElement('div');
-            el.className = `enemy-word boss-enemy`;
-            el.innerHTML = `<span></span><span>${phrase}</span>`;
-            
-            el.style.left = `50%`;
-            el.style.transform = `translateX(-50%)`;
-            el.style.top = '50px';
-            battlefield.appendChild(el);
-            
-            enemies.push({
-                word: phrase,
-                element: el,
-                x: window.innerWidth / 2,
-                y: 50,
-                progress: 0,
-                type: 'boss',
-                speed: 0.2
-            });
-
-            createFloatingText("⚠️ VIRUS BOSS INCOMING ⚠️", "f00");
-            errorSynth.triggerAttackRelease("C1", "1n");
-            
-            resetHintTimer();
         }
 
         // 按鈕監聽
