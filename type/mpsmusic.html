@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>打字交響樂 🎵</title>
+  
+  <!-- 設定瀏覽器分頁圖示 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+
+  <!-- 載入 Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- 載入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 載入 Tone.js (音效與交響樂引擎) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="questions.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Outfit:wght@300;500;800&display=swap');
+    
+    body {
+      /* 使用優雅的黑藍色漸層作為背景 */
+      background: radial-gradient(circle at 50% 50%, #1e1b4b, #0f172a, #000000);
+      font-family: 'Outfit', 'Noto Serif TC', serif;
+      touch-action: manipulation;
+      overflow-x: hidden;
+      color: #e2e8f0;
+    }
+
+    /* 玻璃擬物風格 (Glassmorphism) 卡片 */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    /* 發光文字效果 */
+    .glow-text {
+      text-shadow: 0 0 10px rgba(129, 140, 248, 0.7), 0 0 20px rgba(129, 140, 248, 0.5);
+    }
+    
+    .glow-text-error {
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.7), 0 0 20px rgba(248, 113, 113, 0.5);
+    }
+
+    /* 3D 鋼琴/合成器按鍵樣式 */
+    .synth-key {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: all 0.05s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .synth-key::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+    }
+    .synth-key.pressed, .synth-key:active {
+      transform: translateY(2px) scale(0.98);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    /* 提示按鍵：帶有呼吸發光效果 */
+    .active-hint {
+      border-color: rgba(255, 255, 255, 0.8) !important;
+      animation: keyGlow 1.5s infinite alternate;
+      z-index: 10;
+    }
+    @keyframes keyGlow {
+      0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.4); filter: brightness(1); }
+      100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.9); filter: brightness(1.3); }
+    }
+
+    /* 浮動音符動畫 */
+    .floating-note {
+      position: absolute;
+      pointer-events: none;
+      animation: floatUp 1s ease-out forwards;
+      font-size: 1.5rem;
+      z-index: 50;
+      filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.8));
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100px) scale(1.5) rotate(20deg); opacity: 0; }
+    }
+
+    /* 背景音樂律動波紋 */
+    .music-waves {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 30vh;
+      background: linear-gradient(to top, rgba(99, 102, 241, 0.15), transparent);
+      z-index: -1;
+      transition: opacity 0.3s ease;
+    }
+
+    /* 單一符號彈出動畫 */
+    @keyframes popIn {
+      0% { transform: scale(0.5); opacity: 0; filter: blur(10px); }
+      70% { transform: scale(1.1); opacity: 1; filter: blur(0px); }
+      100% { transform: scale(1); opacity: 1; filter: blur(0px); }
+    }
+    .animate-pop {
+      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* 節奏打擊回饋動畫 */
+    @keyframes hitFloat {
+      0% { transform: translate(-50%, 0) scale(0.8); opacity: 1; }
+      50% { transform: translate(-50%, -20px) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%, -30px) scale(1); opacity: 0; }
+    }
+    .animate-hit-float {
+      animation: hitFloat 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="w-full max-w-6xl mx-auto min-h-screen p-3 sm:p-6 flex flex-col justify-between relative">
+    
+    <!-- 背景音樂律動視覺化 (透明度與玩家流暢度掛鉤) -->
+    <div class="music-waves" :style="{ opacity: heat / 100 }"></div>
+
+    <main class="flex-1 w-full flex flex-col relative max-w-full z-10">
+      
+      <div v-if="gameState === 'start'" class="flex-1 flex flex-col items-center justify-center">
+        <!-- 頁首移至此處 -->
+        <header class="text-center mb-8 relative z-10">
+          <h1 class="text-4xl sm:text-6xl font-black tracking-widest flex items-center justify-center gap-3">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 glow-text font-serif">
+              打字交響樂
+            </span>
+            <span class="text-3xl sm:text-5xl animate-bounce" style="animation-duration: 2s;">🎼</span>
+          </h1>
+          <p class="text-indigo-200 mt-2 font-light tracking-widest text-sm sm:text-base">每個指尖，都是一個音符</p>
+        </header>
+
+        <div class="glass-panel p-6 sm:p-10 rounded-3xl text-center max-w-2xl w-full border border-indigo-500/30">
+          <div class="text-5xl mb-4">🎹</div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">準備好演奏了嗎？</h2>
+          <p class="text-indigo-200 mb-6 font-light leading-relaxed">
+            這是一場音樂與打字的結合。<br>
+            你打得越順暢，背景交響樂越豐富；<br>
+            一旦卡殼或打錯，音樂就會<span class="text-red-400 font-bold">走音變調</span>！
+          </p>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-indigo-900/40 p-4 rounded-xl border border-indigo-500/20 text-left">
+               <label class="block text-indigo-300 text-sm mb-2 font-bold tracking-wider">選擇難度</label>
+               <select v-model="selectedGrade" class="w-full bg-indigo-950/80 border border-indigo-400 text-indigo-100 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-center cursor-pointer appearance-none">
+                  <option :value="3">三年級</option>
+                  <option :value="4">四年級</option>
+                  <option :value="5">五年級</option>
+                  <option :value="6">六年級</option>
+               </select>
+            </div>
+
+            <div class="bg-indigo-900/40 p-4 rounded-xl border border-indigo-500/20 text-left">
+               <label class="block text-indigo-300 text-sm mb-2 font-bold tracking-wider">遊戲時間</label>
+               <select v-model="selectedTime" class="w-full bg-indigo-950/80 border border-indigo-400 text-indigo-100 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-center cursor-pointer appearance-none">
+                  <option :value="30">30 秒</option>
+                  <option :value="60">60 秒</option>
+                  <option :value="90">90 秒</option>
+                  <option :value="120">120 秒</option>
+                  <option :value="180">180 秒</option>
+               </select>
+            </div>
+
+            <div class="bg-indigo-900/40 p-4 rounded-xl border border-indigo-500/20 text-left">
+               <label class="block text-indigo-300 text-sm mb-2 font-bold tracking-wider">選擇曲目</label>
+               <select v-model="selectedSong" class="w-full bg-indigo-950/80 border border-indigo-400 text-indigo-100 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-center cursor-pointer appearance-none">
+                  <option value="歡樂頌">歡樂頌</option>
+                  <option value="小星星">小星星</option>
+                  <option value="小綿羊">瑪莉小綿羊</option>
+                  <option value="倫敦鐵橋">倫敦鐵橋</option>
+                  <option value="兩隻老虎">兩隻老虎</option>
+               </select>
+            </div>
+          </div>
+
+          <button @click="startGame" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 rounded-2xl text-2xl tracking-widest shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-all hover:scale-105 active:scale-95">
+            開始演奏
+          </button>
+        </div>
+      </div>
+
+      <div v-if="gameState === 'playing' || gameState === 'paused'" class="flex-1 flex flex-col w-full h-full max-h-full">
+        
+        <!-- 頂部資訊板 (玻璃風格) -->
+        <div class="w-full flex flex-wrap justify-between items-center mb-4 gap-3 glass-panel p-3 sm:p-4 rounded-2xl">
+          
+          <div class="flex gap-2 sm:gap-4 flex-1">
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-indigo-500/30 flex flex-col items-center min-w-[80px]">
+              <span class="text-[10px] text-indigo-300 font-bold tracking-widest">分數</span>
+              <span class="text-xl sm:text-2xl font-black text-white glow-text">{{ score }}</span>
+            </div>
+            
+            <!-- 熱度/流暢度條 (Smoothness) -->
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-indigo-500/30 flex-1 flex flex-col justify-center min-w-[120px]">
+              <div class="flex justify-between items-end mb-1">
+                <span class="text-[10px] text-purple-300 font-bold tracking-widest">音樂流暢度</span>
+                <span class="text-xs font-bold text-white" :class="{'text-red-400': heat < 30, 'text-green-400': heat > 80}">
+                  {{ heat > 80 ? '完美!' : heat < 30 ? '走音警告' : '良好' }}
+                </span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-gray-700">
+                <div class="h-2.5 rounded-full transition-all duration-300 ease-out"
+                     :class="heat > 80 ? 'bg-gradient-to-r from-green-400 to-emerald-400 shadow-[0_0_10px_#34d399]' : heat > 30 ? 'bg-gradient-to-r from-purple-400 to-indigo-400' : 'bg-gradient-to-r from-red-500 to-orange-500'"
+                     :style="{ width: heat + '%' }"></div>
+              </div>
+            </div>
+            
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-indigo-500/30 flex flex-col items-center min-w-[80px]">
+              <span class="text-[10px] text-pink-300 font-bold tracking-widest">連擊</span>
+              <span class="text-xl sm:text-2xl font-black" :class="combo > 10 ? 'text-pink-400 glow-text' : 'text-white'">{{ combo }}</span>
+            </div>
+          </div>
+
+          <!-- 計時器 -->
+          <div class="flex items-center gap-2">
+            <div class="bg-black/30 px-5 py-2 rounded-xl border border-blue-500/30 flex flex-col items-center min-w-[90px]" :class="{'shadow-[0_0_15px_rgba(248,113,113,0.5)] border-red-500/50': timeLeft <= 10}">
+              <span class="text-[10px] text-blue-300 font-bold tracking-widest">剩餘時間</span>
+              <span class="text-xl sm:text-2xl font-black text-white" :class="{'text-red-400 glow-text-error': timeLeft <= 10}">{{ formattedTime }}</span>
+            </div>
+            <button v-if="gameState === 'playing'" @click="pauseGame" class="glass-panel hover:bg-white/10 text-indigo-200 p-3 rounded-xl transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </button>
+            <button @click="backToMenu" class="glass-panel hover:bg-red-500/20 text-indigo-200 hover:text-red-400 p-3 rounded-xl transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 w-full glass-panel rounded-3xl p-4 sm:p-8 flex flex-col relative overflow-hidden" :class="{'border-red-500/50 shadow-[inset_0_0_50px_rgba(248,113,113,0.1)]': heat === 0}">
+          
+          <!-- 暫停遮罩 -->
+          <div v-if="gameState === 'paused'" class="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center z-40 rounded-3xl">
+            <h2 class="text-4xl font-black text-white mb-6 tracking-widest">演奏暫停</h2>
+            <button @click="resumeGame" class="bg-indigo-500 hover:bg-indigo-400 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-[0_0_20px_rgba(99,102,241,0.6)] transition-all hover:scale-105">
+              繼續演奏
+            </button>
+          </div>
+
+          <!-- 打擊回饋文字 (GREAT / MISS) -->
+          <div v-if="hitFeedback" :key="hitFeedback.key" 
+               class="absolute left-[30%] top-[10%] sm:top-[15%] z-50 text-2xl sm:text-3xl font-black italic pointer-events-none animate-hit-float drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]"
+               :class="hitFeedback.type === 'good' ? 'text-yellow-400' : 'text-red-500'">
+            {{ hitFeedback.text }}
+          </div>
+
+          <!-- 飄浮音符特效容器 -->
+          <div v-for="note in floatingNotes" :key="note.id" 
+               class="floating-note text-purple-300"
+               :style="{ left: note.x + '%', top: note.y + '%' }">
+            {{ note.char }}
+          </div>
+
+          <!-- 音樂節奏軌道 (Rhythm Track) -->
+          <div class="w-full flex-1 min-h-[25vh] my-4 sm:my-6 relative bg-black/40 rounded-2xl border border-indigo-500/30 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.8)] flex flex-col justify-end">
+            
+            <!-- 五線譜背景裝飾 -->
+            <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col justify-between h-16 sm:h-20 opacity-20 pointer-events-none">
+                <div class="w-full h-px bg-indigo-200"></div>
+                <div class="w-full h-px bg-indigo-200"></div>
+                <div class="w-full h-px bg-indigo-200"></div>
+                <div class="w-full h-px bg-indigo-200"></div>
+                <div class="w-full h-px bg-indigo-200"></div>
+            </div>
+
+            <!-- 判定線 Hit Zone (打擊區) -->
+            <div class="absolute left-[30%] top-0 bottom-0 w-20 sm:w-24 -ml-10 sm:-ml-12 border-x-2 border-pink-400/80 bg-gradient-to-b from-pink-500/10 via-pink-500/30 to-pink-500/10 z-10 flex flex-col justify-center items-center shadow-[0_0_20px_rgba(236,72,153,0.3)]">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.8)] opacity-60"></div>
+            </div>
+
+            <!-- 滾動的音符容器 -->
+            <div class="absolute left-[30%] top-0 bottom-0 w-0 h-full z-20"> 
+                 <!-- 軌道依據 noteSpacing (80px) 向左平移 -->
+                 <div class="absolute top-0 bottom-0 left-0 flex items-center transition-transform duration-150 ease-out"
+                      :style="{ transform: `translateX(-${globalKeyIndex * 80}px)` }">
+                      
+                      <!-- 繪製視野範圍內的音符 -->
+                      <div v-for="note in visibleNotes" :key="note.id"
+                           class="absolute w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center font-black text-xl sm:text-2xl shadow-lg transition-all duration-200"
+                           :class="[
+                             note.idx < globalKeyIndex ? 'opacity-0 scale-50' : 'opacity-100',
+                             note.idx === globalKeyIndex ? 'bg-gradient-to-br from-pink-400 to-purple-500 text-white shadow-[0_0_25px_rgba(236,72,153,1)] scale-125 z-30' : 'bg-indigo-900/90 text-indigo-100 border-2 border-indigo-400/50 scale-100 z-20'
+                           ]"
+                           :style="{ left: `${note.idx * 80}px`, marginLeft: '-24px' }"> 
+                           
+                           <!-- 注音符號 -->
+                           {{ note.displayZhuyin }}
+                           
+                           <!-- 中文字提示 (顯示在一個字元的第一個注音泡泡上方) -->
+                           <div v-if="note.isFirstOfChar" class="absolute -top-10 sm:-top-12 text-xl sm:text-2xl font-bold text-white whitespace-nowrap drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                               {{ note.char }}
+                           </div>
+                      </div>
+                 </div>
+            </div>
+          </div>
+
+          <div class="mt-auto w-full max-w-5xl mx-auto flex flex-col gap-1.5 sm:gap-2 pb-2 z-20">
+            <div v-for="(row, rowIndex) in keyboardLayout" :key="rowIndex" class="flex justify-center gap-1.5 sm:gap-2 w-full">
+              <div v-for="keyInfo in row" :key="keyInfo.key"
+                   class="flex-1 flex flex-col items-center justify-center rounded-lg sm:rounded-xl synth-key transition-all duration-200"
+                   :class="[
+                     rowIndex === 4 ? 'max-w-2xl' : 'max-w-[2.5rem] sm:max-w-[3.5rem] md:max-w-[4.5rem]',
+                     keyInfo.zhuyin === '空白鍵(一聲)' ? 'h-10 sm:h-12 md:h-14' : 'h-12 sm:h-14 md:h-16',
+                     (nextExpectedKey === keyInfo.key) ? 'active-hint' : 'opacity-85 hover:opacity-100',
+                     { 'pressed brightness-125 scale-95': pressedKeyId === keyInfo.key },
+                     getFingerColorClass(keyInfo.key)
+                   ]"
+              >
+                <span v-if="keyInfo.zhuyin === '空白鍵(一聲)'" class="text-sm sm:text-base font-bold tracking-widest">
+                  SPACE
+                </span>
+                <span v-else class="text-base sm:text-xl md:text-2xl font-bold font-sans">{{ keyInfo.zhuyin }}</span>
+                
+                <!-- 英文字母小字提示 -->
+                <span class="absolute top-1 left-1.5 text-[8px] sm:text-[10px] opacity-40 uppercase font-sans">
+                  {{ keyInfo.key === ' ' ? '' : keyInfo.key === '-' ? '-' : keyInfo.key }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div v-else-if="gameState === 'gameover'" class="flex-1 flex flex-col items-center justify-center w-full p-2 z-20">
+        <div class="glass-panel p-8 sm:p-12 rounded-[40px] text-center max-w-md w-full relative border-t border-indigo-400/50">
+          
+          <h2 class="text-4xl sm:text-5xl font-black text-white mb-2 mt-4 glow-text tracking-widest">演奏結束</h2>
+          <p class="text-indigo-300 font-light mb-8">{{ selectedGrade }} 年級 評鑑報告</p>
+          
+          <div class="bg-black/40 rounded-3xl p-6 mb-8 border border-white/10">
+            <p class="text-indigo-400 font-bold mb-2 text-sm tracking-widest">綜合演奏得分</p>
+            <p class="text-6xl font-black text-white mb-6 glow-text">{{ score }}</p>
+            
+            <div class="grid grid-cols-2 gap-4 text-left">
+              <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <p class="text-xs text-indigo-300 font-bold mb-1">彈奏速度 (WPM)</p>
+                <p class="text-xl font-black text-white">{{ cpm }}</p>
+              </div>
+              <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <p class="text-xs text-indigo-300 font-bold mb-1">最高連擊</p>
+                <p class="text-xl font-black text-pink-400">{{ maxCombo }}</p>
+              </div>
+              <div class="col-span-2 bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+                <span class="text-xs text-indigo-300 font-bold">走音次數 (失誤)</span>
+                <span class="text-xl font-black text-red-400">{{ totalWrongKeys }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <button @click="backToMenu" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-2xl transition">
+              回主畫面
+            </button>
+            <button @click="startGame" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_15px_rgba(99,102,241,0.5)] transition">
+              再次挑戰
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 頁尾連結 (全域顯示於底部) -->
+      <footer class="w-full flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 pt-6 pb-2 text-indigo-300/80 text-xs sm:text-sm z-20 relative font-light mt-auto">
+        <a href="https://www.facebook.com/profile.php?id=61578088267283" target="_blank" class="flex items-center gap-1.5 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+          <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          晴光科技實驗室
+        </a>
+        <a href="https://sites.google.com/view/sunnypeng/" target="_blank" class="flex items-center gap-1.5 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+          <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          Sunny's 網站
+        </a>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted, watch } = Vue;
+
+    createApp({
+      setup() {
+        // --- 狀態變數 ---
+        const gameState = ref('start'); 
+        const score = ref(0);
+        const combo = ref(0);
+        const maxCombo = ref(0);
+        const timeLeft = ref(180);
+        const selectedTime = ref(180);
+        const selectedGrade = ref(3);
+        const selectedSong = ref("歡樂頌");
+        const heat = ref(0); // 0-100，代表音樂流暢度
+        
+        let timer = null;
+        let heatTimer = null;
+        const totalCorrectKeys = ref(0);
+        const totalWrongKeys = ref(0);
+        const floatingNotes = ref([]);
+        let noteIdCounter = 0;
+
+        // --- 音效與交響樂引擎 (Tone.js) ---
+        let melodySynth = null;
+        let errorSynth = null;
+        let backingPad = null;
+        let backingArp = null;
+        
+        // --- 節奏遊戲與音軌狀態 ---
+        const noteQueue = ref([]);
+        const globalKeyIndex = ref(0);
+        const hitFeedback = ref(null);
+
+        // 樂譜設定
+        const songs = {
+          "歡樂頌": ["E4","E4","F4","G4","G4","F4","E4","D4","C4","C4","D4","E4","E4","D4","D4", "E4","E4","F4","G4","G4","F4","E4","D4","C4","C4","D4","E4","D4","C4","C4", "D4","D4","E4","C4","D4","F4","E4","C4","D4","F4","E4","D4","C4","D4","G3", "E4","E4","F4","G4","G4","F4","E4","D4","C4","C4","D4","E4","D4","C4","C4"],
+          "小星星": ["C4","C4","G4","G4","A4","A4","G4","F4","F4","E4","E4","D4","D4","C4", "G4","G4","F4","F4","E4","E4","D4","G4","G4","F4","F4","E4","E4","D4", "C4","C4","G4","G4","A4","A4","G4","F4","F4","E4","E4","D4","D4","C4"],
+          "小綿羊": ["E4","D4","C4","D4","E4","E4","E4","D4","D4","D4","E4","G4","G4", "E4","D4","C4","D4","E4","E4","E4","E4","D4","D4","E4","D4","C4"],
+          "倫敦鐵橋": ["G4","A4","G4","F4","E4","F4","G4","D4","E4","F4","E4","F4","G4", "G4","A4","G4","F4","E4","F4","G4","D4","G4","E4","C4"],
+          "兩隻老虎": ["C4","D4","E4","C4","C4","D4","E4","C4","E4","F4","G4","E4","F4","G4", "G4","A4","G4","F4","E4","C4","G4","A4","G4","F4","E4","C4","D4","G3","C4","D4","G3","C4"]
+        };
+        
+        let melodyScore = songs["歡樂頌"];
+        let currentNoteIndex = 0;
+
+        // 和弦進行 (C - G - Am - F)，依據打字進度(成語切換)更換
+        const chords = [
+          ["C3", "E3", "G3", "C4"],
+          ["G2", "D3", "G3", "B3"],
+          ["A2", "E3", "A3", "C4"],
+          ["F2", "C3", "F3", "A3"]
+        ];
+        let currentChordIndex = 0;
+
+        // 初始化音效引擎
+        const initAudio = async () => {
+          await Tone.start();
+          
+          if (!melodySynth) {
+            // 主旋律合成器 (類似鋼琴/鐘琴)
+            melodySynth = new Tone.PolySynth(Tone.Synth, {
+              oscillator: { type: "sine" },
+              envelope: { attack: 0.02, decay: 0.1, sustain: 0.2, release: 1.5 }
+            }).toDestination();
+            melodySynth.volume.value = 2; // 主旋律大聲點
+
+            // 錯誤雜音合成器 (走音的金屬聲)
+            errorSynth = new Tone.PolySynth(Tone.FMSynth, {
+              harmonicity: 0.5, modulationIndex: 10,
+              oscillator: { type: "sawtooth" },
+              envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+            errorSynth.volume.value = -5;
+
+            // 背景交響樂鋪墊 (Pad) - 預設極小聲，靠 heat 控制
+            backingPad = new Tone.PolySynth(Tone.Synth, {
+              oscillator: { type: "triangle" },
+              envelope: { attack: 1, decay: 0.5, sustain: 0.8, release: 2 }
+            }).toDestination();
+            
+            // 加上 Chorus 讓背景音更寬廣
+            const chorus = new Tone.Chorus(4, 2.5, 0.5).toDestination().start();
+            backingPad.connect(chorus);
+            backingPad.volume.value = -60; // 初始靜音
+          }
+        };
+
+        // 自動注音轉換表
+        const zhuyinKeyMap = {
+          'ㄅ':'1', 'ㄉ':'2', 'ˇ':'3', 'ˋ':'4', 'ㄓ':'5', 'ˊ':'6', '˙':'7', 'ㄚ':'8', 'ㄞ':'9', 'ㄢ':'0', 'ㄦ':'-',
+          'ㄆ':'q', 'ㄊ':'w', 'ㄍ':'e', 'ㄐ':'r', 'ㄔ':'t', 'ㄗ':'y', 'ㄧ':'u', 'ㄛ':'i', 'ㄟ':'o', 'ㄣ':'p',
+          'ㄇ':'a', 'ㄋ':'s', 'ㄎ':'d', 'ㄑ':'f', 'ㄕ':'g', 'ㄘ':'h', 'ㄨ':'j', 'ㄜ':'k', 'ㄠ':'l', 'ㄤ':';',
+          'ㄈ':'z', 'ㄌ':'x', 'ㄏ':'c', 'ㄒ':'v', 'ㄖ':'b', 'ㄙ':'n', 'ㄩ':'m', 'ㄝ':',', 'ㄡ':'.', 'ㄥ':'/'
+        };
+
+        const processIdioms = (rawList) => {
+          return rawList.map(item => {
+            if (item.characters) return item; 
+            const characters = item.word.split('').map((char, index) => {
+              const zhuyinStr = item.zhuyin[index];
+              const keys = [];
+              let hasTone = false;
+              for (let charZ of zhuyinStr) {
+                 if (zhuyinKeyMap[charZ]) keys.push(zhuyinKeyMap[charZ]);
+                 if (['ˊ', 'ˇ', 'ˋ', '˙'].includes(charZ)) hasTone = true;
+              }
+              if (!hasTone) keys.push(' ');
+              return { char, zhuyin: zhuyinStr, keys };
+            });
+            return { word: item.word, characters };
+          });
+        };
+
+        const idioms = ref([]);
+        const defaultIdioms = [
+          { word: "一鳴驚人", zhuyin: ["ㄧ", "ㄇㄧㄥˊ", "ㄐㄧㄥ", "ㄖㄣˊ"] },
+          { word: "五花八門", zhuyin: ["ㄨˇ", "ㄏㄨㄚ", "ㄅㄚ", "ㄇㄣˊ"] }
+        ];
+
+        const pressedKeyId = ref(null);
+
+        // 取得下一個預期的按鍵
+        const nextExpectedKey = computed(() => noteQueue.value[globalKeyIndex.value]?.key);
+
+        // 可視音符 (優化渲染效能，只渲染當前進度附近的音符)
+        const visibleNotes = computed(() => {
+          const start = Math.max(0, globalKeyIndex.value - 2); 
+          const end = Math.min(noteQueue.value.length, globalKeyIndex.value + 15);
+          return noteQueue.value.slice(start, end);
+        });
+
+        // 反向映射表，用來把英文按鍵轉回單一注音符號顯示
+        const keyToZhuyinMap = {
+          '1':'ㄅ', '2':'ㄉ', '3':'ˇ', '4':'ˋ', '5':'ㄓ', '6':'ˊ', '7':'˙', '8':'ㄚ', '9':'ㄞ', '0':'ㄢ', '-':'ㄦ',
+          'q':'ㄆ', 'w':'ㄊ', 'e':'ㄍ', 'r':'ㄐ', 't':'ㄔ', 'y':'ㄗ', 'u':'ㄧ', 'i':'ㄛ', 'o':'ㄟ', 'p':'ㄣ',
+          'a':'ㄇ', 's':'ㄋ', 'd':'ㄎ', 'f':'ㄑ', 'g':'ㄕ', 'h':'ㄘ', 'j':'ㄨ', 'k':'ㄜ', 'l':'ㄠ', ';':'ㄤ',
+          'z':'ㄈ', 'x':'ㄌ', 'c':'ㄏ', 'v':'ㄒ', 'b':'ㄖ', 'n':'ㄙ', 'm':'ㄩ', ',':'ㄝ', '.':'ㄡ', '/':'ㄥ',
+          ' ': '一聲'
+        };
+
+        // 計算當前應該顯示的巨大單一注音
+        const currentSingleZhuyin = computed(() => keyToZhuyinMap[nextExpectedKey.value] || '');
+        
+        // 產生一個唯一鍵值，讓每次敲擊更換符號時都能重播 Vue 的動畫
+        const strokeKey = computed(() => `${currentIdiomIndex.value}-${currentCharIndex.value}-${currentKeyIndex.value}`);
+
+        const getFingerColorClass = (key) => {
+          const k = key.toLowerCase();
+          const pinkyLeft = ['1', 'q', 'a', 'z'];
+          const ringLeft = ['2', 'w', 's', 'x'];
+          const middleLeft = ['3', 'e', 'd', 'c'];
+          const indexLeft = ['4', '5', 'r', 't', 'f', 'g', 'v', 'b'];
+          const indexRight = ['6', '7', 'y', 'u', 'h', 'j', 'n', 'm'];
+          const middleRight = ['8', 'i', 'k', ','];
+          const ringRight = ['9', 'o', 'l', '.'];
+          const pinkyRight = ['0', '-', 'p', ';', '/'];
+          
+          if (pinkyLeft.includes(k)) return 'bg-rose-500/30 border-rose-400/40 text-rose-100 shadow-[inset_0_0_12px_rgba(244,63,94,0.3)]';
+          if (ringLeft.includes(k)) return 'bg-orange-500/30 border-orange-400/40 text-orange-100 shadow-[inset_0_0_12px_rgba(249,115,22,0.3)]';
+          if (middleLeft.includes(k)) return 'bg-yellow-500/30 border-yellow-400/40 text-yellow-100 shadow-[inset_0_0_12px_rgba(234,179,8,0.3)]';
+          if (indexLeft.includes(k)) return 'bg-green-500/30 border-green-400/40 text-green-100 shadow-[inset_0_0_12px_rgba(34,197,94,0.3)]';
+          
+          if (indexRight.includes(k)) return 'bg-cyan-500/30 border-cyan-400/40 text-cyan-100 shadow-[inset_0_0_12px_rgba(6,182,212,0.3)]';
+          if (middleRight.includes(k)) return 'bg-blue-500/30 border-blue-400/40 text-blue-100 shadow-[inset_0_0_12px_rgba(59,130,246,0.3)]';
+          if (ringRight.includes(k)) return 'bg-indigo-500/30 border-indigo-400/40 text-indigo-100 shadow-[inset_0_0_12px_rgba(99,102,241,0.3)]';
+          if (pinkyRight.includes(k)) return 'bg-fuchsia-500/30 border-fuchsia-400/40 text-fuchsia-100 shadow-[inset_0_0_12px_rgba(217,70,239,0.3)]';
+          
+          if (k === ' ') return 'bg-slate-500/30 border-slate-400/40 text-slate-100 shadow-[inset_0_0_12px_rgba(100,116,139,0.3)]';
+          
+          return 'bg-gray-500/30 border-gray-400/40 text-gray-100';
+        };
+
+        const formattedTime = computed(() => {
+          const m = Math.floor(timeLeft.value / 60);
+          const s = timeLeft.value % 60;
+          return `${m}:${s.toString().padStart(2, '0')}`;
+        });
+
+        const cpm = computed(() => {
+          const minutesPassed = (selectedTime.value - timeLeft.value) / 60;
+          if (minutesPassed <= 0) return 0;
+          return Math.round(totalCorrectKeys.value / minutesPassed);
+        });
+
+        const getPointsPerKey = () => {
+          const g = Number(selectedGrade.value);
+          if (g === 3) return 4.5;
+          if (g === 4) return 2.7;
+          if (g === 5) return 1.9;
+          if (g === 6) return 1.5;
+          return 2;
+        };
+
+        // 監視 Heat 變化來調整背景和弦音量
+        watch(heat, (newVal) => {
+          if (backingPad) {
+            // 將 heat (0-100) 映射到音量 (-40 到 -10)
+            if (newVal === 0) {
+               backingPad.volume.rampTo(-60, 0.5); // 斷掉和弦
+            } else {
+               const vol = -40 + (newVal / 100) * 25; // 最多 -15db
+               backingPad.volume.rampTo(vol, 0.2);
+            }
+          }
+        });
+
+        const updateBackingChord = () => {
+          if (backingPad) {
+            backingPad.releaseAll();
+            if (heat.value > 0) {
+              backingPad.triggerAttack(chords[currentChordIndex]);
+            }
+          }
+        };
+
+        // 啟動熱度衰退機制
+        const startHeatTimer = () => {
+          clearInterval(heatTimer);
+          heatTimer = setInterval(() => {
+            if (gameState.value === 'playing' && heat.value > 0) {
+              heat.value -= 3; // 每 100ms 下降 3
+              if (heat.value < 0) heat.value = 0;
+            }
+          }, 100);
+        };
+
+        const addFloatingNote = () => {
+          const id = noteIdCounter++;
+          const emojis = ['🎵', '🎶', '🎼', '✨'];
+          const x = 30 + Math.random() * 40; // 在中間 40% 區域隨機
+          floatingNotes.value.push({
+            id,
+            x: x,
+            y: 50,
+            char: emojis[Math.floor(Math.random() * emojis.length)]
+          });
+          // 1秒後移除
+          setTimeout(() => {
+            floatingNotes.value = floatingNotes.value.filter(n => n.id !== id);
+          }, 1000);
+        };
+
+        // 顯示節奏打擊評價
+        const showFeedback = (text, type) => {
+          hitFeedback.value = { text, type, key: Date.now() };
+        };
+
+        const startGame = async () => {
+          await initAudio(); 
+          
+          let loadedIdioms = (window.globalIdiomData && window.globalIdiomData.length > 0) 
+            ? processIdioms(window.globalIdiomData) 
+            : processIdioms(defaultIdioms);
+          idioms.value = loadedIdioms.sort(() => Math.random() - 0.5);
+
+          // 扁平化展開所有注音成一個音符軌道佇列
+          const generatedQueue = [];
+          let idCounter = 0;
+          // 產生大量的音符以確保時間內不會打完 (把題庫重複疊加)
+          for(let loop = 0; loop < 50; loop++) {
+              idioms.value.forEach(idiom => {
+                  idiom.characters.forEach(charObj => {
+                      charObj.keys.forEach((key, keyIdx) => {
+                          generatedQueue.push({
+                              id: idCounter,
+                              idx: idCounter,
+                              key: key,
+                              displayZhuyin: key === ' ' ? '␣' : (keyToZhuyinMap[key] || key),
+                              char: charObj.char,
+                              word: idiom.word,
+                              isFirstOfChar: keyIdx === 0
+                          });
+                          idCounter++;
+                      });
+                  });
+              });
+          }
+          noteQueue.value = generatedQueue;
+          globalKeyIndex.value = 0;
+
+          melodyScore = songs[selectedSong.value];
+
+          score.value = 0; combo.value = 0; maxCombo.value = 0; heat.value = 0;
+          timeLeft.value = selectedTime.value;
+          totalCorrectKeys.value = 0; totalWrongKeys.value = 0;
+          currentNoteIndex = 0;
+          currentChordIndex = 0;
+          gameState.value = 'playing';
+          floatingNotes.value = [];
+          hitFeedback.value = null;
+          
+          clearInterval(timer);
+          timer = setInterval(() => {
+            if (timeLeft.value > 0) timeLeft.value--;
+            else endGame();
+          }, 1000);
+
+          startHeatTimer();
+          updateBackingChord(); // 啟動第一個和弦
+        };
+
+        const pauseGame = () => {
+          gameState.value = 'paused';
+          clearInterval(timer);
+          if (backingPad) backingPad.releaseAll();
+        };
+
+        const resumeGame = () => {
+          gameState.value = 'playing';
+          timer = setInterval(() => {
+            if (timeLeft.value > 0) timeLeft.value--;
+            else endGame();
+          }, 1000);
+          updateBackingChord();
+        };
+
+        const endGame = () => {
+          gameState.value = 'gameover';
+          clearInterval(timer);
+          clearInterval(heatTimer);
+          if (backingPad) backingPad.releaseAll();
+        };
+
+        const backToMenu = () => {
+          gameState.value = 'start';
+          clearInterval(timer);
+          clearInterval(heatTimer);
+          if (backingPad) backingPad.releaseAll();
+        };
+
+        const formatZhuyin = (zhuyinStr) => {
+          const tones = ['ˊ', 'ˇ', 'ˋ', '˙'];
+          let symbols = [], tone = '';
+          for (let char of zhuyinStr) {
+            if (tones.includes(char)) tone = char;
+            else symbols.push(char);
+          }
+          return { symbols, tone };
+        };
+
+        const handleKeydown = (event) => {
+          if (gameState.value !== 'playing') return;
+          const ignoreKeys = ['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Enter', 'Backspace', 'Escape', 'CapsLock'];
+          if (ignoreKeys.includes(event.key)) return;
+
+          const pressedKey = event.key.toLowerCase();
+          pressedKeyId.value = pressedKey;
+          setTimeout(() => { pressedKeyId.value = null; }, 150);
+
+          if (pressedKey === nextExpectedKey.value) {
+            // --- 答對邏輯：推進旋律與軌道 ---
+            if (melodySynth) {
+              const note = melodyScore[currentNoteIndex];
+              // 音高微調，讓連擊時聲音有明亮感
+              const octaveShift = (combo.value > 20) ? "5" : note.charAt(1);
+              const actualNote = note.charAt(0) + octaveShift;
+              
+              melodySynth.triggerAttackRelease(actualNote, "8n");
+              currentNoteIndex = (currentNoteIndex + 1) % melodyScore.length;
+            }
+
+            addFloatingNote();
+            showFeedback(combo.value > 10 ? 'PERFECT!' : 'GREAT!', 'good');
+            
+            totalCorrectKeys.value++;
+            combo.value++;
+            if (combo.value > maxCombo.value) maxCombo.value = combo.value;
+            
+            // 檢查是否換了新的詞語來更換和弦
+            const currentNote = noteQueue.value[globalKeyIndex.value];
+            const nextNote = noteQueue.value[globalKeyIndex.value + 1];
+            if (currentNote && nextNote && currentNote.word !== nextNote.word) {
+                currentChordIndex = (currentChordIndex + 1) % chords.length;
+                updateBackingChord();
+            }
+
+            // 軌道前進
+            globalKeyIndex.value++;
+            
+            heat.value = Math.min(100, heat.value + 15); // 增加熱度
+            
+            // 如果背景音沒在響(剛從 0 恢復)，重新 trigger
+            if (heat.value === 15) updateBackingChord();
+
+            const basePoint = getPointsPerKey();
+            const comboBonus = Math.floor(combo.value / 10) * 0.5; 
+            score.value = Math.round(score.value + basePoint + comboBonus);
+            
+          } else {
+            // --- 答錯邏輯：走音與懲罰 ---
+            if (event.key.length === 1) { 
+              if (errorSynth) {
+                // 產生隨機不和諧音 (走音)
+                const sourNotes = ["C#3", "D#3", "F#3", "G#3"];
+                errorSynth.triggerAttackRelease([sourNotes[Math.floor(Math.random()*4)], "A2"], "16n");
+              }
+              showFeedback('MISS', 'bad');
+              combo.value = 0;
+              heat.value = 0; // 熱度歸零，背景音樂瞬間暫停/變弱
+              totalWrongKeys.value++;
+              
+              const penalty = getPointsPerKey() * 0.8;
+              score.value = Math.max(0, Math.round(score.value - penalty)); 
+            }
+          }
+        };
+
+        onMounted(() => { window.addEventListener('keydown', handleKeydown); });
+        onUnmounted(() => { 
+          window.removeEventListener('keydown', handleKeydown);
+          clearInterval(timer); clearInterval(heatTimer);
+        });
+
+        const keyboardLayout = [
+          [
+            { key: '1', zhuyin: 'ㄅ' }, { key: '2', zhuyin: 'ㄉ' }, { key: '3', zhuyin: 'ˇ' }, { key: '4', zhuyin: 'ˋ' },
+            { key: '5', zhuyin: 'ㄓ' }, { key: '6', zhuyin: 'ˊ' }, { key: '7', zhuyin: '˙' }, { key: '8', zhuyin: 'ㄚ' },
+            { key: '9', zhuyin: 'ㄞ' }, { key: '0', zhuyin: 'ㄢ' }, { key: '-', zhuyin: 'ㄦ' }
+          ],
+          [
+            { key: 'q', zhuyin: 'ㄆ' }, { key: 'w', zhuyin: 'ㄊ' }, { key: 'e', zhuyin: 'ㄍ' }, { key: 'r', zhuyin: 'ㄐ' },
+            { key: 't', zhuyin: 'ㄔ' }, { key: 'y', zhuyin: 'ㄗ' }, { key: 'u', zhuyin: 'ㄧ' }, { key: 'i', zhuyin: 'ㄛ' },
+            { key: 'o', zhuyin: 'ㄟ' }, { key: 'p', zhuyin: 'ㄣ' }
+          ],
+          [
+            { key: 'a', zhuyin: 'ㄇ' }, { key: 's', zhuyin: 'ㄋ' }, { key: 'd', zhuyin: 'ㄎ' }, { key: 'f', zhuyin: 'ㄑ' },
+            { key: 'g', zhuyin: 'ㄕ' }, { key: 'h', zhuyin: 'ㄘ' }, { key: 'j', zhuyin: 'ㄨ' }, { key: 'k', zhuyin: 'ㄜ' },
+            { key: 'l', zhuyin: 'ㄠ' }, { key: ';', zhuyin: 'ㄤ' }
+          ],
+          [
+            { key: 'z', zhuyin: 'ㄈ' }, { key: 'x', zhuyin: 'ㄌ' }, { key: 'c', zhuyin: 'ㄏ' }, { key: 'v', zhuyin: 'ㄒ' },
+            { key: 'b', zhuyin: 'ㄖ' }, { key: 'n', zhuyin: 'ㄙ' }, { key: 'm', zhuyin: 'ㄩ' }, { key: ',', zhuyin: 'ㄝ' },
+            { key: '.', zhuyin: 'ㄡ' }, { key: '/', zhuyin: 'ㄥ' }
+          ],
+          [
+            { key: ' ', zhuyin: '空白鍵(一聲)' }
+          ]
+        ];
+
+        return {
+          gameState, score, combo, maxCombo, formattedTime, timeLeft, selectedTime, selectedGrade, selectedSong, heat,
+          nextExpectedKey, pressedKeyId, keyboardLayout,
+          totalCorrectKeys, totalWrongKeys, cpm, floatingNotes,
+          noteQueue, globalKeyIndex, visibleNotes, hitFeedback,
+          startGame, pauseGame, resumeGame, backToMenu, formatZhuyin, getFingerColorClass
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
