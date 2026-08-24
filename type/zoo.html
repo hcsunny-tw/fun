@@ -901,6 +901,9 @@ function resizeCanvases() {
 }
 window.addEventListener('resize', resizeCanvases);
 
+// 新增這行：確保網頁初次載入時立刻設定正確的畫布解析度，避免圖案被異常放大
+resizeCanvases();
+
 // 繪製像素風格的大自然動物園背景 (Pixel Zoo)
 function drawPixelZooBackground(targetCtx, w, h, timeOffset = 0) {
     // 1. 天空漸層
