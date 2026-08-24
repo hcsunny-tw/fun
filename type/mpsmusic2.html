@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>打字交響樂2 🎵</title>
+  
+  <!-- 設定瀏覽器分頁圖示 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+
+  <!-- 載入 Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- 載入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 載入 Tone.js (音效與交響樂引擎) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  
+  <!-- 載入外部題庫 -->
+  <script src="questions.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Outfit:wght@300;500;800&display=swap');
+    
+    body {
+      background: radial-gradient(circle at 50% 50%, #1e1b4b, #0f172a, #000000);
+      font-family: 'Outfit', 'Noto Serif TC', serif;
+      touch-action: manipulation;
+      overflow-x: hidden;
+      color: #e2e8f0;
+      user-select: none;
+    }
+
+    /* 玻璃擬物風格 (Glassmorphism) 卡片 */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    /* 發光文字效果 */
+    .glow-text {
+      text-shadow: 0 0 10px rgba(129, 140, 248, 0.7), 0 0 20px rgba(129, 140, 248, 0.5);
+    }
+    
+    .glow-text-error {
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.7), 0 0 20px rgba(248, 113, 113, 0.5);
+    }
+
+    /* 太鼓達人風格 - 判定鼓面與音符動態 */
+    .taiko-drum-zone {
+      position: absolute;
+      left: 18%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fef08a 0%, #f59e0b 40%, #b45309 100%);
+      border: 4px solid #fff;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.8), inset 0 0 15px rgba(0,0,0,0.5);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .taiko-drum-zone::after {
+      content: '';
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px dashed rgba(255, 255, 255, 0.8);
+      animation: rotateDrum 8s linear infinite;
+    }
+    @keyframes rotateDrum {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .taiko-drum-hit {
+      animation: drumHitPulse 0.15s ease-out;
+    }
+    @keyframes drumHitPulse {
+      0% { transform: translateY(-50%) scale(1.3); filter: brightness(1.8); }
+      100% { transform: translateY(-50%) scale(1); filter: brightness(1); }
+    }
+
+    /* 太鼓音符（咚 DON / 咔 KA） */
+    .taiko-note-don {
+      background: radial-gradient(circle at 35% 35%, #f87171, #dc2626, #991b1b);
+      border: 3px solid #fff;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
+    }
+    .taiko-note-ka {
+      background: radial-gradient(circle at 35% 35%, #38bdf8, #0284c7, #075985);
+      border: 3px solid #fff;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.7);
+    }
+
+    /* 錯過的音符 (灰色) */
+    .taiko-note-missed {
+      background: radial-gradient(circle at 35% 35%, #9ca3af, #4b5563, #1f2937);
+      border: 3px solid #6b7280;
+      box-shadow: none;
+    }
+
+    /* 火花打擊特效 */
+    .taiko-spark {
+      position: absolute;
+      pointer-events: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: sparkOut 0.4s ease-out forwards;
+      z-index: 60;
+    }
+    @keyframes sparkOut {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+
+    /* 3D 鋼琴/合成器按鍵樣式 */
+    .synth-key {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: all 0.05s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .synth-key::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+    }
+    .synth-key.pressed, .synth-key:active {
+      transform: translateY(2px) scale(0.98);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    /* 提示按鍵：帶有呼吸發光效果 */
+    .active-hint {
+      border-color: rgba(255, 255, 255, 1) !important;
+      animation: keyGlow 0.8s infinite alternate;
+      z-index: 10;
+    }
+    @keyframes keyGlow {
+      0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); filter: brightness(1.2); }
+      100% { box-shadow: 0 0 30px rgba(255, 255, 255, 1); filter: brightness(2); background-color: rgba(255, 255, 255, 0.3); }
+    }
+
+    /* 浮動音符動畫 */
+    .floating-note {
+      position: absolute;
+      pointer-events: none;
+      animation: floatUp 1s ease-out forwards;
+      font-size: 1.5rem;
+      z-index: 50;
+      filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.8));
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100px) scale(1.5) rotate(20deg); opacity: 0; }
+    }
+
+    /* 背景音樂律動波紋 */
+    .music-waves {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 30vh;
+      background: linear-gradient(to top, rgba(99, 102, 241, 0.15), transparent);
+      z-index: -1;
+      transition: opacity 0.3s ease;
+    }
+
+    /* 節奏打擊回饋動畫 */
+    @keyframes hitFloat {
+      0% { transform: translate(-50%, 0) scale(0.8); opacity: 1; }
+      50% { transform: translate(-50%, -20px) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%, -30px) scale(1); opacity: 0; }
+    }
+    .animate-hit-float {
+      animation: hitFloat 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="w-full max-w-6xl mx-auto min-h-screen p-3 sm:p-6 flex flex-col justify-between relative">
+    
+    <!-- 背景音樂律動視覺化 -->
+    <div class="music-waves" :style="{ opacity: heat / 100 }"></div>
+
+    <main class="flex-1 w-full flex flex-col relative max-w-full z-10">
+      
+      <!-- 開始選單區塊 -->
+      <div v-if="gameState === 'start'" class="flex-1 flex flex-col items-center justify-center">
+        <header class="text-center mb-8 relative z-10">
+          <h1 class="text-4xl sm:text-6xl font-black tracking-widest flex items-center justify-center gap-3">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 glow-text font-serif">
+              打字交響樂2
+            </span>
+            <span class="text-3xl sm:text-5xl animate-bounce" style="animation-duration: 2s;">🎼</span>
+          </h1>
+          <p class="text-indigo-200 mt-2 font-light tracking-widest text-sm sm:text-base">每個指尖，都是一個音符</p>
+        </header>
+
+        <div class="glass-panel p-6 sm:p-10 rounded-3xl text-center max-w-2xl w-full border border-indigo-500/30">
+          <div class="text-5xl mb-4">🎹</div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">準備好演奏了嗎？</h2>
+          <p class="text-indigo-200 mb-6 font-light leading-relaxed">
+            這是一場音樂與打字的結合。<br>
+            你打得越順暢，背景交響樂越豐富；<br>
+            一旦卡殼或打錯，音樂就會<span class="text-red-400 font-bold">走音變調</span>！
+          </p>
+          
+          <div class="grid grid-cols-1 gap-4 mb-8">
+            <div class="bg-indigo-900/40 p-4 rounded-xl border border-indigo-500/20 text-left w-full sm:max-w-md mx-auto flex flex-col gap-3">
+               <div>
+                 <label class="block text-indigo-300 text-sm mb-1 font-bold tracking-wider text-center">選擇要挑戰的曲目</label>
+                 <select v-model="selectedSong" class="w-full bg-indigo-950/80 border border-indigo-400 text-indigo-100 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-center cursor-pointer appearance-none">
+                    <option value="歡樂頌">歡樂頌</option>
+                    <option value="小星星">小星星</option>
+                    <option value="小綿羊">瑪莉小綿羊</option>
+                    <option value="倫敦鐵橋">倫敦鐵橋</option>
+                    <option value="兩隻老虎">兩隻老虎</option>
+                 </select>
+               </div>
+
+               <div>
+                 <label class="block text-indigo-300 text-sm mb-1 font-bold tracking-wider text-center">太鼓滾動速度</label>
+                 <div class="grid grid-cols-3 gap-2">
+                   <button v-for="sp in speedOptions" :key="sp.value" 
+                           @click="scrollSpeed = sp.value"
+                           class="py-1.5 px-2 rounded-lg text-xs font-bold transition border"
+                           :class="scrollSpeed === sp.value ? 'bg-amber-500 border-amber-300 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.6)]' : 'bg-black/30 border-indigo-500/30 text-indigo-200 hover:bg-white/10'">
+                     {{ sp.label }}
+                   </button>
+                 </div>
+               </div>
+            </div>
+          </div>
+
+          <button @click="startGame" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 rounded-2xl text-2xl tracking-widest shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-all hover:scale-105 active:scale-95">
+            開始演奏
+          </button>
+        </div>
+      </div>
+
+      <!-- 遊戲進行與暫停區塊 -->
+      <div v-if="gameState === 'playing' || gameState === 'paused' || gameState === 'countdown'" class="flex-1 flex flex-col w-full h-full max-h-full">
+        
+        <!-- 頂部資訊板 -->
+        <div class="w-full flex flex-wrap justify-between items-center mb-4 gap-3 glass-panel p-3 sm:p-4 rounded-2xl">
+          
+          <div class="flex gap-2 sm:gap-4 flex-1">
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-indigo-500/30 flex flex-col items-center min-w-[80px]">
+              <span class="text-[10px] text-indigo-300 font-bold tracking-widest">分數</span>
+              <span class="text-xl sm:text-2xl font-black text-white glow-text">{{ score }}</span>
+            </div>
+            
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-indigo-500/30 flex-1 flex flex-col justify-center min-w-[120px]">
+              <div class="flex justify-between items-end mb-1">
+                <span class="text-[10px] text-purple-300 font-bold tracking-widest">音樂流暢度</span>
+                <span class="text-xs font-bold text-white" :class="{'text-red-400': heat < 30, 'text-green-400': heat > 80}">
+                  {{ heat > 80 ? '完美!' : heat < 30 ? '走音警告' : '良好' }}
+                </span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-gray-700">
+                <div class="h-2.5 rounded-full transition-all duration-300 ease-out"
+                     :class="heat > 80 ? 'bg-gradient-to-r from-green-400 to-emerald-400 shadow-[0_0_10px_#34d399]' : heat > 30 ? 'bg-gradient-to-r from-purple-400 to-indigo-400' : 'bg-gradient-to-r from-red-500 to-orange-500'"
+                     :style="{ width: heat + '%' }"></div>
+              </div>
+            </div>
+            
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-indigo-500/30 flex flex-col items-center min-w-[80px]">
+              <span class="text-[10px] text-pink-300 font-bold tracking-widest">連擊</span>
+              <span class="text-xl sm:text-2xl font-black" :class="combo > 10 ? 'text-pink-400 glow-text' : 'text-white'">{{ combo }}</span>
+            </div>
+          </div>
+
+          <!-- 進度與控制鍵 -->
+          <div class="flex items-center gap-2">
+            <div class="bg-black/30 px-5 py-2 rounded-xl border border-blue-500/30 flex flex-col items-center min-w-[90px]">
+              <span class="text-[10px] text-blue-300 font-bold tracking-widest">演奏進度</span>
+              <span class="text-xl sm:text-2xl font-black text-white">{{ currentNoteIndex }} / {{ melodyLength }}</span>
+            </div>
+            <button v-if="gameState === 'playing' || gameState === 'countdown'" @click="pauseGame" class="glass-panel hover:bg-white/10 text-indigo-200 p-3 rounded-xl transition disabled:opacity-50" :disabled="gameState === 'countdown'">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </button>
+            <button @click="backToMenu" class="glass-panel hover:bg-red-500/20 text-indigo-200 hover:text-red-400 p-3 rounded-xl transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 w-full glass-panel rounded-3xl p-4 sm:p-8 flex flex-col relative overflow-hidden" :class="{'border-red-500/50 shadow-[inset_0_0_50px_rgba(248,113,113,0.1)]': heat === 0 && gameState === 'playing'}">
+          
+          <!-- 倒數遮罩 -->
+          <div v-if="gameState === 'countdown'" class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-50 rounded-3xl">
+            <div class="text-[8rem] sm:text-[12rem] font-black text-transparent bg-clip-text bg-gradient-to-br from-indigo-300 to-purple-500 drop-shadow-[0_0_40px_rgba(129,140,248,0.8)] animate-pulse" style="line-height: 1;">
+              {{ countdownValue }}
+            </div>
+            <div class="text-xl sm:text-3xl text-indigo-200 mt-6 font-bold tracking-widest animate-bounce">
+              準備開始演奏...
+            </div>
+          </div>
+
+          <!-- 暫停遮罩 -->
+          <div v-if="gameState === 'paused'" class="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center z-40 rounded-3xl">
+            <h2 class="text-4xl font-black text-white mb-6 tracking-widest">演奏暫停</h2>
+            <button @click="resumeGame" class="bg-indigo-500 hover:bg-indigo-400 text-white font-bold py-3 px-10 text-xl rounded-2xl shadow-lg transition hover:scale-105 active:scale-95">繼續演奏</button>
+          </div>
+          
+          <!-- 打擊回饋文字 (良 / 可 / 不可) -->
+          <div v-if="hitFeedback" :key="hitFeedback.key" 
+               class="absolute left-[18%] top-[8%] sm:top-[12%] -translate-x-1/2 z-50 text-3xl sm:text-4xl font-black tracking-widest italic pointer-events-none animate-hit-float drop-shadow-[0_0_12px_rgba(0,0,0,0.9)]"
+               :class="hitFeedback.type === 'perfect' ? 'text-yellow-300 glow-text' : hitFeedback.type === 'good' ? 'text-emerald-400' : 'text-red-500 glow-text-error'">
+            {{ hitFeedback.text }}
+          </div>
+
+          <!-- 太鼓打擊火花特效 -->
+          <div v-for="spark in sparks" :key="spark.id" class="taiko-spark"
+               :style="{ left: '18%', top: '50%', backgroundColor: spark.color, '--tx': spark.tx + 'px', '--ty': spark.ty + 'px' }">
+          </div>
+
+          <!-- 飄浮音符特效容器 -->
+          <div v-for="note in floatingNotes" :key="note.id" 
+               class="floating-note text-purple-300"
+               :style="{ left: note.x + '%', top: note.y + '%' }">
+            {{ note.char }}
+          </div>
+
+          <!-- 太鼓達人音樂節奏軌道 -->
+          <div class="w-full flex-1 min-h-[26vh] my-3 sm:my-5 relative bg-slate-950/80 rounded-2xl border-2 border-amber-500/40 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.9)] flex flex-col justify-center">
+            
+            <!-- 軌道背景滾動條與傳送帶紋理 -->
+            <div class="absolute inset-x-0 h-20 top-1/2 -translate-y-1/2 bg-gradient-to-r from-red-950/40 via-amber-950/30 to-indigo-950/40 border-y-2 border-amber-500/30"></div>
+            <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-amber-400/20"></div>
+
+            <!-- 太鼓判定鼓面 -->
+            <div class="taiko-drum-zone" :class="{ 'taiko-drum-hit': isDrumHit }">
+              <span class="text-xs font-black text-amber-950 tracking-tighter uppercase pointer-events-none">DON</span>
+            </div>
+
+            <!-- 當前成語 / 詞彙提示懸浮橫幅 -->
+            <div v-if="currentWordDisplay" class="absolute top-2 left-1/2 -translate-x-1/2 bg-indigo-950/80 border border-amber-400/50 px-4 py-1 rounded-full text-base sm:text-xl font-bold text-amber-200 shadow-md backdrop-blur-sm z-30">
+              {{ currentWordDisplay }}
+            </div>
+
+            <!-- 實時滾動中的太鼓音符佇列 -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none z-20"> 
+               <div v-for="note in activeVisibleNotes" :key="note.id"
+                    v-show="note.status !== 'hit'"
+                    class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center font-black text-xl sm:text-2xl shadow-xl transition-transform duration-75"
+                    :class="[
+                      note.status === 'missed' ? 'taiko-note-missed text-gray-300 opacity-60' : (isKaNote(note.key) ? 'taiko-note-ka text-sky-100' : 'taiko-note-don text-amber-100'),
+                      note.idx === globalKeyIndex && note.status !== 'missed' ? 'scale-110 z-30 ring-4 ring-amber-300 shadow-[0_0_20px_rgba(252,211,77,0.8)]' : 'scale-90 z-20'
+                    ]"
+                    :style="{ left: note.currentXPercent + '%' }"> 
+                    
+                     <span class="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-sans">{{ note.displayZhuyin }}</span>
+                     
+                     <!-- 音符下方的小按鍵提示 -->
+                     <span class="text-[9px] sm:text-[10px] uppercase font-mono opacity-80 -mt-1"
+                           :class="note.status === 'missed' ? 'text-gray-400' : 'text-amber-200'">
+                       {{ note.key === ' ' ? 'SPACE' : note.key }}
+                     </span>
+
+                     <!-- 中文字提示 -->
+                     <div v-if="note.isFirstOfChar" class="absolute -top-9 sm:-top-11 text-lg sm:text-2xl font-bold whitespace-nowrap drop-shadow-[0_2px_6px_rgba(0,0,0,1)] bg-black/50 px-2 py-0.5 rounded-md border"
+                          :class="note.status === 'missed' ? 'text-gray-400 border-gray-600/50' : 'text-amber-300 border-amber-500/30'">
+                         {{ note.char }}
+                     </div>
+                </div>
+            </div>
+          </div>
+
+          <!-- 虛擬 3D 音樂鍵盤 -->
+          <div class="mt-auto w-full max-w-5xl mx-auto flex flex-col gap-1.5 sm:gap-2 pb-2 z-20">
+            <div v-for="(row, rowIndex) in keyboardLayout" :key="rowIndex" class="flex justify-center gap-1.5 sm:gap-2 w-full">
+              <div v-for="keyInfo in row" :key="keyInfo.key"
+                   @click="handleVirtualKey(keyInfo.key)"
+                   class="flex-1 flex flex-col items-center justify-center rounded-lg sm:rounded-xl synth-key transition-all duration-200"
+                   :class="[
+                     rowIndex === 4 ? 'max-w-2xl' : 'max-w-[2.5rem] sm:max-w-[3.5rem] md:max-w-[4.5rem]',
+                     keyInfo.zhuyin === '空白鍵(一聲)' ? 'h-10 sm:h-12 md:h-14' : 'h-12 sm:h-14 md:h-16',
+                     (nextExpectedKey === keyInfo.key) ? 'active-hint' : 'opacity-85 hover:opacity-100',
+                     { 'pressed brightness-125 scale-95': pressedKeyId === keyInfo.key },
+                     getFingerColorClass(keyInfo.key)
+                   ]"
+              >
+                <span v-if="keyInfo.zhuyin === '空白鍵(一聲)'" class="text-sm sm:text-base font-bold tracking-widest">
+                  SPACE
+                </span>
+                <span v-else class="text-base sm:text-xl md:text-2xl font-bold font-sans">{{ keyInfo.zhuyin }}</span>
+                
+                <span class="absolute top-1 left-1.5 text-[8px] sm:text-[10px] opacity-40 uppercase font-sans">
+                  {{ keyInfo.key === ' ' ? '' : keyInfo.key === '-' ? '-' : keyInfo.key }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 結算報告畫面 -->
+      <div v-else-if="gameState === 'gameover'" class="flex-1 flex flex-col items-center justify-center w-full p-2 z-20">
+        <div class="glass-panel p-8 sm:p-12 rounded-[40px] text-center max-w-md w-full relative border-t border-indigo-400/50">
+          
+          <h2 class="text-4xl sm:text-5xl font-black text-white mb-2 mt-4 glow-text tracking-widest">演奏結束</h2>
+          <p class="text-indigo-300 font-light mb-8">評鑑報告</p>
+          
+          <div class="bg-black/40 rounded-3xl p-6 mb-8 border border-white/10">
+            <p class="text-indigo-400 font-bold mb-2 text-sm tracking-widest">綜合演奏得分</p>
+            <p class="text-6xl font-black text-white mb-6 glow-text">{{ score }}</p>
+            
+            <div class="grid grid-cols-2 gap-4 text-left">
+              <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <p class="text-xs text-indigo-300 font-bold mb-1">彈奏速度 (CPM)</p>
+                <p class="text-xl font-black text-white">{{ cpm }}</p>
+              </div>
+              <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <p class="text-xs text-indigo-300 font-bold mb-1">最高連擊</p>
+                <p class="text-xl font-black text-pink-400">{{ maxCombo }}</p>
+              </div>
+              <div class="col-span-2 bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+                <span class="text-xs text-indigo-300 font-bold">走音次數 (失誤)</span>
+                <span class="text-xl font-black text-red-400">{{ totalWrongKeys }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <button @click="backToMenu" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-2xl transition">
+              回主畫面
+            </button>
+            <button @click="startGame" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_15px_rgba(99,102,241,0.5)] transition">
+              再次挑戰
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 頁尾資訊 -->
+      <footer v-if="gameState === 'start' || gameState === 'gameover'" class="w-full flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 pt-6 pb-2 text-indigo-300/80 text-xs sm:text-sm z-20 relative font-light mt-auto">
+        <a href="https://www.facebook.com/profile.php?id=61578088267283" target="_blank" class="flex items-center gap-1.5 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+          <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          晴光科技實驗室
+        </a>
+        <a href="https://sites.google.com/view/sunnypeng/" target="_blank" class="flex items-center gap-1.5 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+          <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          Sunny's 網站
+        </a>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted, watch } = Vue;
+
+    createApp({
+      setup() {
+        const gameState = ref('start'); 
+        const countdownValue = ref(5);
+        const score = ref(0);
+        const combo = ref(0);
+        const maxCombo = ref(0);
+        const selectedSong = ref("歡樂頌");
+        const heat = ref(0); 
+        
+        // 滾動速度設定 (整體調降)
+        const scrollSpeed = ref(0.8);
+        const speedOptions = [
+          { label: '輕鬆 0.6x', value: 0.6 },
+          { label: '標準 0.8x', value: 0.8 },
+          { label: '極速 1.0x', value: 1.0 }
+        ];
+
+        let heatTimer = null;
+        let countdownInterval = null;
+        let playStartTime = 0;
+        let animationFrameId = null;
+        const playDuration = ref(0);
+        const totalCorrectKeys = ref(0);
+        const totalWrongKeys = ref(0);
+        const floatingNotes = ref([]);
+        const sparks = ref([]);
+        const isDrumHit = ref(false);
+        let noteIdCounter = 0;
+
+        // --- Tone.js 音樂與太鼓打擊樂引擎 ---
+        let melodySynth = null;
+        let errorSynth = null;
+        let backingPad = null;
+        let taikoDonSynth = null;
+        let taikoKaSynth = null;
+        
+        // --- 節奏軌道狀態 ---
+        const noteQueue = ref([]);
+        const globalKeyIndex = ref(0);
+        const hitFeedback = ref(null);
+        const currentTimeSec = ref(0);
+        
+        const currentNoteIndex = ref(0);
+        // 使 melodyScore 具備 Vue 響應性，解決進度條計算與結算條件異常問題
+        const melodyScore = ref([]);
+        const melodyLength = computed(() => melodyScore.value.length);
+
+        const chords = [
+          ["C3", "E3", "G3"],
+          ["F2", "A2", "C3"],
+          ["G2", "B2", "D3"],
+          ["A2", "C3", "E3"]
+        ];
+        let currentChordIndex = 0;
+
+        // 樂譜資料庫 (包含音高 p 與 節奏時值 d，1 為一拍)
+        const songs = {
+          "歡樂頌": [
+            {p:"E4",d:1}, {p:"E4",d:1}, {p:"F4",d:1}, {p:"G4",d:1}, {p:"G4",d:1}, {p:"F4",d:1}, {p:"E4",d:1}, {p:"D4",d:1}, {p:"C4",d:1}, {p:"C4",d:1}, {p:"D4",d:1}, {p:"E4",d:1}, {p:"E4",d:1.5}, {p:"D4",d:0.5}, {p:"D4",d:2},
+            {p:"E4",d:1}, {p:"E4",d:1}, {p:"F4",d:1}, {p:"G4",d:1}, {p:"G4",d:1}, {p:"F4",d:1}, {p:"E4",d:1}, {p:"D4",d:1}, {p:"C4",d:1}, {p:"C4",d:1}, {p:"D4",d:1}, {p:"E4",d:1}, {p:"D4",d:1.5}, {p:"C4",d:0.5}, {p:"C4",d:2}
+          ],
+          "小星星": [
+            {p:"C4",d:1}, {p:"C4",d:1}, {p:"G4",d:1}, {p:"G4",d:1}, {p:"A4",d:1}, {p:"A4",d:1}, {p:"G4",d:2}, 
+            {p:"F4",d:1}, {p:"F4",d:1}, {p:"E4",d:1}, {p:"E4",d:1}, {p:"D4",d:1}, {p:"D4",d:1}, {p:"C4",d:2}, 
+            {p:"G4",d:1}, {p:"G4",d:1}, {p:"F4",d:1}, {p:"F4",d:1}, {p:"E4",d:1}, {p:"E4",d:1}, {p:"D4",d:2}, 
+            {p:"G4",d:1}, {p:"G4",d:1}, {p:"F4",d:1}, {p:"F4",d:1}, {p:"E4",d:1}, {p:"E4",d:1}, {p:"D4",d:2}
+          ],
+          "小綿羊": [
+            {p:"E4",d:1.5}, {p:"D4",d:0.5}, {p:"C4",d:1}, {p:"D4",d:1}, {p:"E4",d:1}, {p:"E4",d:1}, {p:"E4",d:2}, 
+            {p:"D4",d:1}, {p:"D4",d:1}, {p:"D4",d:2}, {p:"E4",d:1}, {p:"G4",d:1}, {p:"G4",d:2}, 
+            {p:"E4",d:1.5}, {p:"D4",d:0.5}, {p:"C4",d:1}, {p:"D4",d:1}, {p:"E4",d:1}, {p:"E4",d:1}, {p:"E4",d:1}, {p:"E4",d:1}, 
+            {p:"D4",d:1}, {p:"D4",d:1}, {p:"E4",d:1}, {p:"D4",d:1}, {p:"C4",d:2}
+          ],
+          "倫敦鐵橋": [
+            {p:"G4",d:1.5}, {p:"A4",d:0.5}, {p:"G4",d:1}, {p:"F4",d:1}, {p:"E4",d:1}, {p:"F4",d:1}, {p:"G4",d:2}, 
+            {p:"D4",d:1}, {p:"E4",d:1}, {p:"F4",d:2}, {p:"E4",d:1}, {p:"F4",d:1}, {p:"G4",d:2}, 
+            {p:"G4",d:1.5}, {p:"A4",d:0.5}, {p:"G4",d:1}, {p:"F4",d:1}, {p:"E4",d:1}, {p:"F4",d:1}, {p:"G4",d:2}, 
+            {p:"D4",d:2}, {p:"G4",d:2}, {p:"E4",d:1}, {p:"C4",d:2}
+          ],
+          "兩隻老虎": [
+            {p:"C4",d:1}, {p:"D4",d:1}, {p:"E4",d:1}, {p:"C4",d:1}, {p:"C4",d:1}, {p:"D4",d:1}, {p:"E4",d:1}, {p:"C4",d:1},
+            {p:"E4",d:1}, {p:"F4",d:1}, {p:"G4",d:2}, {p:"E4",d:1}, {p:"F4",d:1}, {p:"G4",d:2},
+            {p:"G4",d:0.5}, {p:"A4",d:0.5}, {p:"G4",d:0.5}, {p:"F4",d:0.5}, {p:"E4",d:1}, {p:"C4",d:1},
+            {p:"G4",d:0.5}, {p:"A4",d:0.5}, {p:"G4",d:0.5}, {p:"F4",d:0.5}, {p:"E4",d:1}, {p:"C4",d:1},
+            {p:"D4",d:1}, {p:"G3",d:1}, {p:"C4",d:2}, {p:"D4",d:1}, {p:"G3",d:1}, {p:"C4",d:2}
+          ]
+        };
+
+        const initAudio = async () => {
+          try {
+            await Tone.start();
+            if (!melodySynth) {
+              melodySynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.02, decay: 0.1, sustain: 0.2, release: 1.2 }
+              }).toDestination();
+              melodySynth.volume.value = 2;
+
+              // 太鼓「咚 DON」音色 (Membrane Synth)
+              taikoDonSynth = new Tone.MembraneSynth({
+                pitchDecay: 0.04,
+                octaves: 4,
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.3 }
+              }).toDestination();
+              taikoDonSynth.volume.value = 6;
+
+              // 太鼓「咔 KA」音色 (Metal Synth)
+              taikoKaSynth = new Tone.MetalSynth({
+                frequency: 220,
+                envelope: { attack: 0.001, decay: 0.08, release: 0.05 },
+                harmonicity: 4,
+                modulationIndex: 20,
+                resonance: 3000,
+                octaves: 1.5
+              }).toDestination();
+              taikoKaSynth.volume.value = -6;
+
+              errorSynth = new Tone.PolySynth(Tone.FMSynth, {
+                harmonicity: 0.5, modulationIndex: 10,
+                oscillator: { type: "sawtooth" },
+                envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 }
+              }).toDestination();
+              errorSynth.volume.value = -5;
+
+              backingPad = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "triangle" },
+                envelope: { attack: 1, decay: 0.5, sustain: 0.8, release: 2 }
+              }).toDestination();
+              
+              const chorus = new Tone.Chorus(4, 2.5, 0.5).toDestination().start();
+              backingPad.connect(chorus);
+              backingPad.volume.value = -60;
+            }
+          } catch(e) {
+            console.log("Audio Init Warning:", e);
+          }
+        };
+
+        // 自動注音對應英文按鍵對照表
+        const zhuyinKeyMap = {
+          'ㄅ':'1', 'ㄉ':'2', 'ˇ':'3', 'ˋ':'4', 'ㄓ':'5', 'ˊ':'6', '˙':'7', 'ㄚ':'8', 'ㄞ':'9', 'ㄢ':'0', 'ㄦ':'-',
+          'ㄆ':'q', 'ㄊ':'w', 'ㄍ':'e', 'ㄐ':'r', 'ㄔ':'t', 'ㄗ':'y', 'ㄧ':'u', 'ㄛ':'i', 'ㄟ':'o', 'ㄣ':'p',
+          'ㄇ':'a', 'ㄋ':'s', 'ㄎ':'d', 'ㄑ':'f', 'ㄕ':'g', 'ㄘ':'h', 'ㄨ':'j', 'ㄜ':'k', 'ㄠ':'l', 'ㄤ':';',
+          'ㄈ':'z', 'ㄌ':'x', 'ㄏ':'c', 'ㄒ':'v', 'ㄖ':'b', 'ㄙ':'n', 'ㄩ':'m', 'ㄝ':',', 'ㄡ':'.', 'ㄥ':'/'
+        };
+
+        const keyToZhuyinMap = {
+          '1':'ㄅ', '2':'ㄉ', '3':'ˇ', '4':'ˋ', '5':'ㄓ', '6':'ˊ', '7':'˙', '8':'ㄚ', '9':'ㄞ', '0':'ㄢ', '-':'ㄦ',
+          'q':'ㄆ', 'w':'ㄊ', 'e':'ㄍ', 'r':'ㄐ', 't':'ㄔ', 'y':'ㄗ', 'u':'ㄧ', 'i':'ㄛ', 'o':'ㄟ', 'p':'ㄣ',
+          'a':'ㄇ', 's':'ㄋ', 'd':'ㄎ', 'f':'ㄑ', 'g':'ㄕ', 'h':'ㄘ', 'j':'ㄨ', 'k':'ㄜ', 'l':'ㄠ', ';':'ㄤ',
+          'z':'ㄈ', 'x':'ㄌ', 'c':'ㄏ', 'v':'ㄒ', 'b':'ㄖ', 'n':'ㄙ', 'm':'ㄩ', ',':'ㄝ', '.':'ㄡ', '/':'ㄥ',
+          ' ': '一聲'
+        };
+
+        const defaultIdioms = [
+            { word: "一鳴驚人", zhuyin: ["ㄧ", "ㄇㄧㄥˊ", "ㄐㄧㄥ", "ㄖㄣˊ"] },
+            { word: "五花八門", zhuyin: ["ㄨˇ", "ㄏㄨㄚ", "ㄅㄚ", "ㄇㄣˊ"] },
+            { word: "守株待兔", zhuyin: ["ㄕㄡˇ", "ㄓㄨ", "ㄉㄞˋ", "ㄊㄨˋ"] }
+        ];
+
+        const getIdiomData = () => {
+            if (window.globalIdiomData && Array.isArray(window.globalIdiomData) && window.globalIdiomData.length > 0) {
+                return window.globalIdiomData;
+            }
+            return defaultIdioms;
+        };
+
+        const processIdioms = (rawList) => {
+          return rawList.map(item => {
+            const characters = item.word.split('').map((char, index) => {
+              const zhuyinStr = item.zhuyin ? item.zhuyin[index] : '';
+              const keys = [];
+              let hasTone = false;
+              if (zhuyinStr) {
+                for (let charZ of zhuyinStr) {
+                   if (zhuyinKeyMap[charZ]) keys.push(zhuyinKeyMap[charZ]);
+                   if (['ˊ', 'ˇ', 'ˋ', '˙'].includes(charZ)) hasTone = true;
+                }
+              }
+              if (!hasTone) keys.push(' ');
+              return { char, zhuyin: zhuyinStr, keys };
+            });
+            return { word: item.word, characters };
+          });
+        };
+
+        const pressedKeyId = ref(null);
+
+        const nextExpectedKey = computed(() => noteQueue.value[globalKeyIndex.value]?.key);
+
+        const isKaNote = (key) => {
+          return ['3', '4', '6', '7', ' '].includes(key);
+        };
+
+        const activeVisibleNotes = computed(() => {
+          const targetPercent = 18;
+          // 速度基數從 22 降至 16，讓音符移動得更平緩
+          const speedFactor = 16 * scrollSpeed.value; 
+
+          return noteQueue.value
+            .slice(Math.max(0, globalKeyIndex.value - 4), globalKeyIndex.value + 12)
+            .map(note => {
+              const timeDiff = note.targetTimeSec - currentTimeSec.value;
+              const currentXPercent = targetPercent + (timeDiff * speedFactor);
+              return {
+                ...note,
+                currentXPercent
+              };
+            });
+        });
+
+        const currentWordDisplay = computed(() => {
+          const currentNote = noteQueue.value[globalKeyIndex.value];
+          return currentNote ? currentNote.word : '';
+        });
+
+        const getFingerColorClass = (key) => {
+          const k = key.toLowerCase();
+          if (['1', 'q', 'a', 'z'].includes(k)) return 'bg-rose-500/30 border-rose-400/40 text-rose-100 shadow-[inset_0_0_12px_rgba(244,63,94,0.3)]';
+          if (['2', 'w', 's', 'x'].includes(k)) return 'bg-orange-500/30 border-orange-400/40 text-orange-100 shadow-[inset_0_0_12px_rgba(249,115,22,0.3)]';
+          if (['3', 'e', 'd', 'c'].includes(k)) return 'bg-yellow-500/30 border-yellow-400/40 text-yellow-100 shadow-[inset_0_0_12px_rgba(234,179,8,0.3)]';
+          if (['4', '5', 'r', 't', 'f', 'g', 'v', 'b'].includes(k)) return 'bg-green-500/30 border-green-400/40 text-green-100 shadow-[inset_0_0_12px_rgba(34,197,94,0.3)]';
+          if (['6', '7', 'y', 'u', 'h', 'j', 'n', 'm'].includes(k)) return 'bg-cyan-500/30 border-cyan-400/40 text-cyan-100 shadow-[inset_0_0_12px_rgba(6,182,212,0.3)]';
+          if (['8', 'i', 'k', ','].includes(k)) return 'bg-blue-500/30 border-blue-400/40 text-blue-100 shadow-[inset_0_0_12px_rgba(59,130,246,0.3)]';
+          if (['9', 'o', 'l', '.'].includes(k)) return 'bg-indigo-500/30 border-indigo-400/40 text-indigo-100 shadow-[inset_0_0_12px_rgba(99,102,241,0.3)]';
+          if (['0', '-', 'p', ';', '/'].includes(k)) return 'bg-fuchsia-500/30 border-fuchsia-400/40 text-fuchsia-100 shadow-[inset_0_0_12px_rgba(217,70,239,0.3)]';
+          if (k === ' ') return 'bg-slate-500/30 border-slate-400/40 text-slate-100 shadow-[inset_0_0_12px_rgba(100,116,139,0.3)]';
+          return 'bg-gray-500/30 border-gray-400/40 text-gray-100';
+        };
+
+        const cpm = computed(() => {
+          const minutesPassed = playDuration.value / 60000;
+          if (minutesPassed <= 0) return 0;
+          return Math.round(totalCorrectKeys.value / minutesPassed);
+        });
+
+        const getPointsPerKey = () => 2.5;
+
+        watch(heat, (newVal) => {
+          if (backingPad) {
+            if (newVal === 0) {
+               backingPad.volume.rampTo(-60, 0.5);
+            } else {
+               const vol = -40 + (newVal / 100) * 25;
+               backingPad.volume.rampTo(vol, 0.2);
+            }
+          }
+        });
+
+        const updateBackingChord = () => {
+          if (backingPad) {
+            backingPad.releaseAll();
+            if (heat.value > 0) {
+              backingPad.triggerAttack(chords[currentChordIndex]);
+            }
+          }
+        };
+
+        const startHeatTimer = () => {
+          clearInterval(heatTimer);
+          heatTimer = setInterval(() => {
+            if (gameState.value === 'playing' && heat.value > 0) {
+              heat.value -= 3;
+              if (heat.value < 0) heat.value = 0;
+            }
+          }, 100);
+        };
+
+        const addFloatingNote = () => {
+          const id = noteIdCounter++;
+          const emojis = ['🎵', '🎶', '🎼', '✨'];
+          const x = 20 + Math.random() * 20;
+          floatingNotes.value.push({ id, x, y: 50, char: emojis[Math.floor(Math.random() * emojis.length)] });
+          setTimeout(() => { floatingNotes.value = floatingNotes.value.filter(n => n.id !== id); }, 1000);
+        };
+
+        const triggerSparks = (isKa) => {
+          isDrumHit.value = true;
+          setTimeout(() => { isDrumHit.value = false; }, 150);
+
+          const colors = isKa ? ['#38bdf8', '#7dd3fc', '#ffffff'] : ['#fef08a', '#f59e0b', '#ef4444', '#ffffff'];
+          for (let i = 0; i < 12; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 30 + Math.random() * 50;
+            sparks.value.push({
+              id: Date.now() + Math.random(),
+              color: colors[Math.floor(Math.random() * colors.length)],
+              tx: Math.cos(angle) * dist,
+              ty: Math.sin(angle) * dist
+            });
+          }
+          setTimeout(() => { sparks.value = sparks.value.slice(-20); }, 400);
+        };
+
+        const showFeedback = (text, type) => {
+          hitFeedback.value = { text, type, key: Date.now() };
+        };
+
+        const updateFrame = () => {
+          if (gameState.value === 'playing') {
+            currentTimeSec.value = (performance.now() - playStartTime) / 1000;
+
+            const currentNote = noteQueue.value[globalKeyIndex.value];
+            if (currentNote) {
+              const speedFactor = 16 * scrollSpeed.value; // 對應上方的速度基數
+              const currentX = 18 + (currentNote.targetTimeSec - currentTimeSec.value) * speedFactor;
+              
+              // 判定錯過：放寬判定區域，將 14% 降至 8%，讓音符過了中心點後玩家仍有更多時間補救
+              if (currentX < 8) { 
+                currentNote.status = 'missed';
+                showFeedback('不可!', 'bad');
+                combo.value = 0;
+                heat.value = Math.max(0, heat.value - 10);
+                totalWrongKeys.value++;
+                globalKeyIndex.value++; // 略過這個音符，不再強迫打擊
+              }
+            }
+
+            animationFrameId = requestAnimationFrame(updateFrame);
+          }
+        };
+
+        const startGame = async () => {
+          // 移除按鈕焦點，防止按下空白鍵（一聲）時重複觸發按鈕點擊
+          if (document.activeElement && document.activeElement.blur) {
+            document.activeElement.blur();
+          }
+
+          await initAudio(); 
+          
+          melodyScore.value = songs[selectedSong.value] || songs["歡樂頌"];
+
+          const targetList = getIdiomData();
+          const processedIdioms = processIdioms(targetList).sort(() => Math.random() - 0.5);
+
+          const generatedQueue = [];
+          let idCounter = 0;
+          // 將第一顆音符出現的等待時間拉長，留出更多緩衝
+          let accTimeSec = 3.5;
+          const secondsPerBeat = 0.55 / scrollSpeed.value; 
+
+          for (let loop = 0; loop < 50; loop++) {
+            processedIdioms.forEach(idiom => {
+              idiom.characters.forEach(charObj => {
+                charObj.keys.forEach((key, keyIdx) => {
+                  let noteDuration = 1;
+                  if (idCounter < melodyScore.value.length) {
+                    noteDuration = melodyScore.value[idCounter].d;
+                  }
+
+                  generatedQueue.push({
+                    id: idCounter,
+                    idx: idCounter,
+                    key: key,
+                    displayZhuyin: key === ' ' ? '' : (keyToZhuyinMap[key] || key),
+                    char: charObj.char,
+                    word: idiom.word,
+                    isFirstOfChar: keyIdx === 0,
+                    targetTimeSec: accTimeSec,
+                    status: 'pending'
+                  });
+                  
+                  accTimeSec += noteDuration * secondsPerBeat;
+                  idCounter++;
+                });
+              });
+            });
+          }
+          
+          noteQueue.value = generatedQueue;
+          globalKeyIndex.value = 0;
+
+          score.value = 0; combo.value = 0; maxCombo.value = 0; heat.value = 0;
+          totalCorrectKeys.value = 0; totalWrongKeys.value = 0;
+          currentNoteIndex.value = 0;
+          currentChordIndex = 0;
+          
+          floatingNotes.value = [];
+          sparks.value = [];
+          hitFeedback.value = null;
+          
+          // 進入倒數狀態
+          gameState.value = 'countdown';
+          countdownValue.value = 5;
+          
+          clearInterval(countdownInterval);
+          countdownInterval = setInterval(() => {
+            countdownValue.value--;
+            if (countdownValue.value <= 0) {
+              clearInterval(countdownInterval);
+              gameState.value = 'playing';
+              playStartTime = performance.now();
+              playDuration.value = 0;
+
+              startHeatTimer();
+              updateBackingChord();
+
+              cancelAnimationFrame(animationFrameId);
+              animationFrameId = requestAnimationFrame(updateFrame);
+            }
+          }, 1000);
+        };
+
+        const pauseGame = () => {
+          if (gameState.value === 'countdown') return;
+          gameState.value = 'paused';
+          cancelAnimationFrame(animationFrameId);
+          playDuration.value += performance.now() - playStartTime;
+          if (backingPad) backingPad.releaseAll();
+        };
+
+        const resumeGame = () => {
+          gameState.value = 'playing';
+          playStartTime = performance.now() - (currentTimeSec.value * 1000);
+          updateBackingChord();
+          animationFrameId = requestAnimationFrame(updateFrame);
+        };
+
+        const endGame = () => {
+          cancelAnimationFrame(animationFrameId);
+          playDuration.value = performance.now() - playStartTime;
+          gameState.value = 'gameover';
+          clearInterval(heatTimer);
+          if (backingPad) backingPad.releaseAll();
+        };
+
+        const backToMenu = () => {
+          cancelAnimationFrame(animationFrameId);
+          gameState.value = 'start';
+          clearInterval(heatTimer);
+          clearInterval(countdownInterval);
+          if (backingPad) backingPad.releaseAll();
+        };
+
+        const processKeyInput = (pressedKey) => {
+          if (gameState.value !== 'playing') return;
+
+          const currentNote = noteQueue.value[globalKeyIndex.value];
+          
+          // 防止提早亂打：如果音符還沒進入打擊範圍，不予理會
+          if (currentNote) {
+            const timeDiff = currentNote.targetTimeSec - currentTimeSec.value;
+            if (timeDiff > 1.5) {
+               return; // 距離太遠，忽略按鍵 (稍微放寬提早按的容錯至1.5秒)
+            }
+          }
+
+          pressedKeyId.value = pressedKey;
+          setTimeout(() => { pressedKeyId.value = null; }, 150);
+
+          const isKa = isKaNote(pressedKey);
+
+          if (pressedKey === nextExpectedKey.value) {
+            if (isKa && taikoKaSynth) {
+              taikoKaSynth.triggerAttackRelease("16n");
+            } else if (taikoDonSynth) {
+              taikoDonSynth.triggerAttackRelease("C2", "8n");
+            }
+
+            if (melodySynth && currentNoteIndex.value < melodyScore.value.length) {
+              const noteData = melodyScore.value[currentNoteIndex.value];
+              const octaveShift = (combo.value > 20) ? "5" : noteData.p.charAt(1);
+              const actualNote = noteData.p.charAt(0) + octaveShift;
+              
+              let durationStr = "4n";
+              if (noteData.d === 0.5) durationStr = "8n";
+              else if (noteData.d === 1.5) durationStr = "4n.";
+              else if (noteData.d === 2) durationStr = "2n";
+
+              melodySynth.triggerAttackRelease(actualNote, durationStr);
+              currentNoteIndex.value++;
+            }
+
+            let timingRating = 'good';
+            let ratingText = '可!';
+            if (currentNote) {
+              const timeDiff = Math.abs(currentNote.targetTimeSec - currentTimeSec.value);
+              // 放寬 Perfect (良) 的判定時間，從 0.2 秒增加到 0.35 秒，更容易拿高分
+              if (timeDiff < 0.35) {
+                timingRating = 'perfect';
+                ratingText = '良!';
+              }
+              currentNote.status = 'hit'; // 標記為已打擊，讓它從畫面上消失
+            }
+
+            triggerSparks(isKa);
+            addFloatingNote();
+            showFeedback(ratingText, timingRating);
+            
+            totalCorrectKeys.value++;
+            combo.value++;
+            if (combo.value > maxCombo.value) maxCombo.value = combo.value;
+            
+            const nextNote = noteQueue.value[globalKeyIndex.value + 1];
+            if (currentNote && nextNote && currentNote.word !== nextNote.word) {
+              currentChordIndex = (currentChordIndex + 1) % chords.length;
+              updateBackingChord();
+            }
+
+            globalKeyIndex.value++;
+            heat.value = Math.min(100, heat.value + 15);
+            
+            if (heat.value === 15) updateBackingChord();
+
+            const basePoint = getPointsPerKey() * (timingRating === 'perfect' ? 1.5 : 1.0);
+            const comboBonus = Math.floor(combo.value / 10) * 0.5; 
+            score.value = Math.round(score.value + basePoint + comboBonus);
+            
+            if (melodyScore.value.length > 0 && currentNoteIndex.value >= melodyScore.value.length) {
+              setTimeout(() => { endGame(); }, 400);
+            }
+            
+          } else {
+            if (errorSynth) {
+              const sourNotes = ["C#3", "D#3", "F#3", "G#3"];
+              errorSynth.triggerAttackRelease([sourNotes[Math.floor(Math.random()*4)], "A2"], "16n");
+            }
+            showFeedback('不可!', 'bad');
+            combo.value = 0;
+            heat.value = 0; 
+            totalWrongKeys.value++;
+            
+            const penalty = getPointsPerKey() * 0.8;
+            score.value = Math.max(0, Math.round(score.value - penalty)); 
+          }
+        };
+
+        const handleKeydown = (event) => {
+          if (gameState.value !== 'playing') return;
+          const ignoreKeys = ['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Escape', 'CapsLock'];
+          if (ignoreKeys.includes(event.key)) return;
+          
+          // 阻止空白鍵捲動頁面或觸發聚焦按鈕
+          if (event.key === ' ' || event.key === 'Spacebar') {
+            event.preventDefault();
+          }
+
+          processKeyInput(event.key.toLowerCase());
+        };
+
+        const handleVirtualKey = (key) => {
+          processKeyInput(key);
+        };
+
+        onMounted(() => { window.addEventListener('keydown', handleKeydown); });
+        onUnmounted(() => { 
+          window.removeEventListener('keydown', handleKeydown);
+          cancelAnimationFrame(animationFrameId);
+          clearInterval(heatTimer);
+        });
+
+        const keyboardLayout = [
+          [
+            { key: '1', zhuyin: 'ㄅ' }, { key: '2', zhuyin: 'ㄉ' }, { key: '3', zhuyin: 'ˇ' }, { key: '4', zhuyin: 'ˋ' },
+            { key: '5', zhuyin: 'ㄓ' }, { key: '6', zhuyin: 'ˊ' }, { key: '7', zhuyin: '˙' }, { key: '8', zhuyin: 'ㄚ' },
+            { key: '9', zhuyin: 'ㄞ' }, { key: '0', zhuyin: 'ㄢ' }, { key: '-', zhuyin: 'ㄦ' }
+          ],
+          [
+            { key: 'q', zhuyin: 'ㄆ' }, { key: 'w', zhuyin: 'ㄊ' }, { key: 'e', zhuyin: 'ㄍ' }, { key: 'r', zhuyin: 'ㄐ' },
+            { key: 't', zhuyin: 'ㄔ' }, { key: 'y', zhuyin: 'ㄗ' }, { key: 'u', zhuyin: 'ㄧ' }, { key: 'i', zhuyin: 'ㄛ' },
+            { key: 'o', zhuyin: 'ㄟ' }, { key: 'p', zhuyin: 'ㄣ' }
+          ],
+          [
+            { key: 'a', zhuyin: 'ㄇ' }, { key: 's', zhuyin: 'ㄋ' }, { key: 'd', zhuyin: 'ㄎ' }, { key: 'f', zhuyin: 'ㄑ' },
+            { key: 'g', zhuyin: 'ㄕ' }, { key: 'h', zhuyin: 'ㄘ' }, { key: 'j', zhuyin: 'ㄨ' }, { key: 'k', zhuyin: 'ㄜ' },
+            { key: 'l', zhuyin: 'ㄠ' }, { key: ';', zhuyin: 'ㄤ' }
+          ],
+          [
+            { key: 'z', zhuyin: 'ㄈ' }, { key: 'x', zhuyin: 'ㄌ' }, { key: 'c', zhuyin: 'ㄏ' }, { key: 'v', zhuyin: 'ㄒ' },
+            { key: 'b', zhuyin: 'ㄖ' }, { key: 'n', zhuyin: 'ㄙ' }, { key: 'm', zhuyin: 'ㄩ' }, { key: ',', zhuyin: 'ㄝ' },
+            { key: '.', zhuyin: 'ㄡ' }, { key: '/', zhuyin: 'ㄥ' }
+          ],
+          [
+            { key: ' ', zhuyin: '空白鍵(一聲)' }
+          ]
+        ];
+
+        return {
+          gameState, countdownValue, score, combo, maxCombo, selectedSong, heat,
+          scrollSpeed, speedOptions, isKaNote, activeVisibleNotes,
+          currentWordDisplay, sparks, isDrumHit,
+          nextExpectedKey, pressedKeyId, keyboardLayout,
+          totalCorrectKeys, totalWrongKeys, cpm, floatingNotes,
+          noteQueue, globalKeyIndex, hitFeedback,
+          currentNoteIndex, melodyLength,
+          startGame, pauseGame, resumeGame, backToMenu, getFingerColorClass, handleVirtualKey
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
