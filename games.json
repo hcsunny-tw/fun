@@ -1,4 +1,13 @@
 [
+     {
+    "title": "互動賓果紙(數字)",
+    "image": "https://hcsunny-tw.github.io/fun/img/BingoNum.png",
+    "link": "https://hcsunny-tw.github.io/fun/Bingo/Num.html",
+    "category": "其他遊戲",
+    "description": "環保賓果紙，隨機抽取，支援點擊做記號與畫線",
+    "tags": ["班級經營", "賓果","配對連線"],
+    "date": "2026-08"
+  },
     {
     "title": "ㄅㄆㄇ成語王",
     "image": "https://hcsunny-tw.github.io/fun/img/mpsidiom.png",
