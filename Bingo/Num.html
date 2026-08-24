@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>護眼互動賓果紙</title>
+<title>互動賓果紙(數字)</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,17 +78,17 @@
   }
 </style>
 </head>
-<body class="font-sans min-h-screen flex flex-col items-center justify-start p-4 sm:p-8 select-none">
+<body class="font-sans h-screen max-h-screen overflow-hidden flex flex-col justify-between p-2 sm:p-4 select-none box-border">
 
-<header class="w-full max-w-4xl flex items-center justify-between mb-6 px-1">
-  <h1 class="text-2xl sm:text-3xl font-black tracking-wide" id="headerTitle">學生互動賓果卡</h1>
+<header class="w-full max-w-4xl mx-auto flex items-center justify-between mb-2 px-1 shrink-0">
+  <h1 class="text-xl sm:text-2xl font-black tracking-wide" id="headerTitle">學生互動賓果卡</h1>
 
   <!-- 右上角主題風格切換選單 -->
   <div class="relative">
-    <button onclick="toggleThemeMenu()" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm rounded-xl border border-slate-200 shadow-sm flex items-center gap-1.5 transition">
+    <button onclick="toggleThemeMenu()" class="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 shadow-sm flex items-center gap-1 transition">
       <span id="currentThemeIcon">🎨</span>
       <span id="currentThemeName">護眼綠</span>
-      <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+      <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
     </button>
     <div id="themeMenu" class="hidden absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs sm:text-sm font-bold">
       <button onclick="setTheme('green')" class="w-full text-left px-3 py-1.5 hover:bg-emerald-50 text-emerald-800 flex items-center gap-2">🌿 護眼綠</button>
@@ -99,97 +99,100 @@
   </div>
 </header>
 
-<div class="w-full max-w-4xl flex flex-col md:flex-row gap-6 justify-center items-start">
+<div class="w-full max-w-4xl mx-auto flex-1 min-h-0 flex flex-col md:flex-row gap-3 sm:gap-4 justify-center items-stretch my-auto">
 
   <!-- 賓果卡主體 -->
-  <div class="w-full md:w-[480px] bg-eyecare-card rounded-2xl p-5 sm:p-6 card-shadow border border-eyecare-border">
+  <div class="w-full md:w-[440px] bg-eyecare-card rounded-2xl p-3 sm:p-4 card-shadow border border-eyecare-border flex flex-col justify-between shrink-0">
     
-    <!-- 頂部資訊欄：卡號、時間與重抽按鈕 (移至右上角避免誤觸) -->
-    <div class="flex justify-between items-start pb-3 mb-3 border-b-2 border-dashed border-eyecare-border">
+    <!-- 頂部資訊欄：卡號、時間與重抽按鈕 -->
+    <div class="flex justify-between items-start pb-2 mb-2 border-b border-dashed border-eyecare-border shrink-0">
       <div>
-        <span class="text-2xl font-black text-eyecare-primary tracking-widest block leading-none" id="bingoLogo">BINGO</span>
-        <span class="text-xs text-eyecare-muted mt-1 block">範圍：1 ~ 40 隨機號</span>
+        <span class="text-xl sm:text-2xl font-black text-eyecare-primary tracking-widest block leading-none" id="bingoLogo">BINGO</span>
+        <span class="text-[11px] text-eyecare-muted mt-0.5 block">範圍：1 ~ 40 隨機號</span>
       </div>
-      <div class="flex flex-col items-end gap-1.5">
-        <button id="mainBtnDraw" onclick="requestRedraw()" class="px-3 py-1.5 bg-eyecare-primary hover:bg-eyecare-hover text-white text-xs font-bold rounded-lg transition duration-150 active:scale-95 shadow-sm flex items-center gap-1">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+      <div class="flex flex-col items-end gap-1">
+        <button id="mainBtnDraw" onclick="requestRedraw()" class="px-2.5 py-1 bg-eyecare-primary hover:bg-eyecare-hover text-white text-xs font-bold rounded-lg transition duration-150 active:scale-95 shadow-sm flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           抽取全新賓果卡
         </button>
-        <div class="text-right text-[11px] text-eyecare-muted">
+        <div class="text-right text-[10px] text-eyecare-muted leading-tight">
           <div>卡號：<span id="cardId" class="font-bold text-eyecare-text">------</span></div>
           <div id="drawTime">抽卡時間：--</div>
-          <div id="luckStatus" class="mt-1 font-bold">--</div>
+          <div id="luckStatus" class="mt-0.5 font-bold">--</div>
         </div>
       </div>
     </div>
 
-    <!-- 5x5 賓果網格容器 (包含按鈕與自由塗鴉 Canvas 層) -->
-    <div class="relative w-full aspect-square mb-4">
+    <!-- 5x5 賓果網格容器 -->
+    <div class="relative w-full aspect-square my-auto max-h-[58vh]">
       <!-- 數字網格 -->
-      <div id="bingoGrid" class="grid grid-cols-5 gap-2 sm:gap-2.5 w-full h-full">
+      <div id="bingoGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2 w-full h-full">
         <!-- 網格將由 JavaScript 自動生成 -->
       </div>
 
-      <!-- 自由塗鴉 Canvas 覆蓋層 (用於學生手動連線) -->
+      <!-- 自由塗鴉 Canvas 覆蓋層 -->
       <canvas id="drawCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-20 rounded-xl"></canvas>
     </div>
 
     <!-- 工具列：手畫畫筆連線控制項 -->
-    <div class="flex gap-2">
-      <button id="drawModeBtn" onclick="toggleDrawMode()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-eyecare-text text-xs sm:text-sm font-bold rounded-xl transition border border-slate-300 flex items-center justify-center gap-1.5 shadow-sm">
+    <div class="flex gap-2 mt-2 shrink-0">
+      <button id="drawModeBtn" onclick="toggleDrawMode()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-eyecare-text text-xs font-bold rounded-xl transition border border-slate-300 flex items-center justify-center gap-1.5 shadow-sm">
         <span>✏️ 手動連線 (畫筆)</span>
         <span id="drawStatusBadge" class="text-[10px] px-1.5 py-0.5 bg-slate-300 text-slate-700 rounded-md">關閉</span>
       </button>
-      <button onclick="clearCanvas()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs sm:text-sm font-bold rounded-xl transition border border-slate-300 flex items-center justify-center gap-1 shadow-sm">
+      <button onclick="clearCanvas()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl transition border border-slate-300 flex items-center justify-center gap-1 shadow-sm">
         🧹 清除連線
       </button>
     </div>
   </div>
 
   <!-- 右側：已挖空數字紀錄欄與連線詳情 -->
-  <div class="w-full md:w-[240px] bg-eyecare-card rounded-2xl p-5 card-shadow border border-eyecare-border flex flex-col min-h-[220px] md:min-h-[480px]">
-    <div class="flex justify-between items-center pb-3 mb-3 border-b border-eyecare-border">
-      <h2 class="font-bold text-eyecare-text text-base flex items-center gap-1.5">
+  <div class="w-full md:w-[220px] bg-eyecare-card rounded-2xl p-3 sm:p-4 card-shadow border border-eyecare-border flex flex-col justify-between shrink-0 overflow-hidden">
+    <div class="flex justify-between items-center pb-2 mb-2 border-b border-eyecare-border shrink-0">
+      <h2 class="font-bold text-eyecare-text text-sm sm:text-base flex items-center gap-1">
         <span>📍 已挖空號碼</span>
       </h2>
-      <span id="dugCount" class="bg-emerald-100 text-eyecare-primary text-xs px-2.5 py-1 rounded-full font-bold">0 格</span>
+      <span id="dugCount" class="bg-emerald-100 text-eyecare-primary text-xs px-2 py-0.5 rounded-full font-bold">0 格</span>
     </div>
 
-    <div id="dugList" class="flex flex-wrap gap-2 align-content-start flex-1 mb-4">
-      <!-- 已挖空數字清單將顯示於此 -->
-    </div>
-    
-    <div id="emptyHint" class="text-xs text-eyecare-muted text-center my-auto py-8">
-      點擊賓果卡上的數字即可劃掉挖空
+    <!-- 可內部捲動的挖空清單區塊 -->
+    <div class="flex-1 min-h-0 overflow-y-auto my-1 pr-1">
+      <div id="dugList" class="flex flex-wrap gap-1.5 align-content-start">
+        <!-- 已挖空數字清單將顯示於此 -->
+      </div>
+      
+      <div id="emptyHint" class="text-xs text-eyecare-muted text-center py-6">
+        點擊賓果卡上的數字即可劃掉挖空
+      </div>
     </div>
 
     <!-- 提示說明卡 -->
-    <div class="mt-auto bg-emerald-50/70 p-3 rounded-xl border border-emerald-100 text-xs text-eyecare-muted space-y-1" id="instructionBox">
+    <div class="mt-auto bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100 text-[11px] text-eyecare-muted space-y-0.5 shrink-0" id="instructionBox">
       <p class="font-bold text-eyecare-primary flex items-center gap-1">💡 使用說明：</p>
-      <p>1. 點擊數字即可劃掉挖空。</p>
-      <p>2. 🍀 中間格憑運氣，隨機獲得 FREE 格或實力數字！</p>
-      <p>3. 開啟【手動連線】即可用畫筆親自在賓果卡上劃線連線！</p>
+      <p>1. 點擊數字劃掉挖空。</p>
+      <p>2. 🍀 隨機獲得 FREE 格或實力數字！</p>
+      <p>3. 開啟【手動連線】即可畫筆劃線！</p>
     </div>
   </div>
 
 </div>
 
-<footer class="w-full max-w-4xl mt-8 pt-4 pb-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-  <div class="flex items-center gap-1 font-medium">
+<footer class="w-full max-w-4xl mx-auto pt-2 pb-1 border-t border-slate-200/80 flex items-center justify-between gap-2 text-xs text-slate-500 shrink-0">
+  <div class="flex items-center gap-1 font-medium text-[11px]">
     <span>© 互動賓果紙 by 筱晴老師</span>
   </div>
   
   <div class="flex items-center gap-2">
     <!-- 晴光科技實驗室 臉書連結按鈕 -->
-    <a href="https://www.facebook.com/profile.php?id=61578088267283" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 font-bold rounded-lg border border-slate-200 hover:border-blue-200 shadow-sm transition flex items-center gap-1 text-[11px]">
+    <a href="https://www.facebook.com/profile.php?id=61578088267283" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 font-bold rounded-lg border border-slate-200 hover:border-blue-200 shadow-sm transition flex items-center gap-1 text-[11px]">
       <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
       晴光科技實驗室
     </a>
 
     <!-- 個人網站 連結按鈕 -->
-    <a href="https://sites.google.com/view/sunnypeng/" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 font-bold rounded-lg border border-slate-200 hover:border-emerald-200 shadow-sm transition flex items-center gap-1 text-[11px]">
-      <svg class="w-3 h-3 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-      老師's website
+    <a href="https://sites.google.com/view/sunnypeng/" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-white hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 font-bold rounded-lg border border-slate-200 hover:border-emerald-200 shadow-sm transition flex items-center gap-1 text-[11px]">
+      <svg class="w-3 h-3 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/></svg>
+      個人網站
     </a>
   </div>
 </footer>
