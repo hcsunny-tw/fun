@@ -42,7 +42,7 @@
   { "title": "字首字尾單字遊戲",
     "image": "https://hcsunny-tw.github.io/fun/img/img_HeadTailGame.PNG",
     "link": "https://hcsunny-tw.github.io/fun/en/HeadTailGame.html",
-    "category": "英文遊戲", "description": "接龍式的英文單字挑戰，利用前一個字的字尾作為下一個字的字首。", "tags": ["英文", "字彙量"], "date": "2026-05" },
+    "category": "英語遊戲", "description": "接龍式的英文單字挑戰，利用前一個字的字尾作為下一個字的字首。", "tags": ["英文", "字彙量"], "date": "2026-05" },
   
   { "title": "班級音量小精靈",
     "image": "https://hcsunny-tw.github.io/fun/img/dbtracker.jpg",
@@ -92,7 +92,7 @@
   { "title": "英文找找單字",
     "image": "https://hcsunny-tw.github.io/fun/img/wordsearch.png",
     "link": "https://hcsunny-tw.github.io/fun/en/wordsearch.html",
-    "category": "英文遊戲", "description": "經典的英文單字搜尋遊戲 (Word Search)，在字母矩陣中找出隱藏詞彙。", "tags": ["英文", "觀察力"], "date": "2025-11" },
+    "category": "英語遊戲", "description": "經典的英文單字搜尋遊戲 (Word Search)，在字母矩陣中找出隱藏詞彙。", "tags": ["英文", "觀察力"], "date": "2025-11" },
   
   { "title": "作業管理系統",
     "image": "https://hcsunny-tw.github.io/fun/img/hwcheck.JPG",
