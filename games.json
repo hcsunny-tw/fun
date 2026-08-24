@@ -1,4 +1,40 @@
 [
+  {
+    "title": "打字交響樂2",
+    "image": "https://hcsunny-tw.github.io/fun/img/mpsmusic2.png",
+    "link": "https://hcsunny-tw.github.io/fun/type/mpsmusic2.html",
+    "category": "其他遊戲",
+    "description": "結合中文打字與音樂節奏，在精準的節拍上敲擊正確按鍵，演奏出悠揚動人的樂聲！",
+    "tags": ["中打", "節奏", "音樂"],
+    "date": "2026-08"
+  },
+  {
+    "title": "打字交響樂",
+    "image": "https://hcsunny-tw.github.io/fun/img/mpsmusic.png",
+    "link": "https://hcsunny-tw.github.io/fun/type/mpsmusic.html",
+    "category": "其他遊戲",
+    "description": "輸入正確的注音符號或英文字母即可觸發對應的音符，在練習打字的同時譜出美妙樂曲！",
+    "tags": ["中打", "英打", "音樂"],
+    "date": "2026-08"
+  },
+  {
+    "title": "打字動物園",
+    "image": "https://hcsunny-tw.github.io/fun/img/zoo.png",
+    "link": "https://hcsunny-tw.github.io/fun/type/zoo.html",
+    "category": "其他遊戲",
+    "description": "透過中英文打字練習來捕捉並收集各種可愛動物，打造屬於你的專屬打字動物園！",
+    "tags": ["中打", "英打", "收集"],
+    "date": "2026-08"
+  },
+  {
+    "title": "字彙防禦戰",
+    "image": "https://hcsunny-tw.github.io/fun/img/CyberDefender.png",
+    "link": "https://hcsunny-tw.github.io/fun/type/CyberDefender.html",
+    "category": "其他遊戲",
+    "description": "化身資安守護者，透過快速且準確的英文打字輸入來抵禦外來攻擊，守護系統安全！",
+    "tags": ["英打", "資安守護者","單字"],
+    "date": "2026-08"
+  },
      {
     "title": "互動賓果紙(數字)",
     "image": "https://hcsunny-tw.github.io/fun/img/BingoNum.png",
