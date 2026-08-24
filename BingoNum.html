@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>互動賓果紙(數字)</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Noto Sans TC"', 'sans-serif'],
+        },
+        colors: {
+          eyecare: {
+            bg: '#EFF4F0',         // 柔和護眼豆沙綠背景
+            card: '#FAFCFA',       // 卡片奶白底色
+            border: '#C8D8CE',     // 柔綠邊框
+            text: '#1C3123',       // 深森林綠文字 (高清晰不刺眼)
+            muted: '#5A7363',      // 次要柔綠文字
+            primary: '#3D6B4F',    // 主按鈕綠色
+            hover: '#2F543D',      // 按鈕懸停色
+            marked: '#D3E2D7',     // 已挖空灰色綠
+            markedText: '#7A9382', // 已挖空文字
+            freeBg: '#FEF3C7',     // FREE格暖黃色
+            freeBorder: '#F59E0B',
+            freeText: '#B45309',
+            accent: '#D97706',     // 賓果連線金黃色
+            line: '#2563EB'        // 手繪線條藍色
+          }
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body {
+    background-color: var(--theme-bg, #EFF4F0);
+    color: var(--theme-text, #1C3123);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* 擬真挖空質感特效 */
+  .cell-marked {
+    background-color: #D3E2D7 !important;
+    color: #7A9382 !important;
+    border-color: #AEC4A2 !important;
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.15) !important;
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    transform: scale(0.96);
+  }
+
+  /* 護眼漸層與微立體感 */
+  .card-shadow {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  }
+
+  /* 動畫 */
+  @keyframes popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-pop {
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  /* 繪圖 Canvas 畫布覆蓋 */
+  .canvas-drawing {
+    cursor: crosshair !important;
+  }
+</style>
+</head>
+<body class="font-sans min-h-screen flex flex-col items-center justify-start p-4 sm:p-8 select-none">
+
+<header class="w-full max-w-4xl flex items-center justify-between mb-6 px-1">
+  <h1 class="text-2xl sm:text-3xl font-black tracking-wide" id="headerTitle">學生互動賓果卡</h1>
+
+  <!-- 右上角主題風格切換選單 -->
+  <div class="relative">
+    <button onclick="toggleThemeMenu()" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm rounded-xl border border-slate-200 shadow-sm flex items-center gap-1.5 transition">
+      <span id="currentThemeIcon">🎨</span>
+      <span id="currentThemeName">護眼綠</span>
+      <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+    </button>
+    <div id="themeMenu" class="hidden absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs sm:text-sm font-bold">
+      <button onclick="setTheme('green')" class="w-full text-left px-3 py-1.5 hover:bg-emerald-50 text-emerald-800 flex items-center gap-2">🌿 護眼綠</button>
+      <button onclick="setTheme('macaron')" class="w-full text-left px-3 py-1.5 hover:bg-pink-50 text-pink-800 flex items-center gap-2">🍬 繽紛馬卡龍</button>
+      <button onclick="setTheme('ocean')" class="w-full text-left px-3 py-1.5 hover:bg-sky-50 text-sky-800 flex items-center gap-2">🌊 海洋藍天</button>
+      <button onclick="setTheme('amber')" class="w-full text-left px-3 py-1.5 hover:bg-amber-50 text-amber-800 flex items-center gap-2">🌻 暖陽金黃</button>
+    </div>
+  </div>
+</header>
+
+<div class="w-full max-w-4xl flex flex-col md:flex-row gap-6 justify-center items-start">
+
+  <!-- 賓果卡主體 -->
+  <div class="w-full md:w-[480px] bg-eyecare-card rounded-2xl p-5 sm:p-6 card-shadow border border-eyecare-border">
+    
+    <!-- 頂部資訊欄：卡號、時間與重抽按鈕 (移至右上角避免誤觸) -->
+    <div class="flex justify-between items-start pb-3 mb-3 border-b-2 border-dashed border-eyecare-border">
+      <div>
+        <span class="text-2xl font-black text-eyecare-primary tracking-widest block leading-none" id="bingoLogo">BINGO</span>
+        <span class="text-xs text-eyecare-muted mt-1 block">範圍：1 ~ 40 隨機號</span>
+      </div>
+      <div class="flex flex-col items-end gap-1.5">
+        <button id="mainBtnDraw" onclick="requestRedraw()" class="px-3 py-1.5 bg-eyecare-primary hover:bg-eyecare-hover text-white text-xs font-bold rounded-lg transition duration-150 active:scale-95 shadow-sm flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          抽取全新賓果卡
+        </button>
+        <div class="text-right text-[11px] text-eyecare-muted">
+          <div>卡號：<span id="cardId" class="font-bold text-eyecare-text">------</span></div>
+          <div id="drawTime">抽卡時間：--</div>
+          <div id="luckStatus" class="mt-1 font-bold">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5x5 賓果網格容器 (包含按鈕與自由塗鴉 Canvas 層) -->
+    <div class="relative w-full aspect-square mb-4">
+      <!-- 數字網格 -->
+      <div id="bingoGrid" class="grid grid-cols-5 gap-2 sm:gap-2.5 w-full h-full">
+        <!-- 網格將由 JavaScript 自動生成 -->
+      </div>
+
+      <!-- 自由塗鴉 Canvas 覆蓋層 (用於學生手動連線) -->
+      <canvas id="drawCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-20 rounded-xl"></canvas>
+    </div>
+
+    <!-- 工具列：手畫畫筆連線控制項 -->
+    <div class="flex gap-2">
+      <button id="drawModeBtn" onclick="toggleDrawMode()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-eyecare-text text-xs sm:text-sm font-bold rounded-xl transition border border-slate-300 flex items-center justify-center gap-1.5 shadow-sm">
+        <span>✏️ 手動連線 (畫筆)</span>
+        <span id="drawStatusBadge" class="text-[10px] px-1.5 py-0.5 bg-slate-300 text-slate-700 rounded-md">關閉</span>
+      </button>
+      <button onclick="clearCanvas()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs sm:text-sm font-bold rounded-xl transition border border-slate-300 flex items-center justify-center gap-1 shadow-sm">
+        🧹 清除連線
+      </button>
+    </div>
+  </div>
+
+  <!-- 右側：已挖空數字紀錄欄與連線詳情 -->
+  <div class="w-full md:w-[240px] bg-eyecare-card rounded-2xl p-5 card-shadow border border-eyecare-border flex flex-col min-h-[220px] md:min-h-[480px]">
+    <div class="flex justify-between items-center pb-3 mb-3 border-b border-eyecare-border">
+      <h2 class="font-bold text-eyecare-text text-base flex items-center gap-1.5">
+        <span>📍 已挖空號碼</span>
+      </h2>
+      <span id="dugCount" class="bg-emerald-100 text-eyecare-primary text-xs px-2.5 py-1 rounded-full font-bold">0 格</span>
+    </div>
+
+    <div id="dugList" class="flex flex-wrap gap-2 align-content-start flex-1 mb-4">
+      <!-- 已挖空數字清單將顯示於此 -->
+    </div>
+    
+    <div id="emptyHint" class="text-xs text-eyecare-muted text-center my-auto py-8">
+      點擊賓果卡上的數字即可劃掉挖空
+    </div>
+
+    <!-- 提示說明卡 -->
+    <div class="mt-auto bg-emerald-50/70 p-3 rounded-xl border border-emerald-100 text-xs text-eyecare-muted space-y-1" id="instructionBox">
+      <p class="font-bold text-eyecare-primary flex items-center gap-1">💡 使用說明：</p>
+      <p>1. 點擊數字即可劃掉挖空。</p>
+      <p>2. 🍀 中間格憑運氣，隨機獲得 FREE 格或實力數字！</p>
+      <p>3. 開啟【手動連線】即可用畫筆親自在賓果卡上劃線連線！</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- 客製化重抽確認彈窗 -->
+<div id="modalOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+  <div class="bg-eyecare-card rounded-2xl max-w-sm w-full p-6 card-shadow border border-eyecare-border animate-pop text-center">
+    <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl">⚠️</div>
+    <h3 class="text-lg font-bold text-eyecare-text mb-2">確定要重新抽牌嗎？</h3>
+    <p class="text-sm text-eyecare-muted mb-6">重新抽牌將會清空目前所有已挖空的劃線紀錄與畫布。</p>
+    <div class="flex gap-3">
+      <button onclick="closeModal()" class="flex-1 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition">取消</button>
+      <button onclick="confirmRedraw()" class="flex-1 py-2.5 bg-eyecare-primary hover:bg-eyecare-hover text-white font-bold rounded-xl transition">確定重抽</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let dugNumbers = [];
+  let isDrawMode = false;
+  let isDrawing = false;
+  let canvas, ctx;
+
+  // 隨機抽取時可使用的淡色系清單 (整張卡片顏色統一，每次抽取隨機更換)
+  const cardPastelPalette = [
+    { bg: '#FFF1F2', border: '#FECDD3' }, // 柔粉紅
+    { bg: '#FFF7ED', border: '#FFEDD5' }, // 柔杏橘
+    { bg: '#FEFCE8', border: '#FEF08A' }, // 柔鵝黃
+    { bg: '#F0FDF4', border: '#DCFCE7' }, // 柔嫩綠
+    { bg: '#ECFDF5', border: '#A7F3D0' }, // 柔薄荷
+    { bg: '#F0FDFA', border: '#CCFBF1' }, // 柔水綠
+    { bg: '#F0F9FF', border: '#E0F2FE' }, // 柔天空藍
+    { bg: '#EFF6FF', border: '#DBEAFE' }, // 柔寶藍
+    { bg: '#F5F3FF', border: '#DDD6FE' }, // 柔紫羅蘭
+    { bg: '#FAF5FF', border: '#F3E8FF' }, // 柔芋紫
+    { bg: '#FDF2F8', border: '#FCE7F3' }  // 柔玫瑰
+  ];
+
+  // 主題配色設定
+  const themes = {
+    green: {
+      name: '護眼綠', icon: '🌿',
+      bg: '#EFF4F0', primary: '#3D6B4F', hover: '#2F543D', text: '#1C3123'
+    },
+    macaron: {
+      name: '繽紛馬卡龍', icon: '🍬',
+      bg: '#FFF0F5', primary: '#DB2777', hover: '#BE185D', text: '#831843'
+    },
+    ocean: {
+      name: '海洋藍天', icon: '🌊',
+      bg: '#F0F9FF', primary: '#0284C7', hover: '#0369A1', text: '#0C4A6E'
+    },
+    amber: {
+      name: '暖陽金黃', icon: '🌻',
+      bg: '#FFFBEB', primary: '#D97706', hover: '#B45309', text: '#78350F'
+    }
+  };
+
+  function toggleThemeMenu() {
+    document.getElementById('themeMenu').classList.toggle('hidden');
+  }
+
+  function setTheme(themeKey) {
+    const t = themes[themeKey] || themes.green;
+    document.body.style.backgroundColor = t.bg;
+    document.getElementById('currentThemeIcon').innerText = t.icon;
+    document.getElementById('currentThemeName').innerText = t.name;
+
+    // 更新按鈕與標題顏色
+    const mainBtn = document.getElementById('mainBtnDraw');
+    if (mainBtn) {
+      mainBtn.style.backgroundColor = t.primary;
+    }
+    const bingoLogo = document.getElementById('bingoLogo');
+    if (bingoLogo) {
+      bingoLogo.style.color = t.primary;
+    }
+
+    document.getElementById('themeMenu').classList.add('hidden');
+  }
+
+  // 點擊選單外部自動關閉
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('themeMenu');
+    if (menu && !menu.contains(e.target) && !e.target.closest('button[onclick="toggleThemeMenu()"]')) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  // 生成防作弊隨機卡號
+  function generateCardId() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return '#' + result;
+  }
+
+  // 格式化時間 (YYYY/MM/DD HH:mm:ss)
+  function formatTime(date) {
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}/${pad(date.getMonth()+1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  }
+
+  function requestRedraw() {
+    if (dugNumbers.length > 0) {
+      document.getElementById('modalOverlay').classList.remove('hidden');
+    } else {
+      initBingo();
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.add('hidden');
+  }
+
+  function confirmRedraw() {
+    closeModal();
+    initBingo();
+  }
+
+  // 初始化/生成賓果卡
+  function initBingo() {
+    const grid = document.getElementById('bingoGrid');
+    grid.innerHTML = '';
+    dugNumbers = [];
+
+    renderDugList();
+    clearCanvas();
+
+    // 更新防作弊卡號與時間
+    document.getElementById('cardId').innerText = generateCardId();
+    document.getElementById('drawTime').innerText = '抽卡時間：' + formatTime(new Date());
+
+    // 隨機決定是否有 FREE 格 (50% 幾率靠運氣)
+    const hasFree = Math.random() < 0.5;
+    const luckStatusEl = document.getElementById('luckStatus');
+    if (luckStatusEl) {
+      luckStatusEl.innerHTML = hasFree 
+        ? '<span class="text-amber-700 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-300 shadow-sm">🍀 運氣爆發：FREE 格</span>' 
+        : '<span class="text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-md border border-emerald-300 shadow-sm">🎯 實力卡：25 號全滿</span>';
+    }
+
+    // 隨機從 1~40 洗牌
+    let numbers = Array.from({length: 40}, (_, i) => i + 1);
+    for (let i = numbers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+    }
+
+    // 依是否有 FREE 格選擇抽取 24 或 25 個號碼
+    let selectedNums = numbers.slice(0, hasFree ? 24 : 25);
+    let numIdx = 0;
+
+    // 每次抽卡隨機挑選一種淡色系，供整張賓果卡統一使用
+    const randomCardTheme = cardPastelPalette[Math.floor(Math.random() * cardPastelPalette.length)];
+
+    // 填入 5x5 格子
+    for (let i = 0; i < 25; i++) {
+      const cell = document.createElement('button');
+      cell.setAttribute('data-index', i);
+
+      // 只有在觸發運氣且為正中間格 (index 12) 時才顯示 FREE
+      if (hasFree && i === 12) {
+        cell.innerText = 'FREE';
+        cell.className = 'w-full h-full rounded-xl flex items-center justify-center font-black text-base sm:text-lg border-2 border-eyecare-freeBorder bg-eyecare-freeBg text-eyecare-freeText shadow-sm cursor-default cell-marked';
+      } else {
+        cell.className = 'w-full h-full rounded-xl flex items-center justify-center font-black text-xl sm:text-2xl transition-all duration-150 border-2 text-eyecare-text hover:border-eyecare-primary shadow-sm active:scale-95';
+        cell.style.backgroundColor = randomCardTheme.bg;
+        cell.style.borderColor = randomCardTheme.border;
+
+        const num = selectedNums[numIdx++];
+        cell.innerText = num;
+        cell.onclick = () => toggleCell(cell, num);
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  function toggleCell(cell, num) {
+    if (cell.classList.contains('cell-marked')) {
+      cell.classList.remove('cell-marked');
+      dugNumbers = dugNumbers.filter(n => n !== num);
+    } else {
+      cell.classList.add('cell-marked');
+      dugNumbers.push(num);
+    }
+    renderDugList();
+  }
+
+  function renderDugList() {
+    const listEl = document.getElementById('dugList');
+    const emptyHint = document.getElementById('emptyHint');
+    listEl.innerHTML = '';
+
+    if (dugNumbers.length === 0) {
+      emptyHint.classList.remove('hidden');
+    } else {
+      emptyHint.classList.add('hidden');
+    }
+
+    dugNumbers.forEach(num => {
+      const item = document.createElement('div');
+      item.className = 'animate-pop bg-emerald-100/80 border border-emerald-200 text-eyecare-primary font-bold text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm';
+      item.innerHTML = `<span class="text-xs opacity-60">#</span>${num}`;
+      listEl.appendChild(item);
+    });
+
+    document.getElementById('dugCount').innerText = `${dugNumbers.length} 格`;
+  }
+
+  function setupCanvas() {
+    canvas = document.getElementById('drawCanvas');
+    ctx = canvas.getContext('2d');
+    resizeCanvas();
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // 滑鼠與觸控事件綁定
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+  }
+
+  function resizeCanvas() {
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+  }
+
+  function toggleDrawMode() {
+    isDrawMode = !isDrawMode;
+    const badge = document.getElementById('drawStatusBadge');
+    const btn = document.getElementById('drawModeBtn');
+
+    if (isDrawMode) {
+      badge.innerText = '開啟中';
+      badge.className = 'text-[10px] px-1.5 py-0.5 bg-emerald-600 text-white rounded-md';
+      btn.className = 'flex-1 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-eyecare-primary text-xs sm:text-sm font-bold rounded-xl transition border border-emerald-300 flex items-center justify-center gap-1.5 shadow-sm';
+      canvas.classList.add('pointer-events-auto', 'canvas-drawing');
+      canvas.classList.remove('pointer-events-none');
+    } else {
+      badge.innerText = '關閉';
+      badge.className = 'text-[10px] px-1.5 py-0.5 bg-slate-300 text-slate-700 rounded-md';
+      btn.className = 'flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-eyecare-text text-xs sm:text-sm font-bold rounded-xl transition border border-slate-300 flex items-center justify-center gap-1.5 shadow-sm';
+      canvas.classList.remove('pointer-events-auto', 'canvas-drawing');
+      canvas.classList.add('pointer-events-none');
+    }
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+
+  function startDrawing(e) {
+    if (!isDrawMode) return;
+    isDrawing = true;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  }
+
+  function draw(e) {
+    if (!isDrawing || !isDrawMode) return;
+    const pos = getPos(e);
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#D97706'; // 暖橘黃色連線畫筆
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  }
+
+  function stopDrawing() {
+    isDrawing = false;
+  }
+
+  function handleTouchStart(e) {
+    if (!isDrawMode) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    startDrawing(touch);
+  }
+
+  function handleTouchMove(e) {
+    if (!isDrawMode) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    draw(touch);
+  }
+
+  function clearCanvas() {
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  // 頁面載入時初始化
+  window.onload = function() {
+    setupCanvas();
+    initBingo();
+  };
+</script>
+</body>
+</html>
