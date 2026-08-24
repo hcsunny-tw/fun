@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sunshine Arcade | 晴光遊樂園</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://w3.org viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☀️</text></svg>">
+    <!-- 已修正：加入正確的 xmlns 確保 svg 圖示能正常顯示 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀️</text></svg>">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -136,15 +137,26 @@
 
         <!-- 搜尋與狀態區塊 -->
         <div class="flex items-center gap-4 flex-shrink-0">
-            <!-- 伸縮搜尋框 -->
+            <!-- 伸縮搜尋框與關鍵字選單 -->
             <div class="relative flex items-center justify-end">
                 <input type="text" id="searchInput" placeholder="搜尋遊戲..." class="w-0 opacity-0 transition-all duration-300 bg-sunshine-card border border-sunshine-border text-white text-sm rounded-full py-1.5 pl-4 pr-9 focus:outline-none focus:border-sunshine-primary focus:ring-1 focus:ring-sunshine-primary placeholder-sunshine-muted absolute right-0">
                 <button id="searchToggleBtn" class="text-sunshine-muted hover:text-sunshine-primary transition-colors p-1.5 z-10 relative rounded-full">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </button>
+                
+                <!-- 熱門關鍵字建議清單 -->
+                <div id="searchSuggestions" class="absolute top-full right-0 mt-2 w-48 bg-sunshine-card border border-sunshine-border rounded-lg shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 overflow-hidden">
+                    <div class="px-3 py-2 text-xs text-sunshine-muted border-b border-white/5 bg-black/20">大家都在搜</div>
+                    <ul class="py-1 flex flex-col" id="suggestionList">
+                        <li><button class="w-full text-left px-3 py-1.5 text-sm text-white hover:bg-sunshine-primary/10 hover:text-sunshine-primary transition-colors" data-keyword="打字">打字</button></li>
+                        <li><button class="w-full text-left px-3 py-1.5 text-sm text-white hover:bg-sunshine-primary/10 hover:text-sunshine-primary transition-colors" data-keyword="觀察">觀察</button></li>
+                        <li><button class="w-full text-left px-3 py-1.5 text-sm text-white hover:bg-sunshine-primary/10 hover:text-sunshine-primary transition-colors" data-keyword="數學">數學</button></li>
+                    </ul>
+                </div>
             </div>
 
-            <!-- Firebase 狀態列 -->
+            <!-- Firebase 狀態列 (已註解停用) -->
+            <!--
             <div class="hidden lg:flex items-center gap-3 bg-sunshine-card/50 border border-white/5 px-4 py-1 rounded-full shadow-sm">
                 <div class="flex items-center gap-2">
                     <div id="dbStatusDot" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
@@ -156,6 +168,7 @@
                     <span id="energyCounter" class="text-sunshine-primary font-black font-mono text-base">0</span>
                 </div>
             </div>
+            -->
         </div>
     </nav>
 
@@ -188,9 +201,11 @@
     </button>
 
     <script type="module">
+        /* 暫時註解 Firebase 引入
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        */
 
         // 宣告空陣列，等待從 JSON 載入資料
         let myPortfolio = [];
@@ -198,11 +213,11 @@
         let searchQuery = '';
         const categoryOrder = ['全部', '國語遊戲', '數學遊戲', '其他遊戲', '工具區'];
 
-        let currentEnergy = 0;
+        // let currentEnergy = 0; // 註解能量變數
 
-        // 初始化 (改為 async 以支援等待 Fetch 完成)
+        // 初始化
         document.addEventListener('DOMContentLoaded', async () => {
-            initFirebaseMock();
+            // initFirebaseMock(); // 註解能量初始化
             
             // 讀取外部 JSON 檔案
             await loadGamesData();
@@ -231,39 +246,11 @@
             }
         }
 
-        function initFirebaseMock() {
-            setTimeout(() => {
-                const dot = document.getElementById('dbStatusDot');
-                dot.classList.remove('bg-red-500', 'animate-pulse');
-                dot.classList.add('bg-green-500');
-                
-                currentEnergy = parseInt(localStorage.getItem('mockEnergy')) || 150;
-                updateEnergyDisplay(currentEnergy);
-            }, 1500);
-        }
-
-        window.addEnergy = function(amount, url) {
-            currentEnergy += amount;
-            localStorage.setItem('mockEnergy', currentEnergy);
-            
-            const counter = document.getElementById('energyCounter');
-            counter.classList.add('scale-150', 'text-white');
-            updateEnergyDisplay(currentEnergy);
-            
-            setTimeout(() => {
-                counter.classList.remove('scale-150', 'text-white');
-            }, 300);
-
-            showToast(`🚀 即將啟動！獲得 ${amount} 點登入能量`);
-            
-            setTimeout(() => {
-                window.open(url, '_blank');
-            }, 800);
-        };
-
-        function updateEnergyDisplay(val) {
-            document.getElementById('energyCounter').textContent = val;
-        }
+        /* 暫時註解能量系統相關功能
+        function initFirebaseMock() { ... }
+        window.addEnergy = function(amount, url) { ... };
+        function updateEnergyDisplay(val) { ... }
+        */
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -293,26 +280,62 @@
         function initSearchLogic() {
             const searchBtn = document.getElementById('searchToggleBtn');
             const searchInput = document.getElementById('searchInput');
+            const searchSuggestions = document.getElementById('searchSuggestions');
+            const suggestionButtons = document.querySelectorAll('#suggestionList button');
             let isExpanded = false;
 
-            searchBtn.addEventListener('click', () => {
+            // 顯示或隱藏搜尋框與關鍵字選單
+            searchBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止事件冒泡
                 isExpanded = !isExpanded;
                 if(isExpanded) {
                     searchInput.classList.remove('w-0', 'opacity-0');
                     searchInput.classList.add('w-48', 'opacity-100', 'pr-10'); 
+                    searchSuggestions.classList.remove('opacity-0', 'pointer-events-none');
+                    searchSuggestions.classList.add('opacity-100', 'pointer-events-auto');
                     searchInput.focus();
                 } else {
                     searchInput.classList.remove('w-48', 'opacity-100', 'pr-10');
                     searchInput.classList.add('w-0', 'opacity-0');
+                    searchSuggestions.classList.remove('opacity-100', 'pointer-events-auto');
+                    searchSuggestions.classList.add('opacity-0', 'pointer-events-none');
                     searchInput.value = '';
                     searchQuery = '';
                     updateView();
                 }
             });
 
+            // 點擊其他地方隱藏關鍵字選單
+            document.addEventListener('click', (e) => {
+                if (isExpanded && !e.target.closest('.relative.flex.items-center.justify-end')) {
+                    searchSuggestions.classList.remove('opacity-100', 'pointer-events-auto');
+                    searchSuggestions.classList.add('opacity-0', 'pointer-events-none');
+                }
+            });
+            
+            // 點擊輸入框時再次顯示關鍵字選單
+            searchInput.addEventListener('focus', () => {
+                searchSuggestions.classList.remove('opacity-0', 'pointer-events-none');
+                searchSuggestions.classList.add('opacity-100', 'pointer-events-auto');
+            });
+
+            // 輸入字元時更新畫面
             searchInput.addEventListener('input', (e) => {
                 searchQuery = e.target.value.trim().toLowerCase();
                 updateView();
+            });
+
+            // 處理快速搜尋關鍵字點擊
+            suggestionButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const keyword = e.target.getAttribute('data-keyword');
+                    searchInput.value = keyword;
+                    searchQuery = keyword;
+                    // 點擊後收合選單
+                    searchSuggestions.classList.remove('opacity-100', 'pointer-events-auto');
+                    searchSuggestions.classList.add('opacity-0', 'pointer-events-none');
+                    updateView();
+                });
             });
         }
 
@@ -373,11 +396,9 @@
                     `<span class="text-[10px] font-mono px-2 py-0.5 rounded-sm bg-white/5 text-sunshine-muted border border-white/10 flex items-center gap-1"><span class="text-sunshine-primary/50">#</span>${tag}</span>`
                 ).join('');
 
-                const onClickAction = item.category === '工具區' 
-                    ? `window.open('${item.link}', '_blank')`
-                    : `addEnergy(10, '${item.link}')`;
+                // 原本為 addEnergy，因為功能已註解，改為直接在新視窗打開連結
+                const onClickAction = `window.open('${item.link}', '_blank')`;
 
-                // 結構更新：加入右下角的 date 顯示區塊
                 const cardHTML = `
                     <div class="game-card group cursor-pointer bg-sunshine-card rounded-xl border border-sunshine-border overflow-hidden flex flex-col h-full relative" onclick="${onClickAction}">
                         <div class="h-1 w-full bg-gradient-to-r from-sunshine-primary/20 via-sunshine-primary to-sunshine-primary/20 opacity-50 group-hover:opacity-100 group-hover:h-1.5 transition-all duration-300 shadow-[0_0_10px_rgba(251,191,36,0.5)]"></div>
@@ -403,7 +424,6 @@
                             <h3 class="text-xl font-bold text-white mb-2 group-hover:text-sunshine-primary transition-colors">${item.title}</h3>
                             <p class="text-sm text-sunshine-muted leading-relaxed flex-grow mb-4">${item.description}</p>
                             
-                            <!-- 更新的標籤列結構：左邊 Tags，右邊 Date -->
                             <div class="flex flex-wrap items-center gap-1.5 mt-auto pt-4 border-t border-white/5">
                                 <div class="flex flex-wrap gap-1.5 flex-grow">
                                     ${tagsHtml}
