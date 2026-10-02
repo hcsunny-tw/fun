@@ -68,12 +68,9 @@
             transform: scale(0.8);
         }
 
-        /* 點擊後保留模式 */
+        /* 點擊後保留模式（無視覺變化，僅取消點擊事件避免干擾） */
         .grid-piece.clicked-keep {
-            opacity: 0.6;
             pointer-events: none;
-            transform: scale(0.95);
-            filter: grayscale(40%);
         }
 
         .shake {
