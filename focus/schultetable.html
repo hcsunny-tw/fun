@@ -87,12 +87,32 @@
         <p class="text-[#8B5A2B] font-bold mb-8 text-center text-lg">水豚的專注力考驗 🍊</p>
 
         <div class="flex flex-col gap-4 w-full px-4">
-            <button onclick="startGame(16)" class="w-full bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-4 px-6 rounded-2xl shadow-[0_5px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[5px] transition-all text-xl flex items-center justify-center gap-2">
-                <span class="text-2xl">🌱</span> 基礎模式 (1-16)
-            </button>
-            <button onclick="startGame(25)" class="w-full bg-[#FFC4C4] hover:bg-[#ffadad] text-[#7D3232] font-black py-4 px-6 rounded-2xl shadow-[0_5px_0_#D99696] active:shadow-[0_0px_0_#D99696] active:translate-y-[5px] transition-all text-xl flex items-center justify-center gap-2">
-                <span class="text-2xl">🔥</span> 挑戰模式 (1-25)
-            </button>
+            <div class="bg-white/60 p-4 rounded-2xl shadow-sm mb-2 border border-white">
+                <p class="text-center font-bold text-[#754D20] mb-3 text-sm">經典規則排列</p>
+                <div class="flex gap-2">
+                    <button onclick="startGame(16, 'regular')" class="flex-1 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 px-2 rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-1">
+                        <span class="text-lg">🌱</span> 3x3 (9格)
+                    </button>
+                    <button onclick="startGame(25, 'regular')" class="flex-1 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 px-2 rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-1">
+                        <span class="text-lg">🌿</span> 4x4 (16格)
+                    </button>
+                    <button onclick="startGame(25, 'regular', true)" class="flex-1 bg-[#FFC4C4] hover:bg-[#ffadad] text-[#7D3232] font-black py-3 px-2 rounded-xl shadow-[0_4px_0_#D99696] active:shadow-[0_0px_0_#D99696] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-1">
+                        <span class="text-lg">🔥</span> 5x5 (25格)
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white/60 p-4 rounded-2xl shadow-sm border border-white">
+                <p class="text-center font-bold text-[#754D20] mb-3 text-sm">趣味不規則排列</p>
+                <div class="flex gap-2">
+                    <button onclick="startGame(16, 'irregular')" class="flex-1 bg-[#FFF099] hover:bg-[#ffeb66] text-[#756819] font-black py-3 px-4 rounded-xl shadow-[0_4px_0_#D1C266] active:shadow-[0_0px_0_#D1C266] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-2">
+                        <span class="text-xl">✨</span> 基礎 (16)
+                    </button>
+                    <button onclick="startGame(25, 'irregular')" class="flex-1 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black py-3 px-4 rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-2">
+                        <span class="text-xl">🌟</span> 挑戰 (25)
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -156,9 +176,13 @@
             <h2 class="text-4xl font-black text-[#FF8A8A] mt-12 mb-2">太棒了！</h2>
             <p class="text-[#8B5A2B] font-bold text-lg mb-4">你完成了水豚的考驗 🍊</p>
             
-            <div class="bg-[#FFFDF0] rounded-2xl p-4 mb-6 border-2 border-dashed border-[#A7E8D0]">
+            <div class="bg-[#FFFDF0] rounded-2xl p-4 mb-4 border-2 border-dashed border-[#A7E8D0]">
                 <p class="text-gray-500 text-sm font-bold">你的成績</p>
-                <p id="final-time" class="text-4xl font-black text-[#2c5d4b] tabular-nums mt-1">00:00.00</p>
+                <p id="final-time" class="text-4xl font-black text-[#2c5d4b] tabular-nums mt-1 mb-2">00:00.00</p>
+                <div class="inline-flex items-center justify-center bg-white px-4 py-2 rounded-full shadow-inner border border-gray-100">
+                    <span id="rank-display" class="text-2xl font-black mr-2">S</span>
+                    <span id="rank-message" class="text-sm font-bold text-gray-600">完美專注力！</span>
+                </div>
             </div>
 
             <div class="flex gap-3">
@@ -175,6 +199,7 @@
     <script>
         // 遊戲狀態
         let currentTotalNumbers = 25;
+        let currentLayout = 'irregular'; // 'regular' 或 'irregular'
         let currentTarget = 1;
         let isPlaying = false;
         let startTime = 0;
@@ -190,6 +215,8 @@
         const winModal = document.getElementById('win-modal');
         const winModalContent = document.getElementById('win-modal-content');
         const finalTimeDisplay = document.getElementById('final-time');
+        const rankDisplay = document.getElementById('rank-display');
+        const rankMessage = document.getElementById('rank-message');
 
         // 淨春型視覺設定池 (Clear Spring Palette)
         const visualPool = {
@@ -238,53 +265,77 @@
 
         function renderBoard() {
             gridContainer.innerHTML = '';
+            gridContainer.className = ''; // 重置 class
             
-            // 根據模式動態設定 CSS Grid 欄位與容器寬度
-            if (currentTotalNumbers === 16) {
-                gridContainer.className = 'grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-2xl mx-auto transition-all duration-300';
+            // 決定格數：如果是 9 格，只取 1-9
+            let targetNumbers = currentTotalNumbers === 9 ? 9 : (currentTotalNumbers === 16 ? 16 : 25);
+            
+            if (currentLayout === 'regular') {
+                // 規則排列設定
+                if (targetNumbers === 9) {
+                    gridContainer.className = 'grid grid-cols-3 gap-2 p-2 w-full max-w-[320px] aspect-square mx-auto';
+                } else if (targetNumbers === 16) {
+                    gridContainer.className = 'grid grid-cols-4 gap-2 p-2 w-full max-w-[400px] aspect-square mx-auto';
+                } else {
+                    gridContainer.className = 'grid grid-cols-5 gap-2 p-2 w-full max-w-[500px] aspect-square mx-auto';
+                }
             } else {
-                gridContainer.className = 'grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-4xl mx-auto transition-all duration-300';
+                // 不規則瀑布流設定
+                if (targetNumbers === 16) {
+                    gridContainer.className = 'grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-2xl mx-auto transition-all duration-300';
+                } else {
+                    gridContainer.className = 'grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-4xl mx-auto transition-all duration-300';
+                }
             }
 
-            let numbers = Array.from({ length: currentTotalNumbers }, (_, i) => i + 1);
+            let numbers = Array.from({ length: targetNumbers }, (_, i) => i + 1);
             numbers = shuffleArray(numbers);
 
             let largeBlocksCount = 0;
-            // 基礎模式稍微減少大區塊數量避免版面破洞
-            const maxLargeBlocks = currentTotalNumbers === 16 ? 3 : (window.innerWidth < 768 ? 4 : 8);
+            const maxLargeBlocks = targetNumbers === 16 ? 3 : (window.innerWidth < 768 ? 4 : 8);
 
             numbers.forEach((num, index) => {
                 const btn = document.createElement('button');
                 btn.dataset.number = num;
                 btn.textContent = num;
 
-                const colorObj = getRandom(visualPool.colors);
-                let spanClass = getRandom(visualPool.spans);
-                const sizeClass = getRandom(visualPool.sizes);
-                const radiusClass = getRandom(visualPool.radius);
+                if (currentLayout === 'regular') {
+                    // 規則模式：統一的外觀
+                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-2 border-[#E2D4FF]
+                                    bg-white hover:bg-gray-50 text-[#5C4033] 
+                                    col-span-1 row-span-1 text-2xl md:text-3xl rounded-xl
+                                    relative overflow-hidden select-none shadow-sm`;
+                } else {
+                    // 不規則模式：隨機外觀與大小
+                    const colorObj = getRandom(visualPool.colors);
+                    let spanClass = getRandom(visualPool.spans);
+                    const sizeClass = getRandom(visualPool.sizes);
+                    const radiusClass = getRandom(visualPool.radius);
 
-                // 控制大區塊數量
-                if (spanClass !== 'col-span-1 row-span-1') {
-                    if (largeBlocksCount >= maxLargeBlocks || (window.innerWidth < 768 && spanClass.includes('col-span-2'))) {
-                        spanClass = 'col-span-1 row-span-1';
-                    } else {
-                        largeBlocksCount++;
+                    if (spanClass !== 'col-span-1 row-span-1') {
+                        if (largeBlocksCount >= maxLargeBlocks || (window.innerWidth < 768 && spanClass.includes('col-span-2'))) {
+                            spanClass = 'col-span-1 row-span-1';
+                        } else {
+                            largeBlocksCount++;
+                        }
                     }
-                }
 
-                btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-4 border-white/50
-                                ${colorObj.bg} ${colorObj.text} 
-                                ${spanClass} ${sizeClass} ${radiusClass}
-                                relative overflow-hidden select-none`;
+                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-4 border-white/50
+                                    ${colorObj.bg} ${colorObj.text} 
+                                    ${spanClass} ${sizeClass} ${radiusClass}
+                                    relative overflow-hidden select-none`;
+                    btn.innerHTML += `<div class="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none"></div>`;
+                }
                 
                 btn.style.animationDelay = `${index * 0.02}s`;
-                btn.innerHTML += `<div class="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none"></div>`;
-
                 btn.addEventListener('click', handleCellClick);
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleCellClick.call(btn); }, {passive: false});
 
                 gridContainer.appendChild(btn);
             });
+            
+            // 修正總數變數，以防傳入 25 但想玩 9 的情況 (按鈕參數設定)
+            currentTotalNumbers = targetNumbers;
         }
 
         function handleCellClick() {
@@ -321,11 +372,23 @@
             }
         }
 
-        function startGame(totalNumbers) {
-            currentTotalNumbers = totalNumbers;
-            modeTitle.textContent = totalNumbers === 16 ? '基礎模式' : '挑戰模式';
+        function startGame(totalNumbers, layout = 'irregular', isFiveByFiveRegular = false) {
+            // 處理 3x3 規則模式的特例
+            if (layout === 'regular' && totalNumbers === 16 && !isFiveByFiveRegular && event && event.target.innerText.includes('3x3')) {
+                currentTotalNumbers = 9;
+            } else if (layout === 'regular' && totalNumbers === 25 && !isFiveByFiveRegular) {
+                 currentTotalNumbers = 16;
+            } else if (layout === 'regular' && isFiveByFiveRegular){
+                 currentTotalNumbers = 25;
+            } else {
+                currentTotalNumbers = totalNumbers;
+            }
+
+            currentLayout = layout;
             
-            // 切換畫面
+            let modeName = layout === 'regular' ? '規則模式' : '不規則模式';
+            modeTitle.textContent = `${modeName} (${currentTotalNumbers})`;
+            
             menuScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
             gameScreen.classList.add('flex');
@@ -345,8 +408,34 @@
             timerInterval = setInterval(updateTimer, 30);
         }
 
+        function calculateRank(totalTimeMs) {
+            const timeInSeconds = totalTimeMs / 1000;
+            // 這些標準設定較為寬鬆，以鼓勵為主
+            // 可以根據學生的實際平均表現來調整
+            let rank, message, colorClass;
+
+            if (currentTotalNumbers === 9) {
+                if (timeInSeconds <= 10) { rank = 'S'; message = '神乎其技！'; colorClass = 'text-[#FF8A8A]'; }
+                else if (timeInSeconds <= 15) { rank = 'A'; message = '極度專注！'; colorClass = 'text-[#FF9800]'; }
+                else if (timeInSeconds <= 20) { rank = 'B'; message = '表現很棒！'; colorClass = 'text-[#4CAF50]'; }
+                else { rank = 'C'; message = '漸入佳境，繼續保持！'; colorClass = 'text-[#2196F3]'; }
+            } else if (currentTotalNumbers === 16) {
+                if (timeInSeconds <= 20) { rank = 'S'; message = '神乎其技！'; colorClass = 'text-[#FF8A8A]'; }
+                else if (timeInSeconds <= 30) { rank = 'A'; message = '極度專注！'; colorClass = 'text-[#FF9800]'; }
+                else if (timeInSeconds <= 45) { rank = 'B'; message = '表現很棒！'; colorClass = 'text-[#4CAF50]'; }
+                else { rank = 'C'; message = '穩紮穩打，再來一次！'; colorClass = 'text-[#2196F3]'; }
+            } else { // 25
+                if (timeInSeconds <= 35) { rank = 'S'; message = '鷹眼水豚！'; colorClass = 'text-[#FF8A8A]'; }
+                else if (timeInSeconds <= 55) { rank = 'A'; message = '注意力超群！'; colorClass = 'text-[#FF9800]'; }
+                else if (timeInSeconds <= 80) { rank = 'B'; message = '很有潛力喔！'; colorClass = 'text-[#4CAF50]'; }
+                else { rank = 'C'; message = '水豚為你加油！'; colorClass = 'text-[#2196F3]'; }
+            }
+
+            return { rank, message, colorClass };
+        }
+
         function restartCurrentMode() {
-            startGame(currentTotalNumbers);
+            startGame(currentTotalNumbers, currentLayout, currentTotalNumbers === 25 && currentLayout === 'regular');
         }
 
         function backToMenu() {
@@ -365,6 +454,12 @@
             clearInterval(timerInterval);
             const totalTime = Date.now() - startTime;
             finalTimeDisplay.textContent = formatTime(totalTime);
+            
+            // 設定評價
+            const eval = calculateRank(totalTime);
+            rankDisplay.textContent = eval.rank;
+            rankDisplay.className = `text-3xl font-black mr-2 ${eval.colorClass}`;
+            rankMessage.textContent = eval.message;
             
             // 顯示過關畫面
             winModal.classList.remove('pointer-events-none', 'opacity-0');
