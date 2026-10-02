@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>卡皮巴拉舒爾特方格</title>
+    <title>舒爾特方格訓練</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
@@ -17,7 +17,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .capybara-float {
+        .logo-float {
             animation: float 3s ease-in-out infinite;
         }
 
@@ -26,7 +26,7 @@
             50% { transform: translateY(-10px); }
         }
 
-        /* 自訂金幣圖示 */
+        /* 純 CSS 繪製的金幣圖示，避免跨平台 Emoji 破圖 */
         .coin-icon {
             display: inline-block;
             width: 1.2em;
@@ -57,14 +57,23 @@
         }
 
         .grid-piece {
-            transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s ease;
+            transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s ease, background-color 0.3s ease;
             user-select: none;
         }
 
+        /* 點擊後消失模式 */
         .grid-piece.clicked {
             opacity: 0;
             pointer-events: none;
             transform: scale(0.8);
+        }
+
+        /* 點擊後保留模式 */
+        .grid-piece.clicked-keep {
+            opacity: 0.6;
+            pointer-events: none;
+            transform: scale(0.95);
+            filter: grayscale(40%);
         }
 
         .shake {
@@ -97,6 +106,7 @@
 </head>
 <body id="main-body" class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
 
+    <!-- 頂部選單列：左上角放功能按鈕，右上角放金幣 -->
     <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-start z-30 pointer-events-none">
         <div class="flex flex-col gap-2 pointer-events-auto">
             <button onclick="openShop()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
@@ -113,26 +123,39 @@
     </div>
 
     <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl z-10 flex-1 transition-opacity duration-300 mt-12 sm:mt-8">
-        <svg class="w-40 h-40 capybara-float mb-2 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="45" fill="#FFE4B5"/>
-            <path d="M25 55 Q 50 85 75 55 L 85 70 Q 50 100 15 70 Z" fill="#D2691E"/>
-            <path d="M30 40 Q 50 20 70 40 Q 80 50 70 60 Q 50 80 30 60 Q 20 50 30 40 Z" fill="#8B4513"/>
-            <circle cx="40" cy="45" r="4" fill="#000"/>
-            <circle cx="60" cy="45" r="4" fill="#000"/>
-            <path d="M 45 55 Q 50 60 55 55" stroke="#000" stroke-width="3" fill="transparent" stroke-linecap="round"/>
-            <path d="M 20 40 Q 25 30 35 35" stroke="#654321" stroke-width="4" fill="transparent" stroke-linecap="round"/>
-            <path d="M 80 40 Q 75 30 65 35" stroke="#654321" stroke-width="4" fill="transparent" stroke-linecap="round"/>
+        
+        <!-- 舒爾特方格意象 LOGO -->
+        <svg class="w-32 h-32 md:w-40 md:h-40 logo-float mb-4 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="10" width="80" height="80" rx="20" fill="#FFE4B5"/>
+            <!-- 3x3 方格 -->
+            <rect x="20" y="20" width="16" height="16" rx="6" fill="#FFB6C1"/>
+            <rect x="42" y="20" width="16" height="16" rx="6" fill="#A7E8D0"/>
+            <rect x="64" y="20" width="16" height="16" rx="6" fill="#FFD1A9"/>
+            <rect x="20" y="42" width="16" height="16" rx="6" fill="#E2D4FF"/>
+            <rect x="42" y="42" width="16" height="16" rx="6" fill="#FFB6C1"/>
+            <rect x="64" y="42" width="16" height="16" rx="6" fill="#FFFACD"/>
+            <rect x="20" y="64" width="16" height="16" rx="6" fill="#FFFACD"/>
+            <rect x="42" y="64" width="16" height="16" rx="6" fill="#E2D4FF"/>
+            <rect x="64" y="64" width="16" height="16" rx="6" fill="#A7E8D0"/>
         </svg>
         
-        <h1 class="text-4xl md:text-5xl font-black text-[#5C4033] mb-2 drop-shadow-sm text-center tracking-wide">
-            卡皮巴拉<br><span class="text-3xl md:text-4xl text-[#D2691E]">舒爾特方格</span>
+        <h1 class="text-4xl md:text-5xl font-black text-[#5C4033] mb-6 drop-shadow-sm text-center tracking-wide">
+            舒爾特方格
         </h1>
         
-        <div class="mb-6 bg-white/60 p-2 rounded-xl backdrop-blur-sm border border-white/50">
-            <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2">
+        <!-- 遊戲設定選單區塊 -->
+        <div class="mb-6 bg-white/60 p-3 rounded-2xl backdrop-blur-sm border border-white/50 flex flex-col sm:flex-row gap-3 shadow-sm">
+            <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center">
                 <option value="123">🔢 數字模式 (1-25)</option>
                 <option value="abc">🔤 英文模式 (A-Y)</option>
                 <option value="bopomo">🇹🇼 注音模式 (ㄅ-ㄙ)</option>
+            </select>
+            
+            <div class="hidden sm:block w-px bg-gray-300"></div>
+            
+            <select id="click-mode-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center" onchange="loadHighScores()">
+                <option value="disappear">✨ 點擊後消失</option>
+                <option value="keep">📌 點擊後保留</option>
             </select>
         </div>
 
@@ -206,13 +229,14 @@
             
             <div class="relative inline-block">
                 <div id="modal-crown" class="crown">👑</div>
-                <svg class="w-24 h-24 mx-auto mb-2 drop-shadow-md capybara-float" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- 結算獎盃 LOGO -->
+                <svg class="w-24 h-24 mx-auto mb-2 drop-shadow-md logo-float" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="50" cy="50" r="45" fill="#FFE4B5"/>
-                    <path d="M25 55 Q 50 85 75 55 L 85 70 Q 50 100 15 70 Z" fill="#D2691E"/>
-                    <path d="M30 40 Q 50 20 70 40 Q 80 50 70 60 Q 50 80 30 60 Q 20 50 30 40 Z" fill="#8B4513"/>
-                    <path d="M 40 45 Q 45 40 50 45 Q 55 40 60 45" stroke="#000" stroke-width="3" fill="transparent" stroke-linecap="round"/>
-                    <circle cx="35" cy="50" r="5" fill="#FFB6C1" opacity="0.6"/>
-                    <circle cx="65" cy="50" r="5" fill="#FFB6C1" opacity="0.6"/>
+                    <path d="M 30 40 L 70 40 L 60 70 L 40 70 Z" fill="#FFDF00"/>
+                    <path d="M 40 70 L 60 70 L 55 85 L 45 85 Z" fill="#DAA520"/>
+                    <path d="M 35 85 L 65 85 L 65 90 L 35 90 Z" fill="#8B4513"/>
+                    <path d="M 30 40 C 20 40 20 55 35 50" stroke="#FFDF00" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    <path d="M 70 40 C 80 40 80 55 65 50" stroke="#FFDF00" stroke-width="5" fill="none" stroke-linecap="round"/>
                 </svg>
             </div>
             
@@ -222,7 +246,7 @@
             <div class="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-100">
                 <p class="text-gray-500 font-bold text-sm mb-1">你的成績</p>
                 <p id="final-time" class="text-4xl font-black text-[#5C4033] tabular-nums">0.00<span class="text-lg text-gray-400 ml-1">s</span></p>
-                <p id="encouragement-text" class="text-sm font-bold text-gray-500 mt-2">水豚為你喝采！</p>
+                <p id="encouragement-text" class="text-sm font-bold text-gray-500 mt-2">為你的專注力喝采！</p>
             </div>
 
             <div class="bg-[#FFFDF0] rounded-xl p-3 mb-6 flex justify-center items-center gap-2 border border-[#FFF099]">
@@ -277,7 +301,7 @@
                     <ul class="text-gray-600 text-sm leading-relaxed font-bold space-y-2 list-decimal list-inside pl-1">
                         <li>選擇喜歡的內容（數字、英文、注音）。</li>
                         <li>眼睛盡量注視畫面<strong class="text-rose-500">中央</strong>，用「餘光」尋找目標。</li>
-                        <li>依照順序，用最快速度點擊所有方塊（點擊後方塊會消失）。</li>
+                        <li>依照順序，用最快速度點擊所有方塊。</li>
                         <li>過關速度越快，評級與金幣獎勵越高哦！挑戰 S 級解鎖彩蛋！</li>
                     </ul>
                 </div>
@@ -292,7 +316,6 @@
     </div>
 
     <script>
-        // --- 狀態與資料區 ---
         let timerInterval;
         let startTime;
         let currentTargetIndex = 0;
@@ -300,7 +323,8 @@
         let isPlaying = false;
         
         let gameSize = 16;
-        let gameMode = 'regular'; // 'regular' or 'irregular'
+        let gameMode = 'regular'; 
+        let clickMode = 'disappear'; 
         
         let coins = parseInt(localStorage.getItem('capy_coins') || '0');
         let currentTheme = localStorage.getItem('capy_theme') || 'default';
@@ -309,11 +333,11 @@
         const CHAR_SETS = {
             '123': Array.from({length: 25}, (_, i) => (i + 1).toString()),
             'abc': 'ABCDEFGHIJKLMNOPQRSTUVWXY'.split(''),
-            'bopomo': 'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛ'.split('') // 取前25個
+            'bopomo': 'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛ'.split('')
         };
 
         const THEMES = {
-            'default': { id: 'default', name: '水豚橘', bg: '#FFF3E0', cost: 0, icon: '🍊' },
+            'default': { id: 'default', name: '經典橘', bg: '#FFF3E0', cost: 0, icon: '🍊' },
             'ocean': { id: 'ocean', name: '深海藍', bg: '#E0F7FA', cost: 100, icon: '🌊' },
             'forest': { id: 'forest', name: '精靈綠', bg: '#E8F5E9', cost: 150, icon: '🌲' },
             'starry': { id: 'starry', name: '星空紫', bg: '#EDE7F6', cost: 300, icon: '✨' }
@@ -321,19 +345,35 @@
 
         const COLORS = ['#FFB6C1', '#FFD1A9', '#FFFACD', '#A7E8D0', '#E2D4FF'];
 
-        // --- 初始化 ---
         window.onload = function() {
             updateCoinDisplay();
             applyTheme(currentTheme);
+            migrateOldScores(); 
             loadHighScores();
         };
 
-        function loadHighScores() {
+        function migrateOldScores() {
             const modes = [
-                { id: 'record-regular-16', key: 'score_regular_16' },
-                { id: 'record-irregular-16', key: 'score_irregular_16' },
-                { id: 'record-regular-25', key: 'score_regular_25' },
-                { id: 'record-irregular-25', key: 'score_irregular_25' }
+                { old: 'score_regular_16', new: 'score_regular_16_disappear' },
+                { old: 'score_irregular_16', new: 'score_irregular_16_disappear' },
+                { old: 'score_regular_25', new: 'score_regular_25_disappear' },
+                { old: 'score_irregular_25', new: 'score_irregular_25_disappear' }
+            ];
+            modes.forEach(m => {
+                const oldVal = localStorage.getItem(m.old);
+                if (oldVal && !localStorage.getItem(m.new)) {
+                    localStorage.setItem(m.new, oldVal);
+                }
+            });
+        }
+
+        function loadHighScores() {
+            const currentClickMode = document.getElementById('click-mode-select').value || 'disappear';
+            const modes = [
+                { id: 'record-regular-16', key: `score_regular_16_${currentClickMode}` },
+                { id: 'record-irregular-16', key: `score_irregular_16_${currentClickMode}` },
+                { id: 'record-regular-25', key: `score_regular_25_${currentClickMode}` },
+                { id: 'record-irregular-25', key: `score_irregular_25_${currentClickMode}` }
             ];
             modes.forEach(m => {
                 const score = localStorage.getItem(m.key);
@@ -341,7 +381,6 @@
             });
         }
 
-        // --- 商店與主題系統 ---
         function updateCoinDisplay() {
             document.getElementById('coin-count').textContent = coins;
             localStorage.setItem('capy_coins', coins);
@@ -351,6 +390,189 @@
             currentTheme = themeId;
             document.body.style.backgroundColor = THEMES[themeId].bg;
             localStorage.setItem('capy_theme', themeId);
+        }
+
+        function startGame(size, mode) {
+            gameSize = size;
+            gameMode = mode;
+            currentTargetIndex = 0;
+            isPlaying = true;
+
+            const type = document.getElementById('char-type-select').value;
+            clickMode = document.getElementById('click-mode-select').value; 
+            currentSequence = CHAR_SETS[type].slice(0, gameSize);
+            
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            
+            updateNextTargetDisplay();
+            generateGrid();
+            
+            document.getElementById('timer').textContent = "0.00";
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 10);
+        }
+
+        function updateNextTargetDisplay() {
+            document.getElementById('next-target').textContent = currentSequence[currentTargetIndex];
+        }
+
+        function generateGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+            
+            let items = [...currentSequence];
+            items.sort(() => Math.random() - 0.5);
+
+            const gridCols = Math.sqrt(gameSize);
+            container.style.gridTemplateColumns = `repeat(${gridCols}, minmax(0, 1fr))`;
+            container.style.gridTemplateRows = `repeat(${gridCols}, minmax(0, 1fr))`;
+
+            items.forEach((item) => {
+                const btn = document.createElement('button');
+                btn.textContent = item;
+                
+                let bgColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+                let spanClasses = "";
+                let fontSize = gameSize === 16 ? "text-4xl" : "text-3xl";
+                
+                if (gameMode === 'irregular') {
+                    const spanX = Math.random() > 0.7 ? 2 : 1;
+                    const spanY = Math.random() > 0.7 ? 2 : 1;
+                    btn.style.gridColumn = `span ${spanX}`;
+                    btn.style.gridRow = `span ${spanY}`;
+                    
+                    const sizes = ["text-2xl", "text-3xl", "text-4xl", "text-5xl"];
+                    fontSize = sizes[Math.floor(Math.random() * sizes.length)];
+                    
+                    const radii = ["rounded-2xl", "rounded-[30px]", "rounded-full", "rounded-[10px]"];
+                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] ${fontSize} ${radii[Math.floor(Math.random() * radii.length)]}`;
+                } else {
+                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] rounded-2xl w-full h-full ${fontSize}`;
+                }
+
+                btn.style.backgroundColor = bgColor;
+                btn.onclick = () => handleBlockClick(btn, item);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleBlockClick(btn, value) {
+            if (!isPlaying) return;
+
+            if (value === currentSequence[currentTargetIndex]) {
+                if (clickMode === 'disappear') {
+                    btn.classList.add('clicked');
+                } else {
+                    btn.classList.add('clicked-keep');
+                }
+                
+                currentTargetIndex++;
+                
+                if (currentTargetIndex >= currentSequence.length) {
+                    endGame();
+                } else {
+                    updateNextTargetDisplay();
+                }
+            } else {
+                btn.classList.remove('shake');
+                void btn.offsetWidth; 
+                btn.classList.add('shake');
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            document.getElementById('timer').textContent = elapsed.toFixed(2);
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            
+            const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+            document.getElementById('final-time').innerHTML = `${finalTime}<span class="text-lg text-gray-400 ml-1">s</span>`;
+            
+            let rating = 'C';
+            let earnedCoins = 5;
+            let msg = "繼續加油！";
+            const timeNum = parseFloat(finalTime);
+            
+            const standard = gameSize === 16 ? { s: 12, a: 18, b: 25 } : { s: 25, a: 35, b: 50 };
+
+            if (timeNum <= standard.s) {
+                rating = 'S'; earnedCoins = 30; msg = "太神啦！專注力大師！";
+            } else if (timeNum <= standard.a) {
+                rating = 'A'; earnedCoins = 15; msg = "表現非常棒！";
+            } else if (timeNum <= standard.b) {
+                rating = 'B'; earnedCoins = 10; msg = "漸入佳境，繼續保持！";
+            }
+
+            document.getElementById('rating-text').textContent = `評級: ${rating}`;
+            document.getElementById('rating-text').style.color = rating === 'S' ? '#FF4500' : '#D2691E';
+            document.getElementById('encouragement-text').textContent = msg;
+            
+            coins += earnedCoins;
+            document.getElementById('reward-coins').textContent = earnedCoins;
+            updateCoinDisplay();
+
+            const recordKey = `score_${gameMode}_${gameSize}_${clickMode}`;
+            const oldRecord = parseFloat(localStorage.getItem(recordKey) || '999');
+            if (timeNum < oldRecord) {
+                localStorage.setItem(recordKey, finalTime);
+            }
+
+            showWinModal(rating === 'S');
+        }
+
+        function showWinModal(isSClass) {
+            const modal = document.getElementById('win-modal');
+            const content = document.getElementById('win-modal-content');
+            const crown = document.getElementById('modal-crown');
+            
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            setTimeout(() => {
+                content.classList.remove('scale-90');
+                content.classList.add('scale-100');
+                
+                if (isSClass) {
+                    crown.classList.add('show');
+                    triggerConfetti();
+                } else {
+                    crown.classList.remove('show');
+                }
+            }, 10);
+        }
+
+        function triggerConfetti() {
+            if(typeof confetti === 'function') {
+                const duration = 2000;
+                const end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFB6C1', '#FFDF00', '#A7E8D0'] });
+                    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFB6C1', '#FFDF00', '#A7E8D0'] });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+            }
+        }
+
+        function backToMenu() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            
+            document.getElementById('win-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('win-modal-content').classList.remove('scale-100');
+            document.getElementById('win-modal-content').classList.add('scale-90');
+            document.getElementById('modal-crown').classList.remove('show');
+            
+            setTimeout(() => {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('flex');
+                document.getElementById('menu-screen').classList.remove('hidden');
+                loadHighScores(); 
+            }, 300);
         }
 
         function openShop() {
@@ -407,7 +629,6 @@
                 localStorage.setItem('capy_unlocked', JSON.stringify(unlockedThemes));
                 updateCoinDisplay();
                 equipTheme(themeId);
-                openShop(); // 重新整理商店畫面
             }
         }
 
@@ -416,7 +637,6 @@
             openShop();
         }
 
-        // --- 說明系統 ---
         function openInfo() {
             document.getElementById('info-modal').classList.remove('pointer-events-none', 'opacity-0');
             setTimeout(() => {
@@ -429,216 +649,6 @@
             document.getElementById('info-modal').classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('info-modal-content').classList.remove('scale-100');
             document.getElementById('info-modal-content').classList.add('scale-90');
-        }
-
-        // --- STREAMING_CHUNK: 遊戲核心邏輯 ---
-        function startGame(size, mode) {
-            gameSize = size;
-            gameMode = mode;
-            currentTargetIndex = 0;
-            isPlaying = true;
-
-            const type = document.getElementById('char-type-select').value;
-            clickMode = document.getElementById('click-mode-select').value;
-            currentSequence = CHAR_SETS[type].slice(0, gameSize);
-            
-            document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('game-screen').classList.add('flex');
-            
-            updateNextTargetDisplay();
-            generateGrid();
-            
-            document.getElementById('timer').textContent = "0.00";
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 10);
-        }
-
-        function updateNextTargetDisplay() {
-            document.getElementById('next-target').textContent = currentSequence[currentTargetIndex];
-        }
-
-        function generateGrid() {
-            const container = document.getElementById('grid-container');
-            container.innerHTML = '';
-            
-            let items = [...currentSequence];
-            items.sort(() => Math.random() - 0.5);
-
-            const gridCols = Math.sqrt(gameSize);
-            container.style.gridTemplateColumns = `repeat(${gridCols}, minmax(0, 1fr))`;
-            container.style.gridTemplateRows = `repeat(${gridCols}, minmax(0, 1fr))`;
-
-            items.forEach((item) => {
-                const btn = document.createElement('button');
-                btn.textContent = item;
-                
-                let bgColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-                let spanClasses = "";
-                let fontSize = gameSize === 16 ? "text-4xl" : "text-3xl";
-                
-                if (gameMode === 'irregular') {
-                    // 不規則模式：隨機跨度、字體大小與邊界半徑
-                    const spanX = Math.random() > 0.7 ? 2 : 1;
-                    const spanY = Math.random() > 0.7 ? 2 : 1;
-                    btn.style.gridColumn = `span ${spanX}`;
-                    btn.style.gridRow = `span ${spanY}`;
-                    
-                    const sizes = ["text-2xl", "text-3xl", "text-4xl", "text-5xl"];
-                    fontSize = sizes[Math.floor(Math.random() * sizes.length)];
-                    
-                    const radii = ["rounded-2xl", "rounded-[30px]", "rounded-full", "rounded-[10px]"];
-                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] ${fontSize} ${radii[Math.floor(Math.random() * radii.length)]}`;
-                } else {
-                    // 規則模式：固定正方形
-                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] rounded-2xl w-full h-full ${fontSize}`;
-                }
-
-                btn.style.backgroundColor = bgColor;
-
-                btn.onclick = () => handleBlockClick(btn, item);
-                container.appendChild(btn);
-            });
-        }
-
-        function handleBlockClick(btn, value) {
-            if (!isPlaying) return;
-
-            if (value === currentSequence[currentTargetIndex]) {
-                // 正確：根據模式決定消失或變暗保留
-                if (clickMode === 'disappear') {
-                    btn.classList.add('clicked');
-                } else {
-                    btn.classList.add('clicked-keep');
-                }
-                currentTargetIndex++;
-                
-                if (currentTargetIndex >= currentSequence.length) {
-                    endGame();
-                } else {
-                    updateNextTargetDisplay();
-                }
-            } else {
-                // 錯誤：震動回饋
-                btn.classList.remove('shake');
-                void btn.offsetWidth; // 觸發重繪
-                btn.classList.add('shake');
-            }
-        }
-
-        function updateTimer() {
-            const elapsed = (Date.now() - startTime) / 1000;
-            document.getElementById('timer').textContent = elapsed.toFixed(2);
-        }
-
-        // --- STREAMING_CHUNK: 遊戲結算與評級邏輯 ---
-        function endGame() {
-            isPlaying = false;
-            clearInterval(timerInterval);
-            
-            const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-            document.getElementById('final-time').innerHTML = `${finalTime}<span class="text-lg text-gray-400 ml-1">s</span>`;
-            
-            // 計算評級 (依據格數調整標準)
-            let rating = 'C';
-            let earnedCoins = 5;
-            let msg = "水豚為你加油！";
-            const timeNum = parseFloat(finalTime);
-            
-            const standard = gameSize === 16 ? { s: 12, a: 18, b: 25 } : { s: 25, a: 35, b: 50 };
-
-            if (timeNum <= standard.s) {
-                rating = 'S'; earnedCoins = 30; msg = "太神啦！專注力大師！";
-            } else if (timeNum <= standard.a) {
-                rating = 'A'; earnedCoins = 15; msg = "表現非常棒！";
-            } else if (timeNum <= standard.b) {
-                rating = 'B'; earnedCoins = 10; msg = "漸入佳境，繼續保持！";
-            }
-
-            document.getElementById('rating-text').textContent = `評級: ${rating}`;
-            document.getElementById('rating-text').style.color = rating === 'S' ? '#FF4500' : '#D2691E';
-            document.getElementById('encouragement-text').textContent = msg;
-            
-            // 儲存金幣
-            coins += earnedCoins;
-            document.getElementById('reward-coins').textContent = earnedCoins;
-            updateCoinDisplay();
-
-            // 儲存最佳紀錄 (加入 clickMode 分隔)
-            const recordKey = `score_${gameMode}_${gameSize}_${clickMode}`;
-            const oldRecord = parseFloat(localStorage.getItem(recordKey) || '999');
-            if (timeNum < oldRecord) {
-                localStorage.setItem(recordKey, finalTime);
-            }
-
-            showWinModal(rating === 'S');
-        }
-
-        function showWinModal(isSClass) {
-            const modal = document.getElementById('win-modal');
-            const content = document.getElementById('win-modal-content');
-            const crown = document.getElementById('modal-crown');
-            
-            modal.classList.remove('pointer-events-none', 'opacity-0');
-            setTimeout(() => {
-                content.classList.remove('scale-90');
-                content.classList.add('scale-100');
-                
-                // S級彩蛋：皇冠與碎紙
-                if (isSClass) {
-                    crown.classList.add('show');
-                    triggerConfetti();
-                } else {
-                    crown.classList.remove('show');
-                }
-            }, 10);
-        }
-
-        function triggerConfetti() {
-            if(typeof confetti === 'function') {
-                const duration = 2000;
-                const end = Date.now() + duration;
-
-                (function frame() {
-                    confetti({
-                        particleCount: 5,
-                        angle: 60,
-                        spread: 55,
-                        origin: { x: 0 },
-                        colors: ['#FFB6C1', '#FFDF00', '#A7E8D0']
-                    });
-                    confetti({
-                        particleCount: 5,
-                        angle: 120,
-                        spread: 55,
-                        origin: { x: 1 },
-                        colors: ['#FFB6C1', '#FFDF00', '#A7E8D0']
-                    });
-
-                    if (Date.now() < end) {
-                        requestAnimationFrame(frame);
-                    }
-                }());
-            }
-        }
-
-        function backToMenu() {
-            isPlaying = false;
-            clearInterval(timerInterval);
-            
-            // 關閉 Modal
-            document.getElementById('win-modal').classList.add('opacity-0', 'pointer-events-none');
-            document.getElementById('win-modal-content').classList.remove('scale-100');
-            document.getElementById('win-modal-content').classList.add('scale-90');
-            document.getElementById('modal-crown').classList.remove('show');
-            
-            // 切換畫面
-            setTimeout(() => {
-                document.getElementById('game-screen').classList.add('hidden');
-                document.getElementById('game-screen').classList.remove('flex');
-                document.getElementById('menu-screen').classList.remove('hidden');
-                loadHighScores(); // 重新整理紀錄顯示
-            }, 300);
         }
     </script>
 </body>
