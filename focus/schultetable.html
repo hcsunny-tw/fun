@@ -8,18 +8,18 @@
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
         body {
-            font-family: 'Nunito', sans-serif;
-            background-color: #FFFDF0; /* 淨春型：鵝黃底色 */
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
             touch-action: manipulation;
             overflow-x: hidden;
+            transition: background-color 0.5s ease;
         }
 
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
         ::-webkit-scrollbar-thumb { background: #FFC4C4; border-radius: 10px; }
 
         @keyframes shake {
@@ -43,19 +43,20 @@
         }
 
         .schulte-cell {
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 6px 0 rgba(0,0,0,0.1);
         }
         .schulte-cell:active:not(.found) {
             transform: translateY(4px);
             box-shadow: 0 2px 0 rgba(0,0,0,0.1);
         }
+        
+        /* 點擊成功後消失的動畫 */
         .schulte-cell.found {
-            opacity: 0.4;
-            transform: scale(0.95);
+            opacity: 0;
+            transform: scale(0);
             box-shadow: none;
-            pointer-events: none;
-            filter: grayscale(50%);
+            pointer-events: none; /* 讓原本的空間保留，但不阻擋點擊 */
         }
 
         @keyframes float {
@@ -66,12 +67,39 @@
         .capybara-float {
             animation: float 3s ease-in-out infinite;
         }
+
+        /* 皇冠彩蛋動畫 */
+        @keyframes dropIn {
+            0% { transform: translateY(-50px) rotate(-20deg) scale(0); opacity: 0; }
+            60% { transform: translateY(10px) rotate(10deg) scale(1.1); opacity: 1; }
+            100% { transform: translateY(0) rotate(5deg) scale(1); opacity: 1; }
+        }
+        .crown-animate {
+            animation: dropIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            transform-origin: bottom center;
+        }
+
+        /* 彩紙粒子 */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 100;
+            animation: fall linear forwards;
+            pointer-events: none;
+        }
+        @keyframes fall {
+            to { transform: translateY(105vh) rotate(720deg); }
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+<body id="main-body" class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
 
-    <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-lg z-10 flex-1 transition-opacity duration-300">
-        <svg class="w-40 h-40 capybara-float mb-4 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <div class="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-2 border border-white z-20 cursor-pointer hover:scale-105 transition-transform" onclick="openShop()">
+        <span class="text-xl">🪙</span> <span id="coin-count">0</span>
+    </div>
+
+    <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl z-10 flex-1 transition-opacity duration-300">
+        <svg class="w-40 h-40 capybara-float mb-2 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <rect x="15" y="40" width="70" height="45" rx="22" fill="#9C6B30"/>
             <circle cx="25" cy="40" r="8" fill="#754D20"/>
             <circle cx="75" cy="40" r="8" fill="#754D20"/>
@@ -84,35 +112,67 @@
         </svg>
 
         <h1 class="text-4xl md:text-5xl font-black text-[#5C4033] tracking-wider drop-shadow-sm mb-2 text-center">舒爾特方格</h1>
-        <p class="text-[#8B5A2B] font-bold mb-8 text-center text-lg">水豚的專注力考驗 🍊</p>
+        <p class="text-[#8B5A2B] font-bold mb-4 text-center text-lg">水豚的專注力考驗 🍊</p>
 
-        <div class="flex flex-col gap-4 w-full px-4">
-            <div class="bg-white/60 p-4 rounded-2xl shadow-sm mb-2 border border-white">
-                <p class="text-center font-bold text-[#754D20] mb-3 text-sm">經典規則排列</p>
-                <div class="flex gap-2">
-                    <button onclick="startGame(16, 'regular')" class="flex-1 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 px-2 rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-1">
-                        <span class="text-lg">🌱</span> 3x3 (9格)
-                    </button>
-                    <button onclick="startGame(25, 'regular')" class="flex-1 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 px-2 rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-1">
-                        <span class="text-lg">🌿</span> 4x4 (16格)
-                    </button>
-                    <button onclick="startGame(25, 'regular', true)" class="flex-1 bg-[#FFC4C4] hover:bg-[#ffadad] text-[#7D3232] font-black py-3 px-2 rounded-xl shadow-[0_4px_0_#D99696] active:shadow-[0_0px_0_#D99696] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-1">
-                        <span class="text-lg">🔥</span> 5x5 (25格)
-                    </button>
+        <!-- 選擇字元模式 -->
+        <div class="mb-6 flex items-center bg-white/70 backdrop-blur px-4 py-2 rounded-2xl shadow-sm border border-white">
+            <span class="font-bold text-[#754D20] mr-3">選擇訓練內容：</span>
+            <select id="charset-select" class="bg-transparent font-black text-[#5C4033] outline-none text-lg cursor-pointer" onchange="changeCharSet()">
+                <option value="numbers">123 (數字)</option>
+                <option value="alphabets">ABC (英文字母)</option>
+                <option value="bopomofo">ㄅㄆㄇ (注音符號)</option>
+            </select>
+        </div>
+
+        <!-- 遊戲模式選擇 -->
+        <div class="flex flex-col gap-5 w-full px-4">
+            <!-- 規則模式 -->
+            <div class="bg-white/60 p-5 rounded-3xl shadow-sm border border-white">
+                <p class="text-center font-bold text-[#754D20] mb-3">經典規則排列</p>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="flex-1 flex flex-col">
+                        <button onclick="startGame(9, 'regular')" class="h-14 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-1 text-sm md:text-base">
+                            <span>🌱 3x3 (9格)</span>
+                        </button>
+                        <p id="record-regular-9" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                        <button onclick="startGame(16, 'regular')" class="h-14 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-1 text-sm md:text-base">
+                            <span>🌿 4x4 (16格)</span>
+                        </button>
+                        <p id="record-regular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                        <button onclick="startGame(25, 'regular')" class="h-14 bg-[#FFC4C4] hover:bg-[#ffadad] text-[#7D3232] font-black rounded-xl shadow-[0_4px_0_#D99696] active:shadow-[0_0px_0_#D99696] active:translate-y-[4px] transition-all flex items-center justify-center gap-1 text-sm md:text-base">
+                            <span>🔥 5x5 (25格)</span>
+                        </button>
+                        <p id="record-regular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white/60 p-4 rounded-2xl shadow-sm border border-white">
-                <p class="text-center font-bold text-[#754D20] mb-3 text-sm">趣味不規則排列</p>
-                <div class="flex gap-2">
-                    <button onclick="startGame(16, 'irregular')" class="flex-1 bg-[#FFF099] hover:bg-[#ffeb66] text-[#756819] font-black py-3 px-4 rounded-xl shadow-[0_4px_0_#D1C266] active:shadow-[0_0px_0_#D1C266] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-2">
-                        <span class="text-xl">✨</span> 基礎 (16)
-                    </button>
-                    <button onclick="startGame(25, 'irregular')" class="flex-1 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black py-3 px-4 rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all text-sm md:text-base flex items-center justify-center gap-2">
-                        <span class="text-xl">🌟</span> 挑戰 (25)
-                    </button>
+            <!-- 不規則模式 -->
+            <div class="bg-white/60 p-5 rounded-3xl shadow-sm border border-white">
+                <p class="text-center font-bold text-[#754D20] mb-3">趣味不規則排列</p>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="flex-1 flex flex-col">
+                        <button onclick="startGame(16, 'irregular')" class="h-14 bg-[#FFF099] hover:bg-[#ffeb66] text-[#756819] font-black rounded-xl shadow-[0_4px_0_#D1C266] active:shadow-[0_0px_0_#D1C266] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                            <span>✨ 基礎 (16格)</span>
+                        </button>
+                        <p id="record-irregular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                        <button onclick="startGame(25, 'irregular')" class="h-14 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                            <span>🌟 挑戰 (25格)</span>
+                        </button>
+                        <p id="record-irregular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
+                    </div>
                 </div>
             </div>
+            
+            <button onclick="openShop()" class="mt-2 text-center text-[#8B5A2B] font-black underline hover:text-[#5C4033] transition-colors">
+                🛍️ 前往主題商店
+            </button>
         </div>
     </div>
 
@@ -129,28 +189,28 @@
             </div>
             
             <!-- 控制面板 -->
-            <div class="bg-white/70 backdrop-blur-md p-4 rounded-3xl shadow-lg flex flex-wrap justify-center items-center gap-4 md:gap-8 w-full max-w-lg border-2 border-white">
-                <div class="flex flex-col items-center min-w-[60px]">
-                    <span class="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest">找尋</span>
-                    <div id="next-target" class="text-3xl md:text-4xl font-black text-rose-500 w-12 text-center">1</div>
+            <div class="bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-lg flex flex-wrap justify-center items-center gap-6 md:gap-10 w-full max-w-lg border border-white">
+                <div class="flex flex-col items-center min-w-[70px]">
+                    <span class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">找尋</span>
+                    <div id="next-target" class="text-3xl md:text-4xl font-black text-rose-500 w-16 text-center">1</div>
                 </div>
                 
-                <div class="w-px h-10 bg-gray-300"></div>
+                <div class="w-px h-12 bg-gray-200"></div>
 
                 <div class="flex flex-col items-center min-w-[100px]">
-                    <span class="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest">時間</span>
+                    <span class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">時間</span>
                     <div id="timer" class="text-2xl md:text-3xl font-black text-[#5C4033] tabular-nums">00:00.00</div>
                 </div>
 
-                <button onclick="backToMenu()" class="bg-[#FFF099] hover:bg-[#ffeb66] text-[#756819] font-black py-2 px-4 rounded-xl shadow-[0_4px_0_#D1C266] active:shadow-[0_0px_0_#D1C266] active:translate-y-[4px] transition-all text-sm md:text-base">
-                    返回選單
+                <button onclick="backToMenu()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-black py-2 px-4 rounded-xl shadow-[0_4px_0_#e5e7eb] active:shadow-[0_0px_0_#e5e7eb] active:translate-y-[4px] transition-all text-sm md:text-base">
+                    放棄
                 </button>
             </div>
         </header>
 
-        <main class="w-full relative">
+        <main class="w-full relative flex-1 flex justify-center items-start">
             <!-- 網格容器 (寬度與欄位會透過 JS 動態設定) -->
-            <div id="grid-container" class="grid auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 mx-auto transition-all duration-300">
+            <div id="grid-container" class="transition-all duration-300 mx-auto">
                 <!-- 方塊動態生成 -->
             </div>
         </main>
@@ -159,8 +219,17 @@
     <div id="win-modal" class="fixed inset-0 bg-[#5C4033]/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-8 max-w-sm w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 border-8 border-[#FFF099] relative" id="win-modal-content">
             
-            <div class="absolute -top-16 left-1/2 transform -translate-x-1/2">
-                <svg class="w-32 h-32 capybara-float drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <div class="absolute -top-20 left-1/2 transform -translate-x-1/2 relative inline-block">
+                <!-- 彩蛋皇冠 (S級顯示) -->
+                <svg id="capybara-crown" class="absolute -top-10 -right-4 w-12 h-12 hidden z-10 drop-shadow-md" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 20 80 L 10 20 L 35 45 L 50 10 L 65 45 L 90 20 L 80 80 Z" fill="#FFD700" stroke="#B8860B" stroke-width="3" stroke-linejoin="round"/>
+                    <circle cx="10" cy="20" r="6" fill="#FF3366"/>
+                    <circle cx="50" cy="10" r="8" fill="#33CCFF"/>
+                    <circle cx="90" cy="20" r="6" fill="#FF3366"/>
+                    <rect x="25" y="70" width="50" height="10" fill="#DAA520" rx="3"/>
+                </svg>
+
+                <svg class="w-32 h-32 capybara-float drop-shadow-xl relative" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <rect x="15" y="30" width="70" height="60" rx="30" fill="#9C6B30"/>
                     <circle cx="25" cy="25" r="10" fill="#754D20"/>
                     <circle cx="75" cy="25" r="10" fill="#754D20"/>
@@ -173,12 +242,22 @@
                 </svg>
             </div>
 
-            <h2 class="text-4xl font-black text-[#FF8A8A] mt-12 mb-2">太棒了！</h2>
-            <p class="text-[#8B5A2B] font-bold text-lg mb-4">你完成了水豚的考驗 🍊</p>
+            <h2 class="text-4xl font-black text-[#FF8A8A] mt-2 mb-2">太棒了！</h2>
+            <p class="text-[#8B5A2B] font-bold text-lg mb-4">你完成了考驗 🍊</p>
             
-            <div class="bg-[#FFFDF0] rounded-2xl p-4 mb-4 border-2 border-dashed border-[#A7E8D0]">
+            <div class="bg-[#FFFDF0] rounded-2xl p-4 mb-4 border-2 border-dashed border-[#A7E8D0] relative">
+                <!-- 獲得金幣提示 -->
+                <div id="earned-coins" class="absolute -right-3 -top-3 bg-[#FFD1A9] text-[#824E24] font-black text-sm px-3 py-1 rounded-full shadow-md border-2 border-white transform rotate-12">
+                    +0 金幣
+                </div>
+
                 <p class="text-gray-500 text-sm font-bold">你的成績</p>
                 <p id="final-time" class="text-4xl font-black text-[#2c5d4b] tabular-nums mt-1 mb-2">00:00.00</p>
+                
+                <p id="new-record-badge" class="hidden text-xs bg-rose-500 text-white font-bold px-2 py-1 rounded-full w-max mx-auto mb-2 animate-bounce">
+                    🎉 破紀錄啦！
+                </p>
+
                 <div class="inline-flex items-center justify-center bg-white px-4 py-2 rounded-full shadow-inner border border-gray-100">
                     <span id="rank-display" class="text-2xl font-black mr-2">S</span>
                     <span id="rank-message" class="text-sm font-bold text-gray-600">完美專注力！</span>
@@ -196,8 +275,29 @@
         </div>
     </div>
 
+    <div id="shop-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[80vh]" id="shop-modal-content">
+            <button onclick="closeShop()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors">✕</button>
+            
+            <h2 class="text-3xl font-black text-[#5C4033] mb-2 mt-2 flex justify-center items-center gap-2">
+                🛍️ 獎勵商店
+            </h2>
+            <p class="text-gray-500 font-bold mb-4">用專注力賺取的金幣解鎖新主題吧！</p>
+            
+            <div class="bg-[#FFFDF0] rounded-xl p-3 mb-4 inline-flex items-center self-center gap-2 border border-[#E2D4FF]">
+                <span class="text-gray-500 font-bold text-sm">目前擁有</span>
+                <span class="text-2xl font-black text-[#8B5A2B]">🪙 <span id="shop-coin-display">0</span></span>
+            </div>
+
+            <!-- 主題列表區塊 -->
+            <div id="shop-items" class="grid grid-cols-2 gap-3 overflow-y-auto pb-4 px-2 custom-scrollbar">
+                <!-- 動態生成 -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 遊戲狀態與新功能資料
+        // --- 狀態變數與設定 ---
         let currentTotalNumbers = 25;
         let currentLayout = 'irregular'; 
         let currentTarget = 1;
@@ -205,28 +305,53 @@
         let startTime = 0;
         let timerInterval = null;
 
-        // 貨幣與主題系統
+        // 貨幣、主題、紀錄系統 (由 LocalStorage 讀取)
         let coins = parseInt(localStorage.getItem('schulteCoins') || '0');
         let unlockedThemes = JSON.parse(localStorage.getItem('schulteThemes') || '["default"]');
         let currentTheme = localStorage.getItem('schulteCurrentTheme') || 'default';
         let currentCharSet = 'numbers';
+        
+        // 紀錄格式: { "regular_9_numbers": 12000, ... } // 單位毫秒
+        let bestRecords = JSON.parse(localStorage.getItem('schulteRecords') || '{}');
 
-        // 字元替換包設定
+        // 字元替換包設定 (對應 1~25 的順序)
         const CHAR_SETS = {
             numbers: Array.from({length: 25}, (_, i) => (i + 1).toString()),
             alphabets: Array.from({length: 25}, (_, i) => String.fromCharCode(65 + i)),
             bopomofo: ['ㄅ','ㄆ','ㄇ','ㄈ','ㄉ','ㄊ','ㄋ','ㄌ','ㄍ','ㄎ','ㄏ','ㄐ','ㄑ','ㄒ','ㄓ','ㄔ','ㄕ','ㄖ','ㄗ','ㄘ','ㄙ','ㄧ','ㄨ','ㄩ','ㄚ']
         };
 
+        // 模式名稱映射
+        const CHAR_SET_NAMES = { numbers: '數字', alphabets: 'ABC', bopomofo: 'ㄅㄆㄇ' };
+
         // 主題資料
         const THEMES = {
-            default: { id: 'default', name: '淨春水豚 (預設)', bg: '#FFFDF0', cost: 0, icon: '🍊' },
+            default: { id: 'default', name: '淨春水豚', bg: '#FFFDF0', cost: 0, icon: '🍊' },
             ocean: { id: 'ocean', name: '深海藍', bg: '#E0F2FE', cost: 30, icon: '🌊' },
             space: { id: 'space', name: '星空紫', bg: '#F3E8FF', cost: 60, icon: '🌌' },
             forest: { id: 'forest', name: '森林綠', bg: '#ECFDF5', cost: 100, icon: '🌲' }
         };
 
-        // DOM 元素
+        // 淨春型視覺設定池 (Clear Spring Palette)
+        const visualPool = {
+            colors: [
+                { bg: 'bg-[#A7E8D0]', text: 'text-[#215A43]', border: 'border-[#75BFA2]' },
+                { bg: 'bg-[#FFC4C4]', text: 'text-[#7D3232]', border: 'border-[#D99696]' },
+                { bg: 'bg-[#AEE1FF]', text: 'text-[#2D5A7A]', border: 'border-[#8ABDE3]' },
+                { bg: 'bg-[#FFF099]', text: 'text-[#756819]', border: 'border-[#D1C266]' },
+                { bg: 'bg-[#E2D4FF]', text: 'text-[#534080]', border: 'border-[#C2B2EB]' },
+                { bg: 'bg-[#FFD1A9]', text: 'text-[#824E24]', border: 'border-[#D9A076]' }
+            ],
+            // 簡化跨度設計，確保在 CSS Grid Dense 模式下不會破圖，大部分設定為 1x1
+            spans: [
+                'col-span-1 row-span-1', 'col-span-1 row-span-1', 'col-span-1 row-span-1', 
+                'col-span-2 row-span-1', 'col-span-1 row-span-2'
+            ],
+            sizes: ['text-3xl', 'text-4xl', 'text-5xl'],
+            radius: ['rounded-xl', 'rounded-2xl', 'rounded-[2rem]']
+        };
+
+        // --- DOM 元素綁定 ---
         const menuScreen = document.getElementById('menu-screen');
         const gameScreen = document.getElementById('game-screen');
         const gridContainer = document.getElementById('grid-container');
@@ -235,35 +360,14 @@
         const modeTitle = document.getElementById('mode-title');
         const winModal = document.getElementById('win-modal');
         const winModalContent = document.getElementById('win-modal-content');
-        const finalTimeDisplay = document.getElementById('final-time');
-        const rankDisplay = document.getElementById('rank-display');
-        const rankMessage = document.getElementById('rank-message');
-        const shopModal = document.getElementById('shop-modal');
-        const shopModalContent = document.getElementById('shop-modal-content');
         
-        // 初始化金幣與主題
+        // --- STREAMING_CHUNK:初始化與工具函式 ---
+        
+        // 初始化載入
         document.getElementById('coin-count').textContent = coins;
         document.getElementById('main-body').style.backgroundColor = THEMES[currentTheme].bg;
+        updateMenuRecords();
 
-        // 淨春型視覺設定池 (Clear Spring Palette)
-        const visualPool = {
-            colors: [
-                { bg: 'bg-[#A7E8D0]', text: 'text-[#215A43]' }, // 薄荷綠
-                { bg: 'bg-[#FFC4C4]', text: 'text-[#7D3232]' }, // 蜜桃粉
-                { bg: 'bg-[#AEE1FF]', text: 'text-[#2D5A7A]' }, // 天青藍
-                { bg: 'bg-[#FFF099]', text: 'text-[#756819]' }, // 鵝黃
-                { bg: 'bg-[#E2D4FF]', text: 'text-[#534080]' }, // 薰衣草
-                { bg: 'bg-[#FFD1A9]', text: 'text-[#824E24]' }  // 珊瑚橘
-            ],
-            spans: [
-                'col-span-1 row-span-1', 'col-span-1 row-span-1', 'col-span-1 row-span-1', 
-                'col-span-2 row-span-1', 'col-span-1 row-span-2', 'col-span-1 row-span-1'
-            ],
-            sizes: ['text-3xl', 'text-4xl', 'text-5xl', 'text-2xl'],
-            radius: ['rounded-2xl', 'rounded-3xl', 'rounded-[2rem]']
-        };
-
-        // 工具函式：洗牌
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -272,17 +376,47 @@
             return array;
         }
 
-        // 工具函式：隨機取值
         function getRandom(arr) {
             return arr[Math.floor(Math.random() * arr.length)];
         }
 
-        // 時間格式化
         function formatTime(ms) {
+            if (ms === Infinity || !ms) return "--";
             const minutes = Math.floor(ms / 60000);
             const seconds = Math.floor((ms % 60000) / 1000);
             const milliseconds = Math.floor((ms % 1000) / 10);
-            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+            if (minutes > 0) {
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+            }
+            return `${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+        }
+
+        function getRecordKey(total, layout) {
+            return `${layout}_${total}_${currentCharSet}`;
+        }
+
+        // --- STREAMING_CHUNK:選單與顯示更新邏輯 ---
+
+        function changeCharSet() {
+            currentCharSet = document.getElementById('charset-select').value;
+            updateMenuRecords();
+        }
+
+        function updateMenuRecords() {
+            const configs = [
+                { id: 'record-regular-9', t: 9, l: 'regular' },
+                { id: 'record-regular-16', t: 16, l: 'regular' },
+                { id: 'record-regular-25', t: 25, l: 'regular' },
+                { id: 'record-irregular-16', t: 16, l: 'irregular' },
+                { id: 'record-irregular-25', t: 25, l: 'irregular' }
+            ];
+
+            configs.forEach(conf => {
+                const el = document.getElementById(conf.id);
+                const key = getRecordKey(conf.t, conf.l);
+                const record = bestRecords[key];
+                el.textContent = record ? `最佳: ${formatTime(record)}` : '最佳: --';
+            });
         }
 
         function updateTimer() {
@@ -290,55 +424,57 @@
             timerDisplay.textContent = formatTime(elapsedTime);
         }
 
+        // --- STREAMING_CHUNK:遊戲核心渲染與邏輯 ---
+
         function renderBoard() {
             gridContainer.innerHTML = '';
-            gridContainer.className = ''; // 重置 class
             
-            // 決定格數：如果是 9 格，只取 1-9
-            let targetNumbers = currentTotalNumbers === 9 ? 9 : (currentTotalNumbers === 16 ? 16 : 25);
-            
+            // 基礎陣列產生 (1 到 N)
+            let numbers = Array.from({ length: currentTotalNumbers }, (_, i) => i + 1);
+            numbers = shuffleArray(numbers);
+
+            // 根據模式設定 Grid 的 CSS
             if (currentLayout === 'regular') {
-                // 規則排列設定
-                if (targetNumbers === 9) {
-                    gridContainer.className = 'grid grid-cols-3 gap-2 p-2 w-full max-w-[320px] aspect-square mx-auto';
-                } else if (targetNumbers === 16) {
-                    gridContainer.className = 'grid grid-cols-4 gap-2 p-2 w-full max-w-[400px] aspect-square mx-auto';
+                if (currentTotalNumbers === 9) {
+                    gridContainer.className = 'grid grid-cols-3 gap-3 p-2 w-full max-w-[320px] aspect-square';
+                } else if (currentTotalNumbers === 16) {
+                    gridContainer.className = 'grid grid-cols-4 gap-3 p-2 w-full max-w-[400px] aspect-square';
                 } else {
-                    gridContainer.className = 'grid grid-cols-5 gap-2 p-2 w-full max-w-[500px] aspect-square mx-auto';
+                    gridContainer.className = 'grid grid-cols-5 gap-3 p-2 w-full max-w-[500px] aspect-square';
                 }
             } else {
                 // 不規則瀑布流設定
-                if (targetNumbers === 16) {
-                    gridContainer.className = 'grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-2xl mx-auto transition-all duration-300';
+                // 為了不跑版，固定欄數，依賴 dense 填補空隙
+                if (currentTotalNumbers === 16) {
+                    gridContainer.className = 'grid grid-cols-4 md:grid-cols-5 grid-flow-dense auto-rows-[80px] md:auto-rows-[90px] gap-3 p-2 w-full max-w-2xl';
                 } else {
-                    gridContainer.className = 'grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-4xl mx-auto transition-all duration-300';
+                    gridContainer.className = 'grid grid-cols-4 md:grid-cols-6 grid-flow-dense auto-rows-[70px] md:auto-rows-[85px] gap-3 p-2 w-full max-w-4xl';
                 }
             }
 
-            let numbers = Array.from({ length: targetNumbers }, (_, i) => i + 1);
-            numbers = shuffleArray(numbers);
-
+            // 控制大方塊的數量，避免 Grid 無法排滿導致破圖
             let largeBlocksCount = 0;
-            const maxLargeBlocks = targetNumbers === 16 ? 3 : (window.innerWidth < 768 ? 4 : 8);
+            const maxLargeBlocks = currentTotalNumbers === 16 ? 3 : 5;
 
             numbers.forEach((num, index) => {
                 const btn = document.createElement('button');
-                btn.dataset.number = num; // 保留原始數字作為判定依據
-                btn.textContent = CHAR_SETS[currentCharSet][num - 1]; // 顯示字元包對應內容
+                btn.dataset.number = num; 
+                btn.textContent = CHAR_SETS[currentCharSet][num - 1]; // 根據字元包渲染
 
                 if (currentLayout === 'regular') {
-                    // 規則模式：統一的外觀
-                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-2 border-[#E2D4FF]
-                                    bg-white hover:bg-gray-50 text-[#5C4033] 
-                                    col-span-1 row-span-1 text-2xl md:text-3xl rounded-xl
-                                    relative overflow-hidden select-none shadow-sm`;
+                    // 規則模式樣式
+                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-b-4 border-[#E2D4FF]
+                                    bg-white text-[#5C4033] 
+                                    text-3xl md:text-4xl rounded-2xl
+                                    relative select-none shadow-sm cursor-pointer`;
                 } else {
-                    // 不規則模式：隨機外觀與大小
+                    // 不規則模式樣式
                     const colorObj = getRandom(visualPool.colors);
                     let spanClass = getRandom(visualPool.spans);
                     const sizeClass = getRandom(visualPool.sizes);
                     const radiusClass = getRandom(visualPool.radius);
 
+                    // 限制大方塊數量與手機版寬度
                     if (spanClass !== 'col-span-1 row-span-1') {
                         if (largeBlocksCount >= maxLargeBlocks || (window.innerWidth < 768 && spanClass.includes('col-span-2'))) {
                             spanClass = 'col-span-1 row-span-1';
@@ -347,22 +483,21 @@
                         }
                     }
 
-                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-4 border-white/50
+                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-b-4 ${colorObj.border}
                                     ${colorObj.bg} ${colorObj.text} 
                                     ${spanClass} ${sizeClass} ${radiusClass}
-                                    relative overflow-hidden select-none`;
-                    btn.innerHTML += `<div class="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none"></div>`;
+                                    relative select-none cursor-pointer`;
+                    // 增加微光澤
+                    btn.innerHTML += `<div class="absolute top-0 left-0 right-0 h-1/2 bg-white/20 rounded-t-full pointer-events-none"></div>`;
                 }
                 
                 btn.style.animationDelay = `${index * 0.02}s`;
                 btn.addEventListener('click', handleCellClick);
+                // 支援觸控裝置的快速反應
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleCellClick.call(btn); }, {passive: false});
 
                 gridContainer.appendChild(btn);
             });
-            
-            // 修正總數變數，以防傳入 25 但想玩 9 的情況 (按鈕參數設定)
-            currentTotalNumbers = targetNumbers;
         }
 
         function handleCellClick() {
@@ -371,25 +506,22 @@
             const clickedNumber = parseInt(this.dataset.number);
 
             if (clickedNumber === currentTarget) {
+                // 點擊正確：縮小消失，保留空間
                 this.classList.add('found');
-                
-                const checkMark = document.createElement('div');
-                checkMark.innerHTML = '✔';
-                checkMark.className = 'absolute text-4xl text-white drop-shadow-md';
-                this.appendChild(checkMark);
 
                 currentTarget++;
                 
                 if (currentTarget > currentTotalNumbers) {
                     endGame();
                 } else {
-                    // 更新找尋目標的顯示文字
+                    // 更新下一個目標
                     nextTargetDisplay.textContent = CHAR_SETS[currentCharSet][currentTarget - 1];
                     nextTargetDisplay.classList.remove('pop-in');
-                    void nextTargetDisplay.offsetWidth;
+                    void nextTargetDisplay.offsetWidth; // 觸發重繪
                     nextTargetDisplay.classList.add('pop-in');
                 }
             } else {
+                // 點擊錯誤：抖動紅光提示
                 this.classList.remove('shake-animation');
                 void this.offsetWidth;
                 this.classList.add('shake-animation');
@@ -400,22 +532,15 @@
             }
         }
 
-        function startGame(totalNumbers, layout = 'irregular', isFiveByFiveRegular = false) {
-            // 處理 3x3 規則模式的特例
-            if (layout === 'regular' && totalNumbers === 16 && !isFiveByFiveRegular && event && event.target.innerText.includes('3x3')) {
-                currentTotalNumbers = 9;
-            } else if (layout === 'regular' && totalNumbers === 25 && !isFiveByFiveRegular) {
-                 currentTotalNumbers = 16;
-            } else if (layout === 'regular' && isFiveByFiveRegular){
-                 currentTotalNumbers = 25;
-            } else {
-                currentTotalNumbers = totalNumbers;
-            }
+        // --- STREAMING_CHUNK:遊戲流程控制 ---
 
+        function startGame(totalNumbers, layout = 'irregular') {
+            currentTotalNumbers = totalNumbers;
             currentLayout = layout;
             
-            let modeName = layout === 'regular' ? '規則模式' : '不規則模式';
-            modeTitle.textContent = `${modeName} (${currentTotalNumbers})`;
+            let modeName = layout === 'regular' ? '規則' : '不規則';
+            let charName = CHAR_SET_NAMES[currentCharSet];
+            modeTitle.textContent = `${modeName} ${charName} (${currentTotalNumbers})`;
             
             menuScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
@@ -424,7 +549,6 @@
             // 重置狀態
             isPlaying = true;
             currentTarget = 1;
-            // 根據字元包顯示第一個目標
             nextTargetDisplay.textContent = CHAR_SETS[currentCharSet][0];
             timerDisplay.textContent = "00:00.00";
             
@@ -437,18 +561,16 @@
             timerInterval = setInterval(updateTimer, 30);
         }
 
-        function calculateRank(totalTimeMs) {
-            const timeInSeconds = totalTimeMs / 1000;
-            // 這些標準設定較為寬鬆，以鼓勵為主
-            // 可以根據學生的實際平均表現來調整
+        function calculateRank(timeInSeconds, totalNum) {
             let rank, message, colorClass;
-
-            if (currentTotalNumbers === 9) {
+            
+            // 鼓勵性質評價，最低C級
+            if (totalNum === 9) {
                 if (timeInSeconds <= 10) { rank = 'S'; message = '神乎其技！'; colorClass = 'text-[#FF8A8A]'; }
                 else if (timeInSeconds <= 15) { rank = 'A'; message = '極度專注！'; colorClass = 'text-[#FF9800]'; }
                 else if (timeInSeconds <= 20) { rank = 'B'; message = '表現很棒！'; colorClass = 'text-[#4CAF50]'; }
                 else { rank = 'C'; message = '漸入佳境，繼續保持！'; colorClass = 'text-[#2196F3]'; }
-            } else if (currentTotalNumbers === 16) {
+            } else if (totalNum === 16) {
                 if (timeInSeconds <= 20) { rank = 'S'; message = '神乎其技！'; colorClass = 'text-[#FF8A8A]'; }
                 else if (timeInSeconds <= 30) { rank = 'A'; message = '極度專注！'; colorClass = 'text-[#FF9800]'; }
                 else if (timeInSeconds <= 45) { rank = 'B'; message = '表現很棒！'; colorClass = 'text-[#4CAF50]'; }
@@ -459,55 +581,54 @@
                 else if (timeInSeconds <= 80) { rank = 'B'; message = '很有潛力喔！'; colorClass = 'text-[#4CAF50]'; }
                 else { rank = 'C'; message = '水豚為你加油！'; colorClass = 'text-[#2196F3]'; }
             }
-
             return { rank, message, colorClass };
-        }
-
-        function restartCurrentMode() {
-            startGame(currentTotalNumbers, currentLayout, currentTotalNumbers === 25 && currentLayout === 'regular');
-        }
-
-        function backToMenu() {
-            isPlaying = false;
-            clearInterval(timerInterval);
-            closeModal();
-            
-            // 切換回主選單
-            gameScreen.classList.add('hidden');
-            gameScreen.classList.remove('flex');
-            menuScreen.classList.remove('hidden');
         }
 
         function endGame() {
             isPlaying = false;
             clearInterval(timerInterval);
-            const totalTime = Date.now() - startTime;
-            finalTimeDisplay.textContent = formatTime(totalTime);
+            const totalTimeMs = Date.now() - startTime;
+            const timeInSeconds = totalTimeMs / 1000;
             
+            document.getElementById('final-time').textContent = formatTime(totalTimeMs);
+            
+            // 處理紀錄保存
+            const recordKey = getRecordKey(currentTotalNumbers, currentLayout);
+            const previousBest = bestRecords[recordKey] || Infinity;
+            const isNewRecord = totalTimeMs < previousBest;
+            
+            if (isNewRecord) {
+                bestRecords[recordKey] = totalTimeMs;
+                localStorage.setItem('schulteRecords', JSON.stringify(bestRecords));
+                document.getElementById('new-record-badge').classList.remove('hidden');
+                updateMenuRecords(); // 更新主選單的文字
+            } else {
+                document.getElementById('new-record-badge').classList.add('hidden');
+            }
+
             // 設定評價
-            const eval = calculateRank(totalTime);
+            const eval = calculateRank(timeInSeconds, currentTotalNumbers);
+            const rankDisplay = document.getElementById('rank-display');
             rankDisplay.textContent = eval.rank;
             rankDisplay.className = `text-3xl font-black mr-2 ${eval.colorClass}`;
-            rankMessage.textContent = eval.message;
+            document.getElementById('rank-message').textContent = eval.message;
             
             // 計算獲得金幣
-            let earnedCoins = 0;
-            if (eval.rank === 'S') earnedCoins = 5;
-            else if (eval.rank === 'A') earnedCoins = 3;
-            else if (eval.rank === 'B') earnedCoins = 1;
+            let earnedCoins = 1; // 過關保底 1 元
+            if (eval.rank === 'S') earnedCoins = 10;
+            else if (eval.rank === 'A') earnedCoins = 5;
+            else if (eval.rank === 'B') earnedCoins = 2;
             
-            if (earnedCoins > 0) {
-                coins += earnedCoins;
-                localStorage.setItem('schulteCoins', coins);
-                document.getElementById('coin-count').textContent = coins;
-            }
+            coins += earnedCoins;
+            localStorage.setItem('schulteCoins', coins);
+            document.getElementById('coin-count').textContent = coins;
             document.getElementById('earned-coins').textContent = `+${earnedCoins} 金幣`;
 
-            // 隱藏彩蛋：S級觸發彩紙與皇冠
+            // 彩蛋：S級或破紀錄觸發彩紙與皇冠
             const crown = document.getElementById('capybara-crown');
-            if (eval.rank === 'S') {
+            if (eval.rank === 'S' || isNewRecord) {
                 crown.classList.remove('hidden');
-                void crown.offsetWidth; // 強制重繪
+                void crown.offsetWidth;
                 crown.classList.add('crown-animate');
                 triggerConfetti();
             } else {
@@ -523,13 +644,27 @@
             }, 10);
         }
 
+        function restartCurrentMode() {
+            startGame(currentTotalNumbers, currentLayout);
+        }
+
+        function backToMenu() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            closeModal();
+            gameScreen.classList.add('hidden');
+            gameScreen.classList.remove('flex');
+            menuScreen.classList.remove('hidden');
+        }
+
         function closeModal() {
             winModal.classList.add('opacity-0', 'pointer-events-none');
             winModalContent.classList.remove('scale-100');
             winModalContent.classList.add('scale-90');
         }
 
-        // 商店系統與主題邏輯
+        // --- STREAMING_CHUNK:商店與特效系統 ---
+
         function openShop() {
             document.getElementById('shop-coin-display').textContent = coins;
             const shopItems = document.getElementById('shop-items');
@@ -540,40 +675,40 @@
                 const isEquipped = currentTheme === theme.id;
                 
                 const card = document.createElement('div');
-                card.className = `theme-card p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${isEquipped ? 'border-[#4CAF50] bg-[#ECFDF5]' : 'border-gray-200 bg-white'}`;
+                card.className = `p-4 rounded-2xl border-4 flex flex-col items-center gap-2 ${isEquipped ? 'border-[#4CAF50] bg-[#ECFDF5]' : 'border-gray-100 bg-white'}`;
                 
                 let btnHtml = '';
                 if (isEquipped) {
-                    btnHtml = `<button disabled class="w-full py-2 rounded-lg bg-gray-200 text-gray-500 font-bold text-sm">裝備中</button>`;
+                    btnHtml = `<button disabled class="w-full py-2 rounded-xl bg-gray-200 text-gray-500 font-bold text-sm">裝備中</button>`;
                 } else if (isUnlocked) {
-                    btnHtml = `<button onclick="equipTheme('${theme.id}')" class="w-full py-2 rounded-lg bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-bold text-sm shadow-[0_3px_0_#75BFA2] active:translate-y-[3px] active:shadow-none transition-all">裝備</button>`;
+                    btnHtml = `<button onclick="equipTheme('${theme.id}')" class="w-full py-2 rounded-xl bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-bold text-sm shadow-[0_3px_0_#75BFA2] active:translate-y-[3px] active:shadow-none transition-all">裝備</button>`;
                 } else {
                     const canAfford = coins >= theme.cost;
-                    btnHtml = `<button onclick="buyTheme('${theme.id}')" class="w-full py-2 rounded-lg ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_3px_0_#d9a076]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-sm active:translate-y-[3px] active:shadow-none transition-all flex justify-center items-center gap-1">
+                    btnHtml = `<button onclick="buyTheme('${theme.id}')" class="w-full py-2 rounded-xl ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_3px_0_#d9a076]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-sm active:translate-y-[3px] active:shadow-none transition-all flex justify-center items-center gap-1">
                                     <span class="text-xs">🪙</span> ${theme.cost} 解鎖
                                </button>`;
                 }
 
                 card.innerHTML = `
-                    <div class="text-3xl">${theme.icon}</div>
+                    <div class="text-4xl drop-shadow-sm">${theme.icon}</div>
                     <div class="font-black text-[#5C4033] text-sm">${theme.name}</div>
-                    <div class="w-full h-8 rounded-md mb-1 border border-black/10" style="background-color: ${theme.bg}"></div>
+                    <div class="w-full h-6 rounded-lg mb-1 border border-black/10" style="background-color: ${theme.bg}"></div>
                     ${btnHtml}
                 `;
                 shopItems.appendChild(card);
             });
 
-            shopModal.classList.remove('pointer-events-none', 'opacity-0');
+            document.getElementById('shop-modal').classList.remove('pointer-events-none', 'opacity-0');
             setTimeout(() => {
-                shopModalContent.classList.remove('scale-90');
-                shopModalContent.classList.add('scale-100');
+                document.getElementById('shop-modal-content').classList.remove('scale-90');
+                document.getElementById('shop-modal-content').classList.add('scale-100');
             }, 10);
         }
 
         function closeShop() {
-            shopModal.classList.add('opacity-0', 'pointer-events-none');
-            shopModalContent.classList.remove('scale-100');
-            shopModalContent.classList.add('scale-90');
+            document.getElementById('shop-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('shop-modal-content').classList.remove('scale-100');
+            document.getElementById('shop-modal-content').classList.add('scale-90');
         }
 
         function buyTheme(themeId) {
@@ -586,7 +721,7 @@
                 localStorage.setItem('schulteThemes', JSON.stringify(unlockedThemes));
                 
                 document.getElementById('coin-count').textContent = coins;
-                equipTheme(themeId); // 買完直接裝備
+                equipTheme(themeId); 
             }
         }
 
@@ -594,49 +729,31 @@
             currentTheme = themeId;
             localStorage.setItem('schulteCurrentTheme', themeId);
             document.getElementById('main-body').style.backgroundColor = THEMES[themeId].bg;
-            openShop(); // 刷新商店介面
+            openShop(); // 刷新介面
         }
 
-        // 彩紙特效產生器
         function triggerConfetti() {
             const colors = ['#FFC4C4', '#A7E8D0', '#FFF099', '#AEE1FF', '#E2D4FF', '#FFD1A9'];
-            for (let i = 0; i < 60; i++) {
+            for (let i = 0; i < 70; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
                 confetti.style.left = Math.random() * 100 + 'vw';
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 
-                // 隨機大小與旋轉
                 const size = Math.random() * 8 + 6;
                 confetti.style.width = `${size}px`;
                 confetti.style.height = `${size}px`;
                 
-                // 隨機掉落時間與延遲
                 confetti.style.animationDuration = (Math.random() * 2.5 + 2) + 's';
                 confetti.style.animationDelay = (Math.random() * 0.5) + 's';
                 
                 document.body.appendChild(confetti);
                 
-                // 動畫結束後移除 DOM
                 setTimeout(() => {
                     if(document.body.contains(confetti)) confetti.remove();
                 }, 5000);
             }
         }
-
-        // 視窗縮放處理
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            if(isPlaying) {
-                // 如果正在玩，視窗改變大小時稍微延遲重新渲染以適應新版面
-                resizeTimer = setTimeout(() => {
-                    // 為了不打斷遊戲體驗，這裡只重算大區塊配置，理想作法是保留狀態
-                    // 在此簡單處理：讓 CSS 自動處理，不主動重繪 (移除 renderBoard 呼叫)
-                }, 200);
-            }
-        });
-
     </script>
 </body>
 </html>
