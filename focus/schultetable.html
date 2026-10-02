@@ -26,7 +26,7 @@
             50% { transform: translateY(-10px); }
         }
 
-        /* 純 CSS 繪製的金幣圖示，避免跨平台 Emoji 破圖 */
+        /* 純 CSS 繪製的金幣圖示，解決Emoji支援度問題 */
         .coin-icon {
             display: inline-block;
             width: 1.2em;
@@ -39,7 +39,6 @@
             margin-right: 4px;
         }
 
-        /* 皇冠彩蛋動畫 */
         .crown {
             position: absolute;
             top: -15px;
@@ -56,6 +55,7 @@
             opacity: 1;
         }
 
+        /* 遊戲方塊樣式 */
         .grid-piece {
             transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s ease, background-color 0.3s ease;
             user-select: none;
@@ -103,7 +103,7 @@
 </head>
 <body id="main-body" class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
 
-    <!-- 頂部選單列：左上角放功能按鈕，右上角放金幣 -->
+    <!-- 頂部選單列：左上角放按鈕，右上角放金幣 -->
     <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-start z-30 pointer-events-none">
         <div class="flex flex-col gap-2 pointer-events-auto">
             <button onclick="openShop()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
@@ -119,6 +119,7 @@
         </div>
     </div>
 
+    <!-- 主選單畫面 -->
     <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl z-10 flex-1 transition-opacity duration-300 mt-12 sm:mt-8">
         
         <!-- 舒爾特方格意象 LOGO -->
@@ -142,15 +143,14 @@
         
         <!-- 遊戲設定選單區塊 -->
         <div class="mb-6 bg-white/60 p-3 rounded-2xl backdrop-blur-sm border border-white/50 flex flex-col sm:flex-row gap-3 shadow-sm">
-            <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center">
-                <option value="123">🔢 數字模式 (1-25)</option>
-                <option value="abc">🔤 英文模式 (A-Y)</option>
-                <option value="bopomo">🇹🇼 注音模式 (ㄅ-ㄙ)</option>
+            <!-- 模式選單將由 JavaScript 動態產生，以反映解鎖狀態 -->
+            <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center text-sm sm:text-base">
             </select>
             
             <div class="hidden sm:block w-px bg-gray-300"></div>
+            <div class="block sm:hidden h-px w-full bg-gray-300"></div>
             
-            <select id="click-mode-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center" onchange="loadHighScores()">
+            <select id="click-mode-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center text-sm sm:text-base" onchange="loadHighScores()">
                 <option value="disappear">✨ 點擊後消失</option>
                 <option value="keep">📌 點擊後保留</option>
             </select>
@@ -158,45 +158,46 @@
 
         <div class="w-full max-w-sm px-4 flex flex-col gap-4">
             <!-- 基礎模式區域 -->
-            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white">
+            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🌱 基礎模式 (16格)</h2>
                 <div class="flex gap-3">
                     <div class="flex-1 flex flex-col">
                         <button onclick="startGame(16, 'regular')" class="h-14 bg-[#FFB6C1] hover:bg-[#ff9eab] text-[#8B0A50] font-black rounded-xl shadow-[0_4px_0_#d98292] active:shadow-[0_0px_0_#d98292] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>📦 規則排列</span>
                         </button>
-                        <p id="record-regular-16" class="text-center text-xs text-gray-600 font-bold mt-2">最佳: --</p>
+                        <p id="record-regular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
                     <div class="flex-1 flex flex-col">
                         <button onclick="startGame(16, 'irregular')" class="h-14 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
-                            <span>🎨 不規則排列</span>
+                            <span>🎨 不規則</span>
                         </button>
-                        <p id="record-irregular-16" class="text-center text-xs text-gray-600 font-bold mt-2">最佳: --</p>
+                        <p id="record-irregular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
                 </div>
             </div>
 
             <!-- 挑戰模式區域 -->
-            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white">
+            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🔥 挑戰模式 (25格)</h2>
                 <div class="flex gap-3">
                     <div class="flex-1 flex flex-col">
                         <button onclick="startGame(25, 'regular')" class="h-14 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>📦 規則排列</span>
                         </button>
-                        <p id="record-regular-25" class="text-center text-xs text-gray-600 font-bold mt-2">最佳: --</p>
+                        <p id="record-regular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
                     <div class="flex-1 flex flex-col">
                         <button onclick="startGame(25, 'irregular')" class="h-14 bg-[#FFE4B5] hover:bg-[#ffcc80] text-[#8B4500] font-black rounded-xl shadow-[0_4px_0_#d4a357] active:shadow-[0_0px_0_#d4a357] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
-                            <span>🎨 不規則排列</span>
+                            <span>🎨 不規則</span>
                         </button>
-                        <p id="record-irregular-25" class="text-center text-xs text-gray-600 font-bold mt-2">最佳: --</p>
+                        <p id="record-irregular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 遊戲進行畫面 -->
     <div id="game-screen" class="hidden w-full flex-col items-center w-full relative mt-12 sm:mt-8 px-2">
         <header class="w-full max-w-3xl flex flex-col items-center mb-4 relative z-10">
             <div class="bg-white/80 backdrop-blur-md px-6 py-2 rounded-3xl shadow-sm mb-4 border border-white">
@@ -205,7 +206,7 @@
             </div>
             
             <div class="w-full flex justify-between items-center px-2">
-                <button onclick="backToMenu()" class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors font-bold border border-gray-100">
+                <button onclick="backToMenu()" class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors font-bold border border-gray-100 cursor-pointer">
                     ✕
                 </button>
                 <div class="bg-[#FFFDF0] px-5 py-2 rounded-2xl shadow-inner border-2 border-[#FFF099] flex items-center gap-3">
@@ -221,12 +222,13 @@
         </div>
     </div>
 
+    <!-- 結算視窗 -->
     <div id="win-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-8 max-w-sm w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative" id="win-modal-content">
             
             <div class="relative inline-block">
                 <div id="modal-crown" class="crown">👑</div>
-                <!-- 結算獎盃 LOGO -->
+                <!-- 獎盃 LOGO -->
                 <svg class="w-24 h-24 mx-auto mb-2 drop-shadow-md logo-float" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="50" cy="50" r="45" fill="#FFE4B5"/>
                     <path d="M 30 40 L 70 40 L 60 70 L 40 70 Z" fill="#FFDF00"/>
@@ -251,67 +253,92 @@
                 <span class="text-lg font-black text-[#D2691E] flex items-center"><i class="coin-icon"></i> +<span id="reward-coins">0</span></span>
             </div>
             
-            <button onclick="backToMenu()" class="w-full bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black py-4 rounded-2xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all text-lg">
+            <button onclick="backToMenu()" class="w-full bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black py-4 rounded-2xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all text-lg cursor-pointer">
                 回主畫面
             </button>
         </div>
     </div>
 
+    <!-- 優化版商店視窗 -->
     <div id="shop-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[80vh]" id="shop-modal-content">
-            <button onclick="closeShop()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors">✕</button>
+        <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh] h-[600px]" id="shop-modal-content">
+            <button onclick="closeShop()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
             
-            <h2 class="text-2xl md:text-3xl font-black text-[#5C4033] mb-2 mt-2 flex justify-center items-center gap-2">
-                🛍️ 獎勵商店
-            </h2>
-            <p class="text-gray-500 font-bold mb-4 text-sm">用專注力賺取的金幣解鎖新主題吧！</p>
-            
-            <div class="bg-[#FFFDF0] rounded-xl p-3 mb-4 inline-flex items-center self-center gap-2 border border-[#E2D4FF]">
-                <span class="text-gray-500 font-bold text-sm">目前擁有</span>
-                <span class="text-2xl font-black text-[#8B5A2B] flex items-center"><i class="coin-icon"></i> <span id="shop-coin-display">0</span></span>
+            <div class="flex-shrink-0">
+                <h2 class="text-2xl md:text-3xl font-black text-[#5C4033] mb-2 mt-2 flex justify-center items-center gap-2">
+                    🛍️ 獎勵商店
+                </h2>
+                
+                <div class="bg-[#FFFDF0] rounded-xl p-3 mb-4 inline-flex items-center self-center gap-2 border border-[#E2D4FF]">
+                    <span class="text-gray-500 font-bold text-sm">目前擁有</span>
+                    <span class="text-2xl font-black text-[#8B5A2B] flex items-center"><i class="coin-icon"></i> <span id="shop-coin-display">0</span></span>
+                </div>
             </div>
 
-            <div id="shop-items" class="grid grid-cols-2 gap-3 overflow-y-auto pb-4 px-2 custom-scrollbar">
-                <!-- 動態生成主題 -->
+            <div class="overflow-y-auto px-2 pb-4 custom-scrollbar flex-1 text-left relative">
+                
+                <!-- 遊戲模式解鎖區 -->
+                <div class="mb-5">
+                    <h3 class="font-bold text-[#8B5A2B] mb-3 flex items-center gap-2 border-b-2 border-gray-100 pb-2">
+                        <span class="text-xl">🎮</span> 解鎖新模式
+                    </h3>
+                    <div id="shop-modes" class="flex flex-col gap-2">
+                        <!-- 動態產生模式卡片 -->
+                    </div>
+                </div>
+                
+                <!-- 外觀主題解鎖區 -->
+                <div>
+                    <h3 class="font-bold text-[#8B5A2B] mb-3 flex items-center gap-2 border-b-2 border-gray-100 pb-2">
+                        <span class="text-xl">🎨</span> 解鎖新主題
+                    </h3>
+                    <div id="shop-themes" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <!-- 動態產生主題卡片 -->
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
+    <!-- 說明視窗 -->
     <div id="info-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-left shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[80vh]" id="info-modal-content">
-            <button onclick="closeInfo()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center">✕</button>
+            <button onclick="closeInfo()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer">✕</button>
             
             <h2 class="text-2xl font-black text-[#5C4033] mb-4 mt-2 flex justify-center items-center gap-2">
-                ❓ 遊戲玩法
+                ❓ 遊戲說明
             </h2>
             
             <div class="overflow-y-auto px-2 custom-scrollbar flex-1">
                 <div class="mb-4 bg-[#FFFDF0] p-4 rounded-2xl border border-[#FFF099]">
-                    <h3 class="font-bold text-[#754D20] text-base md:text-lg mb-2">💡 什麼是舒爾特方格？</h3>
+                    <h3 class="font-bold text-[#754D20] text-base md:text-lg mb-2">💡 舒爾特方格是什麼？</h3>
                     <p class="text-gray-600 text-sm leading-relaxed font-bold">
-                        全球公認最簡單有效的專注力訓練法。透過在隨機網格中快速、依序尋找目標，能提升視覺搜尋速度、擴大注意力廣度與抗干擾能力。
+                        這是全球公認最簡單有效的專注力訓練法。透過在打亂的網格中快速尋找目標，能有效擴大周邊視覺、提升閱讀速度與抗干擾能力。
                     </p>
                 </div>
 
                 <div class="bg-[#F3E8FF] p-4 rounded-2xl border border-[#E2D4FF]">
-                    <h3 class="font-bold text-[#534080] text-base md:text-lg mb-2">🎮 怎麼玩？</h3>
+                    <h3 class="font-bold text-[#534080] text-base md:text-lg mb-2">🎮 遊戲玩法</h3>
                     <ul class="text-gray-600 text-sm leading-relaxed font-bold space-y-2 list-decimal list-inside pl-1">
-                        <li>選擇喜歡的內容（數字、英文、注音）。</li>
-                        <li>眼睛盡量注視畫面<strong class="text-rose-500">中央</strong>，用「餘光」尋找目標。</li>
+                        <li>在主畫面選擇喜歡的內容難度與模式。</li>
+                        <li>眼睛盡量注視畫面<strong class="text-rose-500">中央</strong>，用「餘光」尋找。</li>
                         <li>依照順序，用最快速度點擊所有方塊。</li>
-                        <li>過關速度越快，評級與金幣獎勵越高哦！挑戰 S 級解鎖彩蛋！</li>
+                        <li>過關速度越快，評級與金幣獎勵越高！</li>
+                        <li>收集金幣可以到商店解鎖新模式與新主題喔！</li>
                     </ul>
                 </div>
             </div>
             
             <div class="mt-4 flex justify-center">
-                <button onclick="closeInfo()" class="w-full bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 rounded-2xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-lg">
+                <button onclick="closeInfo()" class="w-full bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 rounded-2xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-lg cursor-pointer">
                     我知道了！
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- 腳本區域 -->
     <script>
         let timerInterval;
         let startTime;
@@ -324,44 +351,117 @@
         let clickMode = 'disappear'; 
         
         let coins = parseInt(localStorage.getItem('capy_coins') || '0');
-        let currentTheme = localStorage.getItem('capy_theme') || 'default';
-        let unlockedThemes = JSON.parse(localStorage.getItem('capy_unlocked') || '["default"]');
-
-        const CHAR_SETS = {
-            '123': Array.from({length: 25}, (_, i) => (i + 1).toString()),
-            'abc': 'ABCDEFGHIJKLMNOPQRSTUVWXY'.split(''),
-            'bopomo': 'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛ'.split('')
+        
+        // 【優化】商店系統配置資料
+        const SHOP_ITEMS = {
+            modes: [
+                { id: 'mode_abc', name: '英文模式', desc: '解鎖 A 到 Y 字母', cost: 50, icon: '🔤' },
+                { id: 'mode_bopomo', name: '注音模式', desc: '解鎖 ㄅ 到 ㄙ 注音', cost: 80, icon: '🇹🇼' },
+                { id: 'mode_emoji', name: '動物模式', desc: '隱藏版可愛動物', cost: 150, icon: '🐰' }
+            ],
+            themes: [
+                { id: 'theme_default', name: '經典橘', bg: '#FFF3E0', cost: 0, icon: '🍊' },
+                { id: 'theme_ocean', name: '深海藍', bg: '#E0F7FA', cost: 100, icon: '🌊' },
+                { id: 'theme_forest', name: '精靈綠', bg: '#E8F5E9', cost: 150, icon: '🌲' },
+                { id: 'theme_sakura', name: '櫻花粉', bg: '#FCE4EC', cost: 200, icon: '🌸' },
+                { id: 'theme_starry', name: '星空紫', bg: '#EDE7F6', cost: 300, icon: '✨' }
+            ]
         };
 
-        const THEMES = {
-            'default': { id: 'default', name: '經典橘', bg: '#FFF3E0', cost: 0, icon: '🍊' },
-            'ocean': { id: 'ocean', name: '深海藍', bg: '#E0F7FA', cost: 100, icon: '🌊' },
-            'forest': { id: 'forest', name: '精靈綠', bg: '#E8F5E9', cost: 150, icon: '🌲' },
-            'starry': { id: 'starry', name: '星空紫', bg: '#EDE7F6', cost: 300, icon: '✨' }
+        const CHAR_SETS = {
+            '123': { name: '數字模式 (1-25)', icon: '🔢', data: Array.from({length: 25}, (_, i) => (i + 1).toString()) },
+            'abc': { name: '英文模式 (A-Y)', icon: '🔤', data: 'ABCDEFGHIJKLMNOPQRSTUVWXY'.split('') },
+            'bopomo': { name: '注音模式 (ㄅ-ㄙ)', icon: '🇹🇼', data: 'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛ'.split('') },
+            'emoji': { name: '動物大集合', icon: '🐰', data: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗'] }
         };
 
         const COLORS = ['#FFB6C1', '#FFD1A9', '#FFFACD', '#A7E8D0', '#E2D4FF'];
 
+        let currentTheme = localStorage.getItem('schulte_theme') || 'theme_default';
+        let unlockedItems = [];
+
         window.onload = function() {
+            migrateStorage();
+            updateModeSelect();
             updateCoinDisplay();
             applyTheme(currentTheme);
-            migrateOldScores(); 
             loadHighScores();
         };
 
-        function migrateOldScores() {
-            const modes = [
-                { old: 'score_regular_16', new: 'score_regular_16_disappear' },
-                { old: 'score_irregular_16', new: 'score_irregular_16_disappear' },
-                { old: 'score_regular_25', new: 'score_regular_25_disappear' },
-                { old: 'score_irregular_25', new: 'score_irregular_25_disappear' }
-            ];
-            modes.forEach(m => {
-                const oldVal = localStorage.getItem(m.old);
-                if (oldVal && !localStorage.getItem(m.new)) {
-                    localStorage.setItem(m.new, oldVal);
+        // 將舊版的解鎖資料遷移到新版
+        function migrateStorage() {
+            let oldTheme = localStorage.getItem('capy_theme');
+            if(oldTheme && !oldTheme.startsWith('theme_')) {
+                currentTheme = 'theme_' + oldTheme;
+                localStorage.setItem('schulte_theme', currentTheme);
+                localStorage.removeItem('capy_theme');
+            }
+
+            let loadedItems = JSON.parse(localStorage.getItem('schulte_unlocked') || 'null');
+            if (!loadedItems) {
+                // 如果是新玩家或從舊版升級
+                unlockedItems = ['theme_default', 'mode_123'];
+                let oldUnlocked = JSON.parse(localStorage.getItem('capy_unlocked') || '[]');
+                oldUnlocked.forEach(item => {
+                    if(!item.startsWith('theme_')) unlockedItems.push('theme_' + item);
+                });
+                saveUnlockedItems();
+                localStorage.removeItem('capy_unlocked');
+            } else {
+                unlockedItems = loadedItems;
+            }
+        }
+
+        function saveUnlockedItems() {
+            localStorage.setItem('schulte_unlocked', JSON.stringify(unlockedItems));
+        }
+
+        // 動態生成模式選單（未解鎖加上鎖頭）
+        function updateModeSelect() {
+            const select = document.getElementById('char-type-select');
+            const currentVal = select.value || '123';
+            select.innerHTML = '';
+            
+            // 基礎數字模式永遠可用
+            select.add(new Option(`🔢 數字模式 (1-25)`, '123'));
+            
+            // 處理其他需要解鎖的模式
+            ['abc', 'bopomo', 'emoji'].forEach(modeKey => {
+                const isUnlocked = unlockedItems.includes(`mode_${modeKey}`);
+                const option = document.createElement('option');
+                option.value = modeKey;
+                const conf = CHAR_SETS[modeKey];
+                
+                if (isUnlocked) {
+                    option.text = `${conf.icon} ${conf.name}`;
+                } else {
+                    option.text = `🔒 ${conf.name} (未解鎖)`;
+                    option.disabled = true;
                 }
+                select.add(option);
             });
+            
+            // 如果原本選的模式被鎖住了（異常狀況），退回123
+            const targetOption = select.querySelector(`option[value="${currentVal}"]`);
+            if (targetOption && !targetOption.disabled) {
+                select.value = currentVal;
+            } else {
+                select.value = '123';
+            }
+        }
+
+        function updateCoinDisplay() {
+            document.getElementById('coin-count').textContent = coins;
+            localStorage.setItem('capy_coins', coins);
+        }
+
+        function applyTheme(themeId) {
+            currentTheme = themeId;
+            const themeData = SHOP_ITEMS.themes.find(t => t.id === themeId);
+            if(themeData) {
+                document.body.style.backgroundColor = themeData.bg;
+                localStorage.setItem('schulte_theme', themeId);
+            }
         }
 
         function loadHighScores() {
@@ -378,17 +478,6 @@
             });
         }
 
-        function updateCoinDisplay() {
-            document.getElementById('coin-count').textContent = coins;
-            localStorage.setItem('capy_coins', coins);
-        }
-
-        function applyTheme(themeId) {
-            currentTheme = themeId;
-            document.body.style.backgroundColor = THEMES[themeId].bg;
-            localStorage.setItem('capy_theme', themeId);
-        }
-
         function startGame(size, mode) {
             gameSize = size;
             gameMode = mode;
@@ -397,7 +486,7 @@
 
             const type = document.getElementById('char-type-select').value;
             clickMode = document.getElementById('click-mode-select').value; 
-            currentSequence = CHAR_SETS[type].slice(0, gameSize);
+            currentSequence = CHAR_SETS[type].data.slice(0, gameSize);
             
             document.getElementById('menu-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
@@ -431,7 +520,6 @@
                 btn.textContent = item;
                 
                 let bgColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-                let spanClasses = "";
                 let fontSize = gameSize === 16 ? "text-4xl" : "text-3xl";
                 
                 if (gameMode === 'irregular') {
@@ -444,9 +532,9 @@
                     fontSize = sizes[Math.floor(Math.random() * sizes.length)];
                     
                     const radii = ["rounded-2xl", "rounded-[30px]", "rounded-full", "rounded-[10px]"];
-                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] ${fontSize} ${radii[Math.floor(Math.random() * radii.length)]}`;
+                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] ${fontSize} ${radii[Math.floor(Math.random() * radii.length)]} cursor-pointer`;
                 } else {
-                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] rounded-2xl w-full h-full ${fontSize}`;
+                    btn.className = `grid-piece flex items-center justify-center font-black text-[#5C4033] shadow-[0_4px_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[4px] rounded-2xl w-full h-full ${fontSize} cursor-pointer`;
                 }
 
                 btn.style.backgroundColor = bgColor;
@@ -462,6 +550,7 @@
                 if (clickMode === 'disappear') {
                     btn.classList.add('clicked');
                 } else {
+                    // 保留模式：完全無視覺變化，僅取消指針事件避免重複點擊
                     btn.classList.add('clicked-keep');
                 }
                 
@@ -574,35 +663,57 @@
 
         function openShop() {
             document.getElementById('shop-coin-display').textContent = coins;
-            const shopItems = document.getElementById('shop-items');
-            shopItems.innerHTML = '';
-
-            Object.values(THEMES).forEach(theme => {
-                const isUnlocked = unlockedThemes.includes(theme.id);
-                const isEquipped = currentTheme === theme.id;
+            
+            // 渲染遊戲模式商品
+            const shopModes = document.getElementById('shop-modes');
+            shopModes.innerHTML = '';
+            SHOP_ITEMS.modes.forEach(mode => {
+                const isUnlocked = unlockedItems.includes(mode.id);
+                const canAfford = coins >= mode.cost;
                 
-                const card = document.createElement('div');
-                card.className = `p-4 rounded-2xl border-4 flex flex-col items-center gap-2 ${isEquipped ? 'border-[#4CAF50] bg-[#ECFDF5]' : 'border-gray-100 bg-white'}`;
+                let btnHtml = isUnlocked 
+                    ? `<button disabled class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs border border-gray-200">已解鎖</button>`
+                    : `<button onclick="buyItem('${mode.id}', ${mode.cost})" class="px-3 py-1.5 rounded-lg ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_2px_0_#d9a076] cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-xs active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-1"><i class="coin-icon" style="font-size: 0.7rem; margin-top:1px;"></i> ${mode.cost}</button>`;
+                
+                shopModes.innerHTML += `
+                    <div class="bg-white p-3 rounded-2xl border-2 ${isUnlocked ? 'border-green-100' : 'border-gray-100'} flex items-center justify-between shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="text-3xl drop-shadow-sm">${mode.icon}</div>
+                            <div class="flex flex-col">
+                                <span class="font-black text-[#5C4033] text-sm">${mode.name}</span>
+                                <span class="text-xs text-gray-400 font-bold">${mode.desc}</span>
+                            </div>
+                        </div>
+                        ${btnHtml}
+                    </div>
+                `;
+            });
+
+            // 渲染外觀主題商品
+            const shopThemes = document.getElementById('shop-themes');
+            shopThemes.innerHTML = '';
+            SHOP_ITEMS.themes.forEach(theme => {
+                const isUnlocked = unlockedItems.includes(theme.id);
+                const isEquipped = currentTheme === theme.id;
+                const canAfford = coins >= theme.cost;
                 
                 let btnHtml = '';
                 if (isEquipped) {
-                    btnHtml = `<button disabled class="w-full py-2 rounded-xl bg-gray-200 text-gray-500 font-bold text-sm">裝備中</button>`;
+                    btnHtml = `<button disabled class="w-full py-1.5 rounded-lg bg-gray-200 text-gray-500 font-bold text-xs">裝備中</button>`;
                 } else if (isUnlocked) {
-                    btnHtml = `<button onclick="equipTheme('${theme.id}')" class="w-full py-2 rounded-xl bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-bold text-sm shadow-[0_3px_0_#75BFA2] active:translate-y-[3px] active:shadow-none transition-all">裝備</button>`;
+                    btnHtml = `<button onclick="equipTheme('${theme.id}')" class="w-full py-1.5 rounded-lg bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-bold text-xs shadow-[0_2px_0_#75BFA2] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer">裝備</button>`;
                 } else {
-                    const canAfford = coins >= theme.cost;
-                    btnHtml = `<button onclick="buyTheme('${theme.id}')" class="w-full py-2 rounded-xl ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_3px_0_#d9a076]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-sm active:translate-y-[3px] active:shadow-none transition-all flex justify-center items-center gap-1">
-                                    <i class="coin-icon" style="font-size: 0.8rem; margin-top: 2px;"></i> ${theme.cost}
-                               </button>`;
+                    btnHtml = `<button onclick="buyItem('${theme.id}', ${theme.cost})" class="w-full py-1.5 rounded-lg ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_2px_0_#d9a076] cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-xs active:translate-y-[2px] active:shadow-none transition-all flex justify-center items-center gap-1"><i class="coin-icon" style="font-size: 0.7rem; margin-top:1px;"></i> ${theme.cost}</button>`;
                 }
 
-                card.innerHTML = `
-                    <div class="text-4xl drop-shadow-sm">${theme.icon}</div>
-                    <div class="font-black text-[#5C4033] text-sm">${theme.name}</div>
-                    <div class="w-full h-6 rounded-lg mb-1 border border-black/10" style="background-color: ${theme.bg}"></div>
-                    ${btnHtml}
+                shopThemes.innerHTML += `
+                    <div class="bg-white p-3 rounded-2xl border-2 ${isEquipped ? 'border-[#4CAF50] bg-[#ECFDF5]' : 'border-gray-100'} flex flex-col items-center gap-1 shadow-sm">
+                        <div class="text-3xl drop-shadow-sm mb-1">${theme.icon}</div>
+                        <span class="font-black text-[#5C4033] text-xs">${theme.name}</span>
+                        <div class="w-full h-3 rounded-md mb-2 border border-black/10" style="background-color: ${theme.bg}"></div>
+                        ${btnHtml}
+                    </div>
                 `;
-                shopItems.appendChild(card);
             });
 
             document.getElementById('shop-modal').classList.remove('pointer-events-none', 'opacity-0');
@@ -618,20 +729,26 @@
             document.getElementById('shop-modal-content').classList.add('scale-90');
         }
 
-        function buyTheme(themeId) {
-            const theme = THEMES[themeId];
-            if (coins >= theme.cost && !unlockedThemes.includes(themeId)) {
-                coins -= theme.cost;
-                unlockedThemes.push(themeId);
-                localStorage.setItem('capy_unlocked', JSON.stringify(unlockedThemes));
+        function buyItem(itemId, cost) {
+            if (coins >= cost && !unlockedItems.includes(itemId)) {
+                coins -= cost;
+                unlockedItems.push(itemId);
+                saveUnlockedItems();
                 updateCoinDisplay();
-                equipTheme(themeId);
+                
+                // 如果買的是主題，直接裝備；如果買的是模式，更新選單
+                if (itemId.startsWith('theme_')) {
+                    equipTheme(itemId);
+                } else if (itemId.startsWith('mode_')) {
+                    updateModeSelect();
+                    openShop(); // 重新整理商店畫面
+                }
             }
         }
 
         function equipTheme(themeId) {
             applyTheme(themeId);
-            openShop();
+            openShop(); // 重新整理商店畫面以顯示「裝備中」狀態
         }
 
         function openInfo() {
