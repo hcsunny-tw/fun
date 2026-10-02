@@ -439,6 +439,7 @@
             isPlaying = true;
 
             const type = document.getElementById('char-type-select').value;
+            clickMode = document.getElementById('click-mode-select').value;
             currentSequence = CHAR_SETS[type].slice(0, gameSize);
             
             document.getElementById('menu-screen').classList.add('hidden');
@@ -504,8 +505,12 @@
             if (!isPlaying) return;
 
             if (value === currentSequence[currentTargetIndex]) {
-                // 正確：消失動畫
-                btn.classList.add('clicked');
+                // 正確：根據模式決定消失或變暗保留
+                if (clickMode === 'disappear') {
+                    btn.classList.add('clicked');
+                } else {
+                    btn.classList.add('clicked-keep');
+                }
                 currentTargetIndex++;
                 
                 if (currentTargetIndex >= currentSequence.length) {
@@ -559,8 +564,8 @@
             document.getElementById('reward-coins').textContent = earnedCoins;
             updateCoinDisplay();
 
-            // 儲存最佳紀錄
-            const recordKey = `score_${gameMode}_${gameSize}`;
+            // 儲存最佳紀錄 (加入 clickMode 分隔)
+            const recordKey = `score_${gameMode}_${gameSize}_${clickMode}`;
             const oldRecord = parseFloat(localStorage.getItem(recordKey) || '999');
             if (timeNum < oldRecord) {
                 localStorage.setItem(recordKey, finalTime);
