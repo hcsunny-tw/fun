@@ -197,13 +197,34 @@
     </div>
 
     <script>
-        // 遊戲狀態
+        // 遊戲狀態與新功能資料
         let currentTotalNumbers = 25;
-        let currentLayout = 'irregular'; // 'regular' 或 'irregular'
+        let currentLayout = 'irregular'; 
         let currentTarget = 1;
         let isPlaying = false;
         let startTime = 0;
         let timerInterval = null;
+
+        // 貨幣與主題系統
+        let coins = parseInt(localStorage.getItem('schulteCoins') || '0');
+        let unlockedThemes = JSON.parse(localStorage.getItem('schulteThemes') || '["default"]');
+        let currentTheme = localStorage.getItem('schulteCurrentTheme') || 'default';
+        let currentCharSet = 'numbers';
+
+        // 字元替換包設定
+        const CHAR_SETS = {
+            numbers: Array.from({length: 25}, (_, i) => (i + 1).toString()),
+            alphabets: Array.from({length: 25}, (_, i) => String.fromCharCode(65 + i)),
+            bopomofo: ['ㄅ','ㄆ','ㄇ','ㄈ','ㄉ','ㄊ','ㄋ','ㄌ','ㄍ','ㄎ','ㄏ','ㄐ','ㄑ','ㄒ','ㄓ','ㄔ','ㄕ','ㄖ','ㄗ','ㄘ','ㄙ','ㄧ','ㄨ','ㄩ','ㄚ']
+        };
+
+        // 主題資料
+        const THEMES = {
+            default: { id: 'default', name: '淨春水豚 (預設)', bg: '#FFFDF0', cost: 0, icon: '🍊' },
+            ocean: { id: 'ocean', name: '深海藍', bg: '#E0F2FE', cost: 30, icon: '🌊' },
+            space: { id: 'space', name: '星空紫', bg: '#F3E8FF', cost: 60, icon: '🌌' },
+            forest: { id: 'forest', name: '森林綠', bg: '#ECFDF5', cost: 100, icon: '🌲' }
+        };
 
         // DOM 元素
         const menuScreen = document.getElementById('menu-screen');
@@ -217,6 +238,12 @@
         const finalTimeDisplay = document.getElementById('final-time');
         const rankDisplay = document.getElementById('rank-display');
         const rankMessage = document.getElementById('rank-message');
+        const shopModal = document.getElementById('shop-modal');
+        const shopModalContent = document.getElementById('shop-modal-content');
+        
+        // 初始化金幣與主題
+        document.getElementById('coin-count').textContent = coins;
+        document.getElementById('main-body').style.backgroundColor = THEMES[currentTheme].bg;
 
         // 淨春型視覺設定池 (Clear Spring Palette)
         const visualPool = {
@@ -296,8 +323,8 @@
 
             numbers.forEach((num, index) => {
                 const btn = document.createElement('button');
-                btn.dataset.number = num;
-                btn.textContent = num;
+                btn.dataset.number = num; // 保留原始數字作為判定依據
+                btn.textContent = CHAR_SETS[currentCharSet][num - 1]; // 顯示字元包對應內容
 
                 if (currentLayout === 'regular') {
                     // 規則模式：統一的外觀
@@ -356,7 +383,8 @@
                 if (currentTarget > currentTotalNumbers) {
                     endGame();
                 } else {
-                    nextTargetDisplay.textContent = currentTarget;
+                    // 更新找尋目標的顯示文字
+                    nextTargetDisplay.textContent = CHAR_SETS[currentCharSet][currentTarget - 1];
                     nextTargetDisplay.classList.remove('pop-in');
                     void nextTargetDisplay.offsetWidth;
                     nextTargetDisplay.classList.add('pop-in');
@@ -396,7 +424,8 @@
             // 重置狀態
             isPlaying = true;
             currentTarget = 1;
-            nextTargetDisplay.textContent = currentTarget;
+            // 根據字元包顯示第一個目標
+            nextTargetDisplay.textContent = CHAR_SETS[currentCharSet][0];
             timerDisplay.textContent = "00:00.00";
             
             closeModal();
@@ -461,6 +490,31 @@
             rankDisplay.className = `text-3xl font-black mr-2 ${eval.colorClass}`;
             rankMessage.textContent = eval.message;
             
+            // 計算獲得金幣
+            let earnedCoins = 0;
+            if (eval.rank === 'S') earnedCoins = 5;
+            else if (eval.rank === 'A') earnedCoins = 3;
+            else if (eval.rank === 'B') earnedCoins = 1;
+            
+            if (earnedCoins > 0) {
+                coins += earnedCoins;
+                localStorage.setItem('schulteCoins', coins);
+                document.getElementById('coin-count').textContent = coins;
+            }
+            document.getElementById('earned-coins').textContent = `+${earnedCoins} 金幣`;
+
+            // 隱藏彩蛋：S級觸發彩紙與皇冠
+            const crown = document.getElementById('capybara-crown');
+            if (eval.rank === 'S') {
+                crown.classList.remove('hidden');
+                void crown.offsetWidth; // 強制重繪
+                crown.classList.add('crown-animate');
+                triggerConfetti();
+            } else {
+                crown.classList.add('hidden');
+                crown.classList.remove('crown-animate');
+            }
+            
             // 顯示過關畫面
             winModal.classList.remove('pointer-events-none', 'opacity-0');
             setTimeout(() => {
@@ -473,6 +527,101 @@
             winModal.classList.add('opacity-0', 'pointer-events-none');
             winModalContent.classList.remove('scale-100');
             winModalContent.classList.add('scale-90');
+        }
+
+        // 商店系統與主題邏輯
+        function openShop() {
+            document.getElementById('shop-coin-display').textContent = coins;
+            const shopItems = document.getElementById('shop-items');
+            shopItems.innerHTML = '';
+
+            Object.values(THEMES).forEach(theme => {
+                const isUnlocked = unlockedThemes.includes(theme.id);
+                const isEquipped = currentTheme === theme.id;
+                
+                const card = document.createElement('div');
+                card.className = `theme-card p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${isEquipped ? 'border-[#4CAF50] bg-[#ECFDF5]' : 'border-gray-200 bg-white'}`;
+                
+                let btnHtml = '';
+                if (isEquipped) {
+                    btnHtml = `<button disabled class="w-full py-2 rounded-lg bg-gray-200 text-gray-500 font-bold text-sm">裝備中</button>`;
+                } else if (isUnlocked) {
+                    btnHtml = `<button onclick="equipTheme('${theme.id}')" class="w-full py-2 rounded-lg bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-bold text-sm shadow-[0_3px_0_#75BFA2] active:translate-y-[3px] active:shadow-none transition-all">裝備</button>`;
+                } else {
+                    const canAfford = coins >= theme.cost;
+                    btnHtml = `<button onclick="buyTheme('${theme.id}')" class="w-full py-2 rounded-lg ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_3px_0_#d9a076]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-sm active:translate-y-[3px] active:shadow-none transition-all flex justify-center items-center gap-1">
+                                    <span class="text-xs">🪙</span> ${theme.cost} 解鎖
+                               </button>`;
+                }
+
+                card.innerHTML = `
+                    <div class="text-3xl">${theme.icon}</div>
+                    <div class="font-black text-[#5C4033] text-sm">${theme.name}</div>
+                    <div class="w-full h-8 rounded-md mb-1 border border-black/10" style="background-color: ${theme.bg}"></div>
+                    ${btnHtml}
+                `;
+                shopItems.appendChild(card);
+            });
+
+            shopModal.classList.remove('pointer-events-none', 'opacity-0');
+            setTimeout(() => {
+                shopModalContent.classList.remove('scale-90');
+                shopModalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeShop() {
+            shopModal.classList.add('opacity-0', 'pointer-events-none');
+            shopModalContent.classList.remove('scale-100');
+            shopModalContent.classList.add('scale-90');
+        }
+
+        function buyTheme(themeId) {
+            const theme = THEMES[themeId];
+            if (coins >= theme.cost && !unlockedThemes.includes(themeId)) {
+                coins -= theme.cost;
+                unlockedThemes.push(themeId);
+                
+                localStorage.setItem('schulteCoins', coins);
+                localStorage.setItem('schulteThemes', JSON.stringify(unlockedThemes));
+                
+                document.getElementById('coin-count').textContent = coins;
+                equipTheme(themeId); // 買完直接裝備
+            }
+        }
+
+        function equipTheme(themeId) {
+            currentTheme = themeId;
+            localStorage.setItem('schulteCurrentTheme', themeId);
+            document.getElementById('main-body').style.backgroundColor = THEMES[themeId].bg;
+            openShop(); // 刷新商店介面
+        }
+
+        // 彩紙特效產生器
+        function triggerConfetti() {
+            const colors = ['#FFC4C4', '#A7E8D0', '#FFF099', '#AEE1FF', '#E2D4FF', '#FFD1A9'];
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 隨機大小與旋轉
+                const size = Math.random() * 8 + 6;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                
+                // 隨機掉落時間與延遲
+                confetti.style.animationDuration = (Math.random() * 2.5 + 2) + 's';
+                confetti.style.animationDelay = (Math.random() * 0.5) + 's';
+                
+                document.body.appendChild(confetti);
+                
+                // 動畫結束後移除 DOM
+                setTimeout(() => {
+                    if(document.body.contains(confetti)) confetti.remove();
+                }, 5000);
+            }
         }
 
         // 視窗縮放處理
