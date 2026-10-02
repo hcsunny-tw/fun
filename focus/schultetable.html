@@ -94,28 +94,28 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: rgba(0,0,0,0.15); 
             border-radius: 10px;
-        }
-        
-        .dense-grid {
-            grid-auto-flow: dense;
-        }
-    </style>
-</head>
-<body id="main-body" class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
-
-    <!-- 頂部選單列：左上角放按鈕，右上角放金幣 -->
+    <!-- 頂部選單列：左上角放按鈕，右上角放金幣與稱號 -->
     <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-start z-30 pointer-events-none">
         <div class="flex flex-col gap-2 pointer-events-auto">
             <button onclick="openShop()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
                 🛍️ 商店
+            </button>
+            <button onclick="openAchievements()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
+                🏆 成就
             </button>
             <button onclick="openInfo()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
                 ❓ 說明
             </button>
         </div>
         
-        <div class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-1 border border-white pointer-events-auto">
-            <i class="coin-icon"></i> <span id="coin-count">0</span>
+        <div class="flex flex-col items-end gap-1 pointer-events-auto">
+            <div class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-1 border border-white">
+                <i class="coin-icon"></i> <span id="coin-count">0</span>
+            </div>
+            <!-- 稱號展示標籤 -->
+            <div id="current-title-badge" onclick="openAchievements()" class="bg-[#FFFDF0] backdrop-blur-md px-3 py-1 rounded-full shadow-xs font-bold text-xs text-[#D2691E] border border-[#FFF099] cursor-pointer hover:scale-105 transition-transform">
+                🌱 稱號: 初學乍練
+            </div>
         </div>
     </div>
 
@@ -338,6 +338,24 @@
         </div>
     </div>
 
+    <!-- 成就視窗 -->
+    <div id="achievements-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh] h-[550px]" id="achievements-modal-content">
+            <button onclick="closeAchievements()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
+            
+            <div class="flex-shrink-0">
+                <h2 class="text-2xl md:text-3xl font-black text-[#5C4033] mb-2 mt-2 flex justify-center items-center gap-2">
+                    🏆 榮譽成就
+                </h2>
+                <p class="text-xs text-gray-500 font-bold mb-4">達成指定條件解鎖稱號，點擊即可切換目前稱號！</p>
+            </div>
+
+            <div id="achievements-list" class="overflow-y-auto px-2 pb-4 custom-scrollbar flex-1 text-left flex flex-col gap-3">
+                <!-- 動態生成成就清單 -->
+            </div>
+        </div>
+    </div>
+
     <!-- 腳本區域 -->
     <script>
         let timerInterval;
@@ -380,22 +398,44 @@
         let currentTheme = localStorage.getItem('schulte_theme') || 'theme_default';
         let unlockedItems = [];
 
+        // 成就與稱號系統資料
+        const ACHIEVEMENTS = [
+            { id: 'ach_novice', title: '🌱 初學乍練', desc: '完成任意一場舒爾特方格遊戲', condition: () => totalGamesPlayed >= 1 },
+            { id: 'ach_sharp', title: '⚡ 眼明手快', desc: '在任意模式中獲得 S 級評價', condition: () => hasAchievedS },
+            { id: 'ach_rich', title: '💰 金幣富翁', desc: '累計獲得 100 枚金幣', condition: () => totalEarnedCoins >= 100 },
+            { id: 'ach_fashion', title: '🎨 風格大師', desc: '解鎖 3 種以上的外觀主題', condition: () => unlockedItems.filter(i => i.startsWith('theme_')).length >= 3 },
+            { id: 'ach_master', title: '👑 舒爾特之神', desc: '解鎖所有遊戲模式與主題', condition: () => unlockedItems.length >= (SHOP_ITEMS.modes.length + 1 + SHOP_ITEMS.themes.length) }
+        ];
+
+        let unlockedAchievements = JSON.parse(localStorage.getItem('schulte_achievements') || '["ach_novice"]');
+        let currentTitle = localStorage.getItem('schulte_current_title') || '🌱 初學乍練';
+        let totalGamesPlayed = parseInt(localStorage.getItem('schulte_total_games') || '0');
+        let totalEarnedCoins = parseInt(localStorage.getItem('schulte_total_coins') || coins);
+        let hasAchievedS = JSON.parse(localStorage.getItem('schulte_has_s') || 'false');
+
         window.onload = function() {
             migrateStorage();
             updateModeSelect();
             updateCoinDisplay();
             applyTheme(currentTheme);
             loadHighScores();
+            checkAchievements();
+            updateTitleDisplay();
         };
 
-        // 將舊版的解鎖資料遷移到新版
-        function migrateStorage() {
-            let oldTheme = localStorage.getItem('capy_theme');
-            if(oldTheme && !oldTheme.startsWith('theme_')) {
-                currentTheme = 'theme_' + oldTheme;
-                localStorage.setItem('schulte_theme', currentTheme);
-                localStorage.removeItem('capy_theme');
-            }
+        // 檢查並解鎖成就
+        function checkAchievements() {
+            ACHIEVEMENTS.forEach(ach => {
+                if (!unlockedAchievements.includes(ach.id) && ach.condition()) {
+                    unlockedAchievements.push(ach.id);
+                    localStorage.setItem('schulte_achievements', JSON.stringify(unlockedAchievements));
+                }
+            });
+        }
+
+        function updateTitleDisplay() {
+            document.getElementById('current-title-badge').textContent = `稱號: ${currentTitle}`;
+        }
 
             let loadedItems = JSON.parse(localStorage.getItem('schulte_unlocked') || 'null');
             if (!loadedItems) {
@@ -577,6 +617,9 @@
             isPlaying = false;
             clearInterval(timerInterval);
             
+            totalGamesPlayed++;
+            localStorage.setItem('schulte_total_games', totalGamesPlayed);
+
             const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
             document.getElementById('final-time').innerHTML = `${finalTime}<span class="text-lg text-gray-400 ml-1">s</span>`;
             
@@ -589,6 +632,8 @@
 
             if (timeNum <= standard.s) {
                 rating = 'S'; earnedCoins = 30; msg = "太神啦！專注力大師！";
+                hasAchievedS = true;
+                localStorage.setItem('schulte_has_s', 'true');
             } else if (timeNum <= standard.a) {
                 rating = 'A'; earnedCoins = 15; msg = "表現非常棒！";
             } else if (timeNum <= standard.b) {
@@ -600,65 +645,20 @@
             document.getElementById('encouragement-text').textContent = msg;
             
             coins += earnedCoins;
+            totalEarnedCoins += earnedCoins;
+            localStorage.setItem('schulte_total_coins', totalEarnedCoins);
+            
             document.getElementById('reward-coins').textContent = earnedCoins;
             updateCoinDisplay();
 
-            const recordKey = `score_${gameMode}_${gameSize}_${clickMode}`;
+            const recordKey = `score_${gameMode}_${gameSize}_${clickMode}_${timeLimit}`;
             const oldRecord = parseFloat(localStorage.getItem(recordKey) || '999');
             if (timeNum < oldRecord) {
                 localStorage.setItem(recordKey, finalTime);
             }
 
+            checkAchievements();
             showWinModal(rating === 'S');
-        }
-
-        function showWinModal(isSClass) {
-            const modal = document.getElementById('win-modal');
-            const content = document.getElementById('win-modal-content');
-            const crown = document.getElementById('modal-crown');
-            
-            modal.classList.remove('pointer-events-none', 'opacity-0');
-            setTimeout(() => {
-                content.classList.remove('scale-90');
-                content.classList.add('scale-100');
-                
-                if (isSClass) {
-                    crown.classList.add('show');
-                    triggerConfetti();
-                } else {
-                    crown.classList.remove('show');
-                }
-            }, 10);
-        }
-
-        function triggerConfetti() {
-            if(typeof confetti === 'function') {
-                const duration = 2000;
-                const end = Date.now() + duration;
-
-                (function frame() {
-                    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFB6C1', '#FFDF00', '#A7E8D0'] });
-                    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFB6C1', '#FFDF00', '#A7E8D0'] });
-                    if (Date.now() < end) requestAnimationFrame(frame);
-                }());
-            }
-        }
-
-        function backToMenu() {
-            isPlaying = false;
-            clearInterval(timerInterval);
-            
-            document.getElementById('win-modal').classList.add('opacity-0', 'pointer-events-none');
-            document.getElementById('win-modal-content').classList.remove('scale-100');
-            document.getElementById('win-modal-content').classList.add('scale-90');
-            document.getElementById('modal-crown').classList.remove('show');
-            
-            setTimeout(() => {
-                document.getElementById('game-screen').classList.add('hidden');
-                document.getElementById('game-screen').classList.remove('flex');
-                document.getElementById('menu-screen').classList.remove('hidden');
-                loadHighScores(); 
-            }, 300);
         }
 
         function openShop() {
@@ -735,13 +735,13 @@
                 unlockedItems.push(itemId);
                 saveUnlockedItems();
                 updateCoinDisplay();
+                checkAchievements();
                 
-                // 如果買的是主題，直接裝備；如果買的是模式，更新選單
                 if (itemId.startsWith('theme_')) {
                     equipTheme(itemId);
                 } else if (itemId.startsWith('mode_')) {
                     updateModeSelect();
-                    openShop(); // 重新整理商店畫面
+                    openShop();
                 }
             }
         }
@@ -763,6 +763,57 @@
             document.getElementById('info-modal').classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('info-modal-content').classList.remove('scale-100');
             document.getElementById('info-modal-content').classList.add('scale-90');
+        }
+
+        function openAchievements() {
+            checkAchievements();
+            const listContainer = document.getElementById('achievements-list');
+            listContainer.innerHTML = '';
+
+            ACHIEVEMENTS.forEach(ach => {
+                const isUnlocked = unlockedAchievements.includes(ach.id);
+                const isEquipped = currentTitle === ach.title;
+
+                let actionBtn = '';
+                if (isUnlocked) {
+                    if (isEquipped) {
+                        actionBtn = `<span class="px-3 py-1 bg-green-100 text-green-700 font-bold text-xs rounded-lg">使用中</span>`;
+                    } else {
+                        actionBtn = `<button onclick="equipTitle('${ach.title}')" class="px-3 py-1 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-bold text-xs rounded-lg shadow-xs cursor-pointer active:translate-y-[1px]">裝備稱號</button>`;
+                    }
+                } else {
+                    actionBtn = `<span class="px-3 py-1 bg-gray-100 text-gray-400 font-bold text-xs rounded-lg">未解鎖</span>`;
+                }
+
+                listContainer.innerHTML += `
+                    <div class="bg-white p-3 rounded-2xl border-2 ${isUnlocked ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100'} flex items-center justify-between shadow-sm">
+                        <div class="flex flex-col">
+                            <span class="font-black text-[#5C4033] text-sm">${ach.title}</span>
+                            <span class="text-xs text-gray-500 font-bold mt-0.5">${ach.desc}</span>
+                        </div>
+                        <div>${actionBtn}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('achievements-modal').classList.remove('pointer-events-none', 'opacity-0');
+            setTimeout(() => {
+                document.getElementById('achievements-modal-content').classList.remove('scale-90');
+                document.getElementById('achievements-modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeAchievements() {
+            document.getElementById('achievements-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('achievements-modal-content').classList.remove('scale-100');
+            document.getElementById('achievements-modal-content').classList.add('scale-90');
+        }
+
+        function equipTitle(title) {
+            currentTitle = title;
+            localStorage.setItem('schulte_current_title', title);
+            updateTitleDisplay();
+            openAchievements(); // 重新整理成就視窗
         }
     </script>
 </body>
