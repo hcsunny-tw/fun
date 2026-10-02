@@ -107,6 +107,9 @@
             <button onclick="openAchievements()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 active:scale-95 transition-transform">
                 🏆 成就
             </button>
+            <button onclick="openReport()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 active:scale-95 transition-transform">
+                📊 報表
+            </button>
             <button onclick="openInfo()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 active:scale-95 transition-transform">
                 ❓ 說明
             </button>
@@ -144,9 +147,19 @@
             舒爾特方格
         </h1>
         
+        <!-- 新增：今日體力顯示 -->
+        <div id="energy-display" class="mb-4 bg-white/80 backdrop-blur-md px-5 py-1.5 rounded-full shadow-sm border border-white/50 flex items-center justify-center gap-2 cursor-help transition-transform hover:scale-105" title="每日最多遊玩5場，保持大腦最佳吸收狀態！">
+            <span class="text-lg">⚡</span>
+            <span class="font-bold text-[#5C4033] text-sm">今日體力</span>
+            <div class="flex gap-1 ml-1" id="energy-bars">
+                <!-- 由 JS 動態生成體力條 -->
+            </div>
+            <span id="energy-text" class="font-black text-[#D2691E] ml-1">5/5</span>
+        </div>
+        
         <!-- 遊戲設定選單區塊 -->
         <div class="mb-6 bg-white/60 p-3 rounded-2xl backdrop-blur-sm border border-white/50 flex flex-col sm:flex-row gap-3 shadow-sm">
-            <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center text-sm sm:text-base">
+            <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center text-sm sm:text-base" onchange="loadHighScores()">
             </select>
             
             <div class="hidden sm:block w-px bg-gray-300"></div>
@@ -163,13 +176,15 @@
             <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🌱 基礎模式 (16格)</h2>
                 <div class="flex gap-3">
-                    <div class="flex-1 flex flex-col">
+                    <div class="flex-1 flex flex-col relative">
+                        <div id="rank-badge-regular-16" class="absolute -top-2 -left-2 w-7 h-7 bg-gray-200 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-sm z-10 hidden"></div>
                         <button onclick="startGame(16, 'regular')" class="h-14 bg-[#FFB6C1] text-[#8B0A50] font-black rounded-xl shadow-[0_4px_0_#d98292] active:shadow-[0_0px_0_#d98292] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>📦 規則排列</span>
                         </button>
                         <p id="record-regular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
-                    <div class="flex-1 flex flex-col">
+                    <div class="flex-1 flex flex-col relative">
+                        <div id="rank-badge-irregular-16" class="absolute -top-2 -left-2 w-7 h-7 bg-gray-200 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-sm z-10 hidden"></div>
                         <button onclick="startGame(16, 'irregular')" class="h-14 bg-[#FFD1A9] text-[#824E24] font-black rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>🎨 不規則</span>
                         </button>
@@ -182,13 +197,15 @@
             <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🔥 挑戰模式 (25格)</h2>
                 <div class="flex gap-3">
-                    <div class="flex-1 flex flex-col">
+                    <div class="flex-1 flex flex-col relative">
+                        <div id="rank-badge-regular-25" class="absolute -top-2 -left-2 w-7 h-7 bg-gray-200 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-sm z-10 hidden"></div>
                         <button onclick="startGame(25, 'regular')" class="h-14 bg-[#A7E8D0] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>📦 規則排列</span>
                         </button>
                         <p id="record-regular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
-                    <div class="flex-1 flex flex-col">
+                    <div class="flex-1 flex flex-col relative">
+                        <div id="rank-badge-irregular-25" class="absolute -top-2 -left-2 w-7 h-7 bg-gray-200 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-sm z-10 hidden"></div>
                         <button onclick="startGame(25, 'irregular')" class="h-14 bg-[#FFE4B5] text-[#8B4500] font-black rounded-xl shadow-[0_4px_0_#d4a357] active:shadow-[0_0px_0_#d4a357] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>🎨 不規則</span>
                         </button>
@@ -277,6 +294,25 @@
         </div>
     </div>
 
+    <!-- 新增：體力耗盡視窗 -->
+    <div id="energy-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[70] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-[40px] p-8 max-w-sm w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative" id="energy-modal-content">
+            <div id="energy-modal-icon" class="text-6xl mb-4 logo-float">😴</div>
+            <h2 id="energy-modal-title" class="text-2xl font-black text-[#5C4033] mb-2">今日訓練已達標！</h2>
+            
+            <div class="bg-blue-50 rounded-2xl p-4 mb-6 border border-blue-100">
+                <p id="energy-modal-desc" class="text-gray-600 font-bold text-sm leading-relaxed">
+                    科學研究指出，每天適量進行 <strong class="text-blue-500">5場</strong> 專注力訓練效果最好。<br><br>
+                    大腦也需要休息來消化學習成果，請明天再來挑戰吧！
+                </p>
+            </div>
+            
+            <button onclick="closeEnergyModal()" class="w-full bg-[#A7E8D0] text-[#215A43] font-black py-4 rounded-2xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-lg cursor-pointer">
+                我知道了
+            </button>
+        </div>
+    </div>
+
     <!-- 商店視窗 -->
     <div id="shop-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh] h-[600px]" id="shop-modal-content">
@@ -348,26 +384,46 @@
         </div>
     </div>
 
-    <!-- 成就視窗 -->
-    <div id="achievements-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh] h-[550px]" id="achievements-modal-content">
-            <button onclick="closeAchievements()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
+    <!-- 報表視窗 -->
+    <div id="report-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-[32px] p-5 sm:p-6 max-w-[500px] w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh]" id="report-modal-content">
+            <button onclick="closeReport()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
             
-            <div class="flex-shrink-0">
-                <h2 class="text-2xl md:text-3xl font-black text-[#5C4033] mb-2 mt-2 flex justify-center items-center gap-2">
-                    🏆 榮譽成就
+            <div class="flex-shrink-0 mb-4">
+                <h2 class="text-2xl sm:text-3xl font-black text-[#5C4033] mt-1 flex justify-center items-center gap-2">
+                    📊 最佳成績報表
                 </h2>
-                <p class="text-xs text-gray-500 font-bold mb-4">達成指定條件解鎖稱號，點擊即可切換目前稱號！</p>
+                <p class="text-sm text-gray-500 font-bold mt-1">紀錄你在各個模式下的極限速度！</p>
             </div>
 
-            <div id="achievements-list" class="overflow-y-auto px-2 pb-4 custom-scrollbar flex-1 text-left flex flex-col gap-3">
-                <!-- 動態生成成就清單 -->
+            <div id="report-list" class="overflow-y-auto px-1 flex-1 custom-scrollbar space-y-4 text-left">
+                <!-- 動態生成報表內容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 成就視窗 (更新為列表設計，移除點擊展開) -->
+    <div id="achievements-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-[32px] p-5 sm:p-6 max-w-[450px] w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh]" id="achievements-modal-content">
+            <button onclick="closeAchievements()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
+            
+            <div class="flex-shrink-0 mb-3">
+                <h2 class="text-2xl sm:text-3xl font-black text-[#5C4033] mt-1 flex justify-center items-center gap-2">
+                    🏆 榮譽成就
+                </h2>
+            </div>
+
+            <!-- 成就列表 -->
+            <div id="achievements-list" class="overflow-y-auto px-1 flex-1 custom-scrollbar space-y-3 text-left">
+                <!-- 動態生成成就項目 -->
             </div>
         </div>
     </div>
 
     <!-- 腳本區域 -->
     <script>
+        const MAX_DAILY_GAMES = 5; // 新增：每日最大遊玩次數
+
         let timerInterval;
         let startTime;
         let currentTargetIndex = 0;
@@ -408,12 +464,75 @@
         let currentTheme = localStorage.getItem('schulte_theme') || 'theme_default';
         let unlockedItems = [];
 
+        let totalSRanks = parseInt(localStorage.getItem('schulte_total_s_ranks') || '0');
+        let failedGamesCount = parseInt(localStorage.getItem('schulte_failed_games') || '0');
+        let wrongClicksInCurrentGame = 0;
+        
+        // 時間限制與每日任務追蹤
+        function getGameDay() {
+            const now = new Date();
+            const twTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Taipei"}));
+            // 每天早上 8:00 重置，若在 8:00 前，算作前一天的額度
+            if (twTime.getHours() < 8) {
+                twTime.setDate(twTime.getDate() - 1);
+            }
+            return twTime.toDateString();
+        }
+
+        let todayString = getGameDay();
+        let storedDate = localStorage.getItem('schulte_today_date');
+        if (storedDate !== todayString) {
+            localStorage.setItem('schulte_today_date', todayString);
+            localStorage.setItem('schulte_daily_games', '0');
+            
+            // 更新連續登入天數
+            let streak = parseInt(localStorage.getItem('schulte_streak') || '0');
+            let lastPlayDate = localStorage.getItem('schulte_last_play_date');
+            if (lastPlayDate) {
+                let last = new Date(lastPlayDate);
+                let current = new Date(todayString);
+                let diffDays = Math.round((current - last) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) {
+                    streak++;
+                } else if (diffDays > 1) {
+                    streak = 1;
+                }
+            } else {
+                streak = 1;
+            }
+            localStorage.setItem('schulte_streak', streak);
+            localStorage.setItem('schulte_last_play_date', todayString);
+        }
+        let dailyGamesPlayed = parseInt(localStorage.getItem('schulte_daily_games') || '0');
+        let currentStreak = parseInt(localStorage.getItem('schulte_streak') || '1');
+
         const ACHIEVEMENTS = [
-            { id: 'ach_novice', title: '🌱 初學乍練', desc: '完成任意一場遊戲', condition: () => totalGamesPlayed >= 1 },
-            { id: 'ach_sharp', title: '⚡ 眼明手快', desc: '在任意模式獲得 S 級', condition: () => hasAchievedS },
-            { id: 'ach_rich', title: '💰 金幣富翁', desc: '累計獲得 100 枚金幣', condition: () => totalEarnedCoins >= 100 },
-            { id: 'ach_fashion', title: '🎨 風格大師', desc: '解鎖 3 種外觀主題', condition: () => unlockedItems.filter(i => i.startsWith('theme_')).length >= 3 },
-            { id: 'ach_master', title: '👑 舒爾特之神', desc: '解鎖所有遊戲模式與主題', condition: () => unlockedItems.length >= (SHOP_ITEMS.modes.length + 1 + SHOP_ITEMS.themes.length) }
+            { id: 'ach_novice', title: '🌱 初學乍練', desc: '完成任意一場遊戲', condition: () => totalGamesPlayed >= 1, secret: false },
+            { id: 'ach_sharp', title: '⚡ 眼明手快', desc: '在任意模式獲得 S 級', condition: () => hasAchievedS, secret: false },
+            { id: 'ach_rich', title: '💰 金幣富翁', desc: '累計獲得 100 枚金幣', condition: () => totalEarnedCoins >= 100, secret: false },
+            { id: 'ach_fashion', title: '🎨 風格大師', desc: '解鎖 3 種外觀主題', condition: () => unlockedItems.filter(i => i.startsWith('theme_')).length >= 3, secret: false },
+            { id: 'ach_master', title: '👑 舒爾特之神', desc: '解鎖所有遊戲模式與主題', condition: () => unlockedItems.length >= (SHOP_ITEMS.modes.length + 1 + SHOP_ITEMS.themes.length), secret: false },
+            
+            // --- 進階成就 ---
+            { id: 'ach_games_10', title: '🎓 漸入佳境', desc: '累積遊玩 10 場', condition: () => totalGamesPlayed >= 10, secret: false },
+            { id: 'ach_games_50', title: '🧠 專注達人', desc: '累積遊玩 50 場', condition: () => totalGamesPlayed >= 50, secret: false },
+            { id: 'ach_s_10', title: '🦅 鷹眼守護者', desc: '累積獲得 10 次 S 級評價', condition: () => totalSRanks >= 10, secret: false },
+            { id: 'ach_rich_500', title: '💎 財富自由', desc: '累計獲得 500 枚金幣', condition: () => totalEarnedCoins >= 500, secret: false },
+            { id: 'ach_modes_all', title: '🌈 探索者', desc: '解鎖商店所有遊戲模式', condition: () => unlockedItems.filter(i => i.startsWith('mode_')).length >= SHOP_ITEMS.modes.length, secret: false },
+            { id: 'ach_daily_10', title: '📅 每日特訓', desc: '單日遊玩達 10 場，保持好習慣！', condition: () => dailyGamesPlayed >= 10, secret: false },
+            { id: 'ach_speed_10s', title: '🚀 音速小子', desc: '在 10 秒內完成任意關卡', condition: () => false, secret: false }, // 透過 endGame 動態判斷解鎖
+            
+            // --- 新增 5 個成就 ---
+            { id: 'ach_perfect', title: '🎯 完美主義', desc: '單場通關 0 次錯誤點擊', condition: () => false, secret: false }, // 透過 endGame 解鎖
+            { id: 'ach_streak_3', title: '🔥 持之以恆', desc: '連續 3 天進行遊戲', condition: () => currentStreak >= 3, secret: false },
+            { id: 'ach_invincible', title: '🏆 百戰百勝', desc: '累積遊玩達 100 場', condition: () => totalGamesPlayed >= 100, secret: false },
+            { id: 'ach_night_owl', title: '🦉 夜貓子', desc: '在晚上 21:00 至 22:30 間遊玩', condition: () => false, secret: false }, // 透過 startGame 解鎖
+            { id: 'ach_early_bird', title: '🐓 晨型人', desc: '在早上 08:00 至 10:00 間遊玩', condition: () => false, secret: false }, // 透過 startGame 解鎖
+
+            // --- 秘密成就 (未解鎖前隱藏說明) ---
+            { id: 'ach_secret_slow', title: '🦥 樹懶轉世', desc: '單場通關時間超過 60 秒', condition: () => false, secret: true }, // 透過 endGame 動態判斷解鎖
+            { id: 'ach_secret_fail', title: '🛡️ 不屈不撓', desc: '限時挑戰失敗累計 3 次', condition: () => failedGamesCount >= 3, secret: true },
+            { id: 'ach_secret_wrong', title: '🌪️ 亂點一通', desc: '單場點錯 10 次以上並過關', condition: () => false, secret: true } // 透過 endGame 動態判斷解鎖
         ];
 
         let unlockedAchievements = JSON.parse(localStorage.getItem('schulte_achievements') || '["ach_novice"]');
@@ -430,6 +549,7 @@
             loadHighScores();
             checkAchievements();
             updateTitleDisplay();
+            updateEnergyDisplay(); // 新增：初始化體力顯示
         };
 
         // 修復: 補充完整的 migrateStorage 函式
@@ -511,23 +631,119 @@
 
         function loadHighScores() {
             const currentClickMode = document.getElementById('click-mode-select').value || 'disappear';
+            const currentCharType = document.getElementById('char-type-select').value || '123';
+            
             const modes = [
-                { id: 'record-regular-16', key: `score_regular_16_${currentClickMode}` },
-                { id: 'record-irregular-16', key: `score_irregular_16_${currentClickMode}` },
-                { id: 'record-regular-25', key: `score_regular_25_${currentClickMode}` },
-                { id: 'record-irregular-25', key: `score_irregular_25_${currentClickMode}` }
+                { id: 'record-regular-16', badge: 'rank-badge-regular-16', key: `score_${currentCharType}_16_regular_${currentClickMode}`, size: 16 },
+                { id: 'record-irregular-16', badge: 'rank-badge-irregular-16', key: `score_${currentCharType}_16_irregular_${currentClickMode}`, size: 16 },
+                { id: 'record-regular-25', badge: 'rank-badge-regular-25', key: `score_${currentCharType}_25_regular_${currentClickMode}`, size: 25 },
+                { id: 'record-irregular-25', badge: 'rank-badge-irregular-25', key: `score_${currentCharType}_25_irregular_${currentClickMode}`, size: 25 }
             ];
+            
             modes.forEach(m => {
-                const score = localStorage.getItem(m.key);
+                let score = localStorage.getItem(m.key);
+                
+                // 相容舊資料邏輯：如果是數字模式，且新 key 沒資料，嘗試讀舊 key (score_regular_16_disappear)
+                if (!score && currentCharType === '123') {
+                    score = localStorage.getItem(`score_${m.key.split('_')[3]}_${m.size}_${currentClickMode}`);
+                    if (score) localStorage.setItem(m.key, score);
+                }
+
                 document.getElementById(m.id).textContent = score ? `最佳: ${score}s` : '最佳: --';
+                
+                const badge = document.getElementById(m.badge);
+                if (score) {
+                    const rank = getScoreRank(parseFloat(score), m.size);
+                    badge.textContent = rank;
+                    badge.classList.remove('hidden');
+                    if (rank === 'S') badge.className = 'absolute -top-2 -left-2 w-7 h-7 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-md z-10';
+                    else if (rank === 'A') badge.className = 'absolute -top-2 -left-2 w-7 h-7 bg-gradient-to-br from-yellow-400 to-yellow-500 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-md z-10';
+                    else if (rank === 'B') badge.className = 'absolute -top-2 -left-2 w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-500 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-md z-10';
+                    else badge.className = 'absolute -top-2 -left-2 w-7 h-7 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-full font-black text-sm flex items-center justify-center border-2 border-white shadow-md z-10';
+                } else {
+                    badge.classList.add('hidden');
+                }
             });
         }
 
+        function getScoreRank(timeNum, size) {
+            const standard = size === 16 ? { s: 12, a: 18, b: 25 } : { s: 25, a: 35, b: 50 };
+            if (timeNum <= standard.s) return 'S';
+            if (timeNum <= standard.a) return 'A';
+            if (timeNum <= standard.b) return 'B';
+            return 'C';
+        }
+
+        // 新增：更新體力UI顯示
+        function updateEnergyDisplay() {
+            const energyRemaining = Math.max(0, MAX_DAILY_GAMES - dailyGamesPlayed);
+            
+            // 更新文字
+            document.getElementById('energy-text').textContent = `${energyRemaining}/${MAX_DAILY_GAMES}`;
+            
+            // 更新圖形體力條
+            const barsContainer = document.getElementById('energy-bars');
+            barsContainer.innerHTML = '';
+            for(let i=0; i<MAX_DAILY_GAMES; i++) {
+                const bar = document.createElement('div');
+                bar.className = `w-3 h-4 rounded-sm ${i < energyRemaining ? 'bg-[#FFD700] shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]' : 'bg-gray-200'}`;
+                barsContainer.appendChild(bar);
+            }
+            
+            const isPlayableTime = checkPlayableTime();
+
+            // 更新按鈕狀態 (UI 視覺弱化)
+            const playButtons = document.querySelectorAll('button[onclick^="startGame"]');
+            playButtons.forEach(btn => {
+                if (energyRemaining <= 0 || !isPlayableTime) {
+                    btn.classList.add('opacity-60', 'saturate-50');
+                    // 移除 active 點擊下壓動畫，避免產生"還能按"的錯覺
+                    btn.classList.remove('active:translate-y-[4px]');
+                } else {
+                    btn.classList.remove('opacity-60', 'saturate-50');
+                    btn.classList.add('active:translate-y-[4px]');
+                }
+            });
+        }
+
+        function checkPlayableTime() {
+            const now = new Date();
+            const twTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Taipei"}));
+            const hours = twTime.getHours();
+            const minutes = twTime.getMinutes();
+            const timeInMinutes = hours * 60 + minutes;
+
+            const startMinutes = 8 * 60; // 08:00
+            const endMinutes = 22 * 60 + 30; // 22:30
+
+            return timeInMinutes >= startMinutes && timeInMinutes < endMinutes;
+        }
+
         function startGame(size, mode, timeLimit = 0) {
+            // 時間檢查
+            if (!checkPlayableTime()) {
+                openEnergyModal(false); 
+                return;
+            }
+
+            // 新增：體力檢查
+            if (dailyGamesPlayed >= MAX_DAILY_GAMES) {
+                openEnergyModal(true);
+                return; // 阻止遊戲開始
+            }
+
+            // 判斷時段成就
+            const now = new Date();
+            const twTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Taipei"}));
+            const hours = twTime.getHours();
+            if (hours >= 21 && hours < 23) unlockAchievement('ach_night_owl');
+            if (hours >= 8 && hours < 10) unlockAchievement('ach_early_bird');
+
             gameSize = size;
             gameMode = mode;
             gameTimeLimit = timeLimit;
             currentTargetIndex = 0;
+            wrongClicksInCurrentGame = 0; // 重置當局錯誤點擊次數
             isPlaying = true;
 
             const type = document.getElementById('char-type-select').value;
@@ -612,6 +828,8 @@
             } else {
                 // 優化: 錯誤時給予連續震動回饋
                 if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
+                
+                wrongClicksInCurrentGame++; // 記錄錯誤點擊次數
 
                 btn.classList.remove('shake');
                 void btn.offsetWidth; 
@@ -638,8 +856,12 @@
             isPlaying = false;
             clearInterval(timerInterval);
             
-            totalGamesPlayed++;
+            totalGamesPlayed++; // 補齊：總遊玩次數也要記得增加
+            dailyGamesPlayed++; 
             localStorage.setItem('schulte_total_games', totalGamesPlayed);
+            localStorage.setItem('schulte_daily_games', dailyGamesPlayed);
+            
+            updateEnergyDisplay(); // 新增：遊玩後更新體力顯示
 
             const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
             
@@ -653,6 +875,9 @@
                 rating = 'Fail';
                 earnedCoins = 1;
                 msg = "差一點點！再試一次吧！";
+                
+                failedGamesCount++; // 記錄失敗次數供秘密成就使用
+                localStorage.setItem('schulte_failed_games', failedGamesCount);
             } else {
                 document.getElementById('final-time').innerHTML = `${finalTime}<span class="text-lg text-gray-400 ml-1">s</span>`;
                 
@@ -687,15 +912,33 @@
             updateCoinDisplay();
 
             if (isSuccess && gameTimeLimit === 0) {
-                const recordKey = `score_${gameMode}_${gameSize}_${clickMode}`;
+                const recordKey = `score_${document.getElementById('char-type-select').value}_${gameSize}_${gameMode}_${clickMode}`;
                 const oldRecord = parseFloat(localStorage.getItem(recordKey) || '999');
                 if (timeNum < oldRecord) {
                     localStorage.setItem(recordKey, finalTime);
                 }
             }
+            
+            if (rating === 'S') {
+                totalSRanks++;
+                localStorage.setItem('schulte_total_s_ranks', totalSRanks);
+            }
+
+            // 判斷需要在結算時強制解鎖的成就
+            if (isSuccess && timeNum <= 10) unlockAchievement('ach_speed_10s');
+            if (isSuccess && timeNum > 60) unlockAchievement('ach_secret_slow');
+            if (isSuccess && wrongClicksInCurrentGame >= 10) unlockAchievement('ach_secret_wrong');
+            if (isSuccess && wrongClicksInCurrentGame === 0) unlockAchievement('ach_perfect');
 
             checkAchievements();
             showWinModal(rating === 'S');
+        }
+
+        function unlockAchievement(achId) {
+            if (!unlockedAchievements.includes(achId)) {
+                unlockedAchievements.push(achId);
+                localStorage.setItem('schulte_achievements', JSON.stringify(unlockedAchievements));
+            }
         }
 
         // 補齊: 顯示結算視窗並加入彩帶特效
@@ -741,6 +984,37 @@
             document.getElementById('menu-screen').classList.remove('hidden');
             
             loadHighScores(); 
+            updateEnergyDisplay(); // 確保回到主畫面時體力是最新的
+        }
+
+        // 新增：開啟體力耗盡與時間限制視窗
+        function openEnergyModal(isEnergyEmpty) {
+            const title = document.getElementById('energy-modal-title');
+            const desc = document.getElementById('energy-modal-desc');
+            const icon = document.getElementById('energy-modal-icon');
+            
+            if (isEnergyEmpty) {
+                icon.textContent = '😴';
+                title.textContent = '今日訓練已達標！';
+                desc.innerHTML = '科學研究指出，每天適量進行 <strong class="text-blue-500">5場</strong> 專注力訓練效果最好。<br><br>大腦也需要休息來消化學習成果，請明天再來挑戰吧！';
+            } else {
+                icon.textContent = '🌙';
+                title.textContent = '大腦休息時間';
+                desc.innerHTML = '良好的睡眠是增強記憶力與專注力的關鍵！<br><br>開放挑戰時間為 <strong class="text-blue-500">早上 08:00 至 晚上 22:30</strong>，請明天準時來報到！';
+            }
+
+            document.getElementById('energy-modal').classList.remove('pointer-events-none', 'opacity-0');
+            setTimeout(() => {
+                document.getElementById('energy-modal-content').classList.remove('scale-90');
+                document.getElementById('energy-modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        // 新增：關閉體力耗盡視窗
+        function closeEnergyModal() {
+            document.getElementById('energy-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('energy-modal-content').classList.remove('scale-100');
+            document.getElementById('energy-modal-content').classList.add('scale-90');
         }
 
         function openShop() {
@@ -845,36 +1119,76 @@
             document.getElementById('info-modal-content').classList.add('scale-90');
         }
 
-        function openAchievements() {
-            checkAchievements();
-            const listContainer = document.getElementById('achievements-list');
+        // --- 報表視窗 ---
+        function openReport() {
+            const listContainer = document.getElementById('report-list');
             listContainer.innerHTML = '';
+            
+            const clickMode = document.getElementById('click-mode-select').value || 'disappear';
+            const clickModeName = clickMode === 'disappear' ? '點擊後消失' : '點擊後保留';
+            
+            listContainer.innerHTML += `<div class="text-center text-sm font-bold text-gray-500 mb-2">目前成績篩選: ${clickModeName}</div>`;
 
-            ACHIEVEMENTS.forEach(ach => {
-                const isUnlocked = unlockedAchievements.includes(ach.id);
-                const isEquipped = currentTitle === ach.title;
+            // 列出已解鎖的模式
+            const availableModes = ['123', ...unlockedItems.filter(i => i.startsWith('mode_')).map(i => i.replace('mode_', ''))];
+            
+            availableModes.forEach(modeKey => {
+                const conf = CHAR_SETS[modeKey];
+                if (!conf) return;
 
-                let actionBtn = '';
-                if (isUnlocked) {
-                    if (isEquipped) {
-                        actionBtn = `<span class="px-3 py-1 bg-green-100 text-green-700 font-bold text-xs rounded-lg">使用中</span>`;
-                    } else {
-                        actionBtn = `<button onclick="equipTitle('${ach.title}')" class="px-3 py-1 bg-[#FFD1A9] text-[#824E24] font-bold text-xs rounded-lg shadow-xs cursor-pointer active:translate-y-[1px]">裝備稱號</button>`;
-                    }
-                } else {
-                    actionBtn = `<span class="px-3 py-1 bg-gray-100 text-gray-400 font-bold text-xs rounded-lg">未解鎖</span>`;
-                }
+                const sizes = [
+                    { label: '16格 規則', key: `score_${modeKey}_16_regular_${clickMode}`, s: 16 },
+                    { label: '16格 不規則', key: `score_${modeKey}_16_irregular_${clickMode}`, s: 16 },
+                    { label: '25格 規則', key: `score_${modeKey}_25_regular_${clickMode}`, s: 25 },
+                    { label: '25格 不規則', key: `score_${modeKey}_25_irregular_${clickMode}`, s: 25 }
+                ];
+
+                let cardsHtml = sizes.map(s => {
+                    let score = localStorage.getItem(s.key);
+                    // 相容舊資料讀取 (僅限數字模式)
+                    if (!score && modeKey === '123') score = localStorage.getItem(`score_${s.key.split('_')[3]}_${s.s}_${clickMode}`);
+                    
+                    const rank = score ? getScoreRank(parseFloat(score), s.s) : '-';
+                    const rankColor = rank === 'S' ? 'text-red-500' : (rank === 'A' ? 'text-orange-500' : 'text-blue-500');
+                    return `
+                        <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-gray-100 shadow-sm">
+                            <span class="text-xs font-bold text-gray-600">${s.label}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-black text-[#5C4033]">${score ? score + 's' : '--'}</span>
+                                <span class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-black ${rank !== '-' ? rankColor : 'text-gray-400'}">${rank}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
 
                 listContainer.innerHTML += `
-                    <div class="bg-white p-3 rounded-2xl border-2 ${isUnlocked ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100'} flex items-center justify-between shadow-sm">
-                        <div class="flex flex-col">
-                            <span class="font-black text-[#5C4033] text-sm">${ach.title}</span>
-                            <span class="text-xs text-gray-500 font-bold mt-0.5">${ach.desc}</span>
+                    <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 mb-3">
+                        <h3 class="font-black text-[#754D20] text-sm mb-2 flex items-center gap-2">
+                            ${conf.icon} ${conf.name}
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            ${cardsHtml}
                         </div>
-                        <div>${actionBtn}</div>
                     </div>
                 `;
             });
+
+            document.getElementById('report-modal').classList.remove('pointer-events-none', 'opacity-0');
+            setTimeout(() => {
+                document.getElementById('report-modal-content').classList.remove('scale-90');
+                document.getElementById('report-modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeReport() {
+            document.getElementById('report-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('report-modal-content').classList.remove('scale-100');
+            document.getElementById('report-modal-content').classList.add('scale-90');
+        }
+
+        function openAchievements() {
+            checkAchievements();
+            renderAchievementsList();
 
             document.getElementById('achievements-modal').classList.remove('pointer-events-none', 'opacity-0');
             setTimeout(() => {
@@ -889,11 +1203,65 @@
             document.getElementById('achievements-modal-content').classList.add('scale-90');
         }
 
+        function renderAchievementsList() {
+            const listContainer = document.getElementById('achievements-list');
+            listContainer.innerHTML = '';
+
+            ACHIEVEMENTS.forEach(ach => {
+                const isUnlocked = unlockedAchievements.includes(ach.id);
+                const isEquipped = currentTitle === ach.title;
+
+                const parts = ach.title.split(' ');
+                const icon = parts[0];
+                const titleText = parts.slice(1).join(' ');
+
+                let displayTitle = ach.title;
+                let displayDesc = ach.desc;
+                let displayIcon = icon;
+
+                // 處理秘密成就未解鎖的顯示
+                if (ach.secret && !isUnlocked) {
+                    displayTitle = "🔒 秘密成就";
+                    displayDesc = "達成特定隱藏條件後解鎖，充滿驚喜！";
+                    displayIcon = "❓";
+                }
+
+                let bgClass = isUnlocked ? 'bg-[#FFFDF0] border-[#FFF099]' : 'bg-gray-50 border-gray-200 opacity-60';
+                if (ach.secret && !isUnlocked) bgClass = 'bg-purple-50 border-purple-100 opacity-60';
+
+                let actionBtn = '';
+                if (isUnlocked) {
+                    if (isEquipped) {
+                        actionBtn = `<button disabled class="px-3 py-1.5 bg-green-100 text-green-700 font-black text-xs rounded-lg border border-green-200 whitespace-nowrap">已裝備</button>`;
+                    } else {
+                        actionBtn = `<button onclick="equipTitle('${ach.title}')" class="px-3 py-1.5 bg-[#FFD1A9] text-[#824E24] font-black text-xs rounded-lg shadow-[0_3px_0_#d9a076] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap">裝備</button>`;
+                    }
+                } else {
+                    actionBtn = `<button disabled class="px-3 py-1.5 bg-gray-100 text-gray-400 font-black text-xs rounded-lg border border-gray-200 whitespace-nowrap">未解鎖</button>`;
+                }
+
+                listContainer.innerHTML += `
+                    <div class="flex items-center p-3 rounded-2xl border-2 ${bgClass} shadow-sm transition-all pointer-events-none">
+                        <div class="text-3xl sm:text-4xl drop-shadow-sm shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full shadow-inner border border-gray-100 mr-3">
+                            ${displayIcon}
+                        </div>
+                        <div class="flex flex-col justify-center flex-1 pr-2">
+                            <h3 class="font-black text-[#5C4033] text-sm sm:text-base leading-tight mb-0.5">${displayTitle}</h3>
+                            <p class="text-[11px] sm:text-xs text-gray-500 font-bold leading-snug">${displayDesc}</p>
+                        </div>
+                        <div class="flex flex-col justify-center items-end shrink-0 pointer-events-auto">
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         function equipTitle(title) {
             currentTitle = title;
             localStorage.setItem('schulte_current_title', title);
             updateTitleDisplay();
-            openAchievements(); 
+            renderAchievementsList();
         }
     </script>
 </body>
