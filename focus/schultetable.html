@@ -1,166 +1,47 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>卡皮巴拉不規則舒爾特方格</title>
-    
-    <!-- 引入 Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
-    
-    <style>
-        body {
-            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
-            touch-action: manipulation;
-            overflow-x: hidden;
-            transition: background-color 0.5s ease;
-        }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
-        ::-webkit-scrollbar-thumb { background: #FFC4C4; border-radius: 10px; }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px) rotate(-3deg); }
-            40%, 80% { transform: translateX(5px) rotate(3deg); }
-        }
-        .shake-animation {
-            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-            background-color: #FF8A8A !important;
-            color: white !important;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .pop-in {
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        .schulte-cell {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 6px 0 rgba(0,0,0,0.1);
-        }
-        .schulte-cell:active:not(.found) {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
-        }
-        
-        /* 點擊成功後消失的動畫 */
-        .schulte-cell.found {
-            opacity: 0;
-            transform: scale(0);
-            box-shadow: none;
-            pointer-events: none; /* 讓原本的空間保留，但不阻擋點擊 */
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
+<!-- ... existing code ... -->
         .capybara-float {
             animation: float 3s ease-in-out infinite;
         }
 
-        /* 皇冠彩蛋動畫 */
-        @keyframes dropIn {
-            0% { transform: translateY(-50px) rotate(-20deg) scale(0); opacity: 0; }
-            60% { transform: translateY(10px) rotate(10deg) scale(1.1); opacity: 1; }
-            100% { transform: translateY(0) rotate(5deg) scale(1); opacity: 1; }
-        }
-        .crown-animate {
-            animation: dropIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            transform-origin: bottom center;
+        /* 自訂金幣圖示（解決Emoji支援度問題） */
+        .coin-icon {
+            display: inline-block;
+            width: 1.2em;
+            height: 1.2em;
+            background: radial-gradient(circle at 30% 30%, #FFDF00, #DAA520);
+            border: 2px solid #B8860B;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            vertical-align: text-bottom;
+            margin-right: 2px;
         }
 
-        /* 彩紙粒子 */
-        .confetti {
-            position: fixed;
-            top: -10px;
-            z-index: 100;
-            animation: fall linear forwards;
-            pointer-events: none;
-        }
-        @keyframes fall {
-            to { transform: translateY(105vh) rotate(720deg); }
-        }
-    </style>
+        /* 皇冠彩蛋動畫 */
+<!-- ... existing code ... -->
 </head>
 <body id="main-body" class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
 
-    <div class="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-2 border border-white z-20 cursor-pointer hover:scale-105 transition-transform" onclick="openShop()">
-        <span class="text-xl">🪙</span> <span id="coin-count">0</span>
+    <!-- 頂部按鈕列 (商店、說明、金幣) -->
+    <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-start z-30 pointer-events-none">
+        <!-- 左上角按鈕 -->
+        <div class="flex flex-col sm:flex-row gap-2 pointer-events-auto">
+            <button onclick="openShop()" class="bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
+                🛍️ 商店
+            </button>
+            <button onclick="openInfo()" class="bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
+                ❓ 說明
+            </button>
+        </div>
+        
+        <!-- 右上角金幣 -->
+        <div class="bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-1 border border-white pointer-events-auto">
+            <i class="coin-icon"></i> <span id="coin-count">0</span>
+        </div>
     </div>
 
-    <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl z-10 flex-1 transition-opacity duration-300">
+    <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl z-10 flex-1 transition-opacity duration-300 mt-12 sm:mt-8">
         <svg class="w-40 h-40 capybara-float mb-2 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect x="15" y="40" width="70" height="45" rx="22" fill="#9C6B30"/>
-            <circle cx="25" cy="40" r="8" fill="#754D20"/>
-            <circle cx="75" cy="40" r="8" fill="#754D20"/>
-            <line x1="30" y1="55" x2="45" y2="55" stroke="#3E2723" stroke-width="4" stroke-linecap="round"/>
-            <line x1="70" y1="55" x2="55" y2="55" stroke="#3E2723" stroke-width="4" stroke-linecap="round"/>
-            <path d="M 45 68 Q 50 74 55 68" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
-            <circle cx="50" cy="62" r="3.5" fill="#3E2723"/>
-            <circle cx="50" cy="25" r="12" fill="#FF9800"/>
-            <path d="M 50 13 Q 55 5 60 10" stroke="#4CAF50" stroke-width="3" fill="none" stroke-linecap="round"/>
-        </svg>
-
-        <h1 class="text-4xl md:text-5xl font-black text-[#5C4033] tracking-wider drop-shadow-sm mb-2 text-center">舒爾特方格</h1>
-        <p class="text-[#8B5A2B] font-bold mb-4 text-center text-lg">水豚的專注力考驗 🍊</p>
-
-        <!-- 選擇字元模式 -->
-        <div class="mb-6 flex items-center bg-white/70 backdrop-blur px-4 py-2 rounded-2xl shadow-sm border border-white">
-            <span class="font-bold text-[#754D20] mr-3">選擇訓練內容：</span>
-            <select id="charset-select" class="bg-transparent font-black text-[#5C4033] outline-none text-lg cursor-pointer" onchange="changeCharSet()">
-                <option value="numbers">123 (數字)</option>
-                <option value="alphabets">ABC (英文字母)</option>
-                <option value="bopomofo">ㄅㄆㄇ (注音符號)</option>
-            </select>
-        </div>
-
-        <!-- 遊戲模式選擇 -->
-        <div class="flex flex-col gap-5 w-full px-4">
-            <!-- 規則模式 -->
-            <div class="bg-white/60 p-5 rounded-3xl shadow-sm border border-white">
-                <p class="text-center font-bold text-[#754D20] mb-3">經典規則排列</p>
-                <div class="flex flex-col md:flex-row gap-3">
-                    <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(9, 'regular')" class="h-14 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-1 text-sm md:text-base">
-                            <span>🌱 3x3 (9格)</span>
-                        </button>
-                        <p id="record-regular-9" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
-                    </div>
-                    <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(16, 'regular')" class="h-14 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-1 text-sm md:text-base">
-                            <span>🌿 4x4 (16格)</span>
-                        </button>
-                        <p id="record-regular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
-                    </div>
-                    <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(25, 'regular')" class="h-14 bg-[#FFC4C4] hover:bg-[#ffadad] text-[#7D3232] font-black rounded-xl shadow-[0_4px_0_#D99696] active:shadow-[0_0px_0_#D99696] active:translate-y-[4px] transition-all flex items-center justify-center gap-1 text-sm md:text-base">
-                            <span>🔥 5x5 (25格)</span>
-                        </button>
-                        <p id="record-regular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 不規則模式 -->
-            <div class="bg-white/60 p-5 rounded-3xl shadow-sm border border-white">
-                <p class="text-center font-bold text-[#754D20] mb-3">趣味不規則排列</p>
-                <div class="flex flex-col md:flex-row gap-3">
-                    <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(16, 'irregular')" class="h-14 bg-[#FFF099] hover:bg-[#ffeb66] text-[#756819] font-black rounded-xl shadow-[0_4px_0_#D1C266] active:shadow-[0_0px_0_#D1C266] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
-                            <span>✨ 基礎 (16格)</span>
-                        </button>
-                        <p id="record-irregular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
-                    </div>
+<!-- ... existing code ... -->
                     <div class="flex-1 flex flex-col">
                         <button onclick="startGame(25, 'irregular')" class="h-14 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>🌟 挑戰 (25格)</span>
@@ -169,112 +50,12 @@
                     </div>
                 </div>
             </div>
-            
-            <button onclick="openShop()" class="mt-2 text-center text-[#8B5A2B] font-black underline hover:text-[#5C4033] transition-colors">
-                🛍️ 前往主題商店
-            </button>
         </div>
     </div>
 
-    <div id="game-screen" class="hidden w-full flex-col items-center w-full relative">
+    <div id="game-screen" class="hidden w-full flex-col items-center w-full relative mt-12 sm:mt-8">
         <header class="w-full max-w-3xl flex flex-col items-center mb-6 relative z-10">
-            <div class="flex items-center gap-2 mb-4">
-                <svg class="w-8 h-8 capybara-float" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="15" y="40" width="70" height="45" rx="22" fill="#9C6B30"/>
-                    <circle cx="25" cy="40" r="8" fill="#754D20"/>
-                    <circle cx="75" cy="40" r="8" fill="#754D20"/>
-                    <circle cx="50" cy="25" r="12" fill="#FF9800"/>
-                </svg>
-                <h2 id="mode-title" class="text-2xl font-black text-[#5C4033]">模式</h2>
-            </div>
-            
-            <!-- 控制面板 -->
-            <div class="bg-white/80 backdrop-blur-md p-4 rounded-3xl shadow-lg flex flex-wrap justify-center items-center gap-6 md:gap-10 w-full max-w-lg border border-white">
-                <div class="flex flex-col items-center min-w-[70px]">
-                    <span class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">找尋</span>
-                    <div id="next-target" class="text-3xl md:text-4xl font-black text-rose-500 w-16 text-center">1</div>
-                </div>
-                
-                <div class="w-px h-12 bg-gray-200"></div>
-
-                <div class="flex flex-col items-center min-w-[100px]">
-                    <span class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">時間</span>
-                    <div id="timer" class="text-2xl md:text-3xl font-black text-[#5C4033] tabular-nums">00:00.00</div>
-                </div>
-
-                <button onclick="backToMenu()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-black py-2 px-4 rounded-xl shadow-[0_4px_0_#e5e7eb] active:shadow-[0_0px_0_#e5e7eb] active:translate-y-[4px] transition-all text-sm md:text-base">
-                    放棄
-                </button>
-            </div>
-        </header>
-
-        <main class="w-full relative flex-1 flex justify-center items-start">
-            <!-- 網格容器 (寬度與欄位會透過 JS 動態設定) -->
-            <div id="grid-container" class="transition-all duration-300 mx-auto">
-                <!-- 方塊動態生成 -->
-            </div>
-        </main>
-    </div>
-
-    <div id="win-modal" class="fixed inset-0 bg-[#5C4033]/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white rounded-[40px] p-8 max-w-sm w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 border-8 border-[#FFF099] relative" id="win-modal-content">
-            
-            <div class="absolute -top-20 left-1/2 transform -translate-x-1/2 relative inline-block">
-                <!-- 彩蛋皇冠 (S級顯示) -->
-                <svg id="capybara-crown" class="absolute -top-10 -right-4 w-12 h-12 hidden z-10 drop-shadow-md" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M 20 80 L 10 20 L 35 45 L 50 10 L 65 45 L 90 20 L 80 80 Z" fill="#FFD700" stroke="#B8860B" stroke-width="3" stroke-linejoin="round"/>
-                    <circle cx="10" cy="20" r="6" fill="#FF3366"/>
-                    <circle cx="50" cy="10" r="8" fill="#33CCFF"/>
-                    <circle cx="90" cy="20" r="6" fill="#FF3366"/>
-                    <rect x="25" y="70" width="50" height="10" fill="#DAA520" rx="3"/>
-                </svg>
-
-                <svg class="w-32 h-32 capybara-float drop-shadow-xl relative" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="15" y="30" width="70" height="60" rx="30" fill="#9C6B30"/>
-                    <circle cx="25" cy="25" r="10" fill="#754D20"/>
-                    <circle cx="75" cy="25" r="10" fill="#754D20"/>
-                    <path d="M 30 50 Q 40 45 45 50" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
-                    <path d="M 70 50 Q 60 45 55 50" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
-                    <path d="M 40 70 Q 50 80 60 70" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
-                    <circle cx="50" cy="60" r="5" fill="#3E2723"/>
-                    <circle cx="25" cy="65" r="8" fill="#FFB5A7" opacity="0.6"/>
-                    <circle cx="75" cy="65" r="8" fill="#FFB5A7" opacity="0.6"/>
-                </svg>
-            </div>
-
-            <h2 class="text-4xl font-black text-[#FF8A8A] mt-2 mb-2">太棒了！</h2>
-            <p class="text-[#8B5A2B] font-bold text-lg mb-4">你完成了考驗 🍊</p>
-            
-            <div class="bg-[#FFFDF0] rounded-2xl p-4 mb-4 border-2 border-dashed border-[#A7E8D0] relative">
-                <!-- 獲得金幣提示 -->
-                <div id="earned-coins" class="absolute -right-3 -top-3 bg-[#FFD1A9] text-[#824E24] font-black text-sm px-3 py-1 rounded-full shadow-md border-2 border-white transform rotate-12">
-                    +0 金幣
-                </div>
-
-                <p class="text-gray-500 text-sm font-bold">你的成績</p>
-                <p id="final-time" class="text-4xl font-black text-[#2c5d4b] tabular-nums mt-1 mb-2">00:00.00</p>
-                
-                <p id="new-record-badge" class="hidden text-xs bg-rose-500 text-white font-bold px-2 py-1 rounded-full w-max mx-auto mb-2 animate-bounce">
-                    🎉 破紀錄啦！
-                </p>
-
-                <div class="inline-flex items-center justify-center bg-white px-4 py-2 rounded-full shadow-inner border border-gray-100">
-                    <span id="rank-display" class="text-2xl font-black mr-2">S</span>
-                    <span id="rank-message" class="text-sm font-bold text-gray-600">完美專注力！</span>
-                </div>
-            </div>
-
-            <div class="flex gap-3">
-                <button onclick="backToMenu()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-black py-4 px-2 rounded-2xl shadow-[0_5px_0_#9ca3af] active:shadow-[0_0px_0_#9ca3af] active:translate-y-[5px] transition-all text-lg">
-                    回選單
-                </button>
-                <button onclick="restartCurrentMode()" class="flex-[2] bg-[#FFC4C4] hover:bg-[#ffadad] text-[#8c3a3a] font-black py-4 px-2 rounded-2xl shadow-[0_5px_0_#df8a8a] active:shadow-[0_0px_0_#df8a8a] active:translate-y-[5px] transition-all text-lg">
-                    再來一次！
-                </button>
-            </div>
-        </div>
-    </div>
-
+<!-- ... existing code ... -->
     <div id="shop-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[80vh]" id="shop-modal-content">
             <button onclick="closeShop()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors">✕</button>
@@ -286,7 +67,7 @@
             
             <div class="bg-[#FFFDF0] rounded-xl p-3 mb-4 inline-flex items-center self-center gap-2 border border-[#E2D4FF]">
                 <span class="text-gray-500 font-bold text-sm">目前擁有</span>
-                <span class="text-2xl font-black text-[#8B5A2B]">🪙 <span id="shop-coin-display">0</span></span>
+                <span class="text-2xl font-black text-[#8B5A2B] flex items-center"><i class="coin-icon"></i> <span id="shop-coin-display">0</span></span>
             </div>
 
             <!-- 主題列表區塊 -->
@@ -296,375 +77,67 @@
         </div>
     </div>
 
+    <!-- 遊戲玩法與說明 Modal -->
+    <div id="info-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-left shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[80vh]" id="info-modal-content">
+            <button onclick="closeInfo()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center">✕</button>
+            
+            <h2 class="text-2xl font-black text-[#5C4033] mb-4 mt-2 flex justify-center items-center gap-2">
+                ❓ 遊戲玩法與說明
+            </h2>
+            
+            <div class="overflow-y-auto px-2 custom-scrollbar flex-1">
+                <div class="mb-5 bg-[#FFFDF0] p-4 rounded-2xl border border-[#FFF099]">
+                    <h3 class="font-bold text-[#754D20] text-lg mb-2">💡 什麼是舒爾特方格？</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed font-bold">
+                        舒爾特方格是全球公認最簡單有效的專注力訓練法。透過在隨機網格中快速、依序尋找目標，能有效提升視覺搜尋速度、擴大注意力廣度，並增強抗干擾能力與大腦反應力。
+                    </p>
+                </div>
+
+                <div class="bg-[#F3E8FF] p-4 rounded-2xl border border-[#E2D4FF]">
+                    <h3 class="font-bold text-[#534080] text-lg mb-2">🎮 怎麼玩？</h3>
+                    <ul class="text-gray-600 text-sm leading-relaxed font-bold space-y-2 list-decimal list-inside pl-1">
+                        <li>選擇喜歡的訓練內容（數字、ABC 或 ㄅㄆㄇ）。</li>
+                        <li>選擇網格難度與排列方式（經典或不規則）。</li>
+                        <li>眼睛盡量注視畫面<strong class="text-rose-500">中央</strong>，用「餘光」尋找目標。</li>
+                        <li>依照順序，用最快速度點擊所有方塊！</li>
+                        <li>過關速度越快，獲得的評級與金幣獎勵越高哦！</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex justify-center">
+                <button onclick="closeInfo()" class="w-full bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 rounded-2xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-lg">
+                    我知道了！
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- 狀態變數與設定 ---
-        let currentTotalNumbers = 25;
-        let currentLayout = 'irregular'; 
-        let currentTarget = 1;
-        let isPlaying = false;
-        let startTime = 0;
-        let timerInterval = null;
-
-        // 貨幣、主題、紀錄系統 (由 LocalStorage 讀取)
-        let coins = parseInt(localStorage.getItem('schulteCoins') || '0');
-        let unlockedThemes = JSON.parse(localStorage.getItem('schulteThemes') || '["default"]');
-        let currentTheme = localStorage.getItem('schulteCurrentTheme') || 'default';
-        let currentCharSet = 'numbers';
-        
-        // 紀錄格式: { "regular_9_numbers": 12000, ... } // 單位毫秒
-        let bestRecords = JSON.parse(localStorage.getItem('schulteRecords') || '{}');
-
-        // 字元替換包設定 (對應 1~25 的順序)
-        const CHAR_SETS = {
-            numbers: Array.from({length: 25}, (_, i) => (i + 1).toString()),
-            alphabets: Array.from({length: 25}, (_, i) => String.fromCharCode(65 + i)),
-            bopomofo: ['ㄅ','ㄆ','ㄇ','ㄈ','ㄉ','ㄊ','ㄋ','ㄌ','ㄍ','ㄎ','ㄏ','ㄐ','ㄑ','ㄒ','ㄓ','ㄔ','ㄕ','ㄖ','ㄗ','ㄘ','ㄙ','ㄧ','ㄨ','ㄩ','ㄚ']
-        };
-
-        // 模式名稱映射
-        const CHAR_SET_NAMES = { numbers: '數字', alphabets: 'ABC', bopomofo: 'ㄅㄆㄇ' };
-
-        // 主題資料
-        const THEMES = {
-            default: { id: 'default', name: '淨春水豚', bg: '#FFFDF0', cost: 0, icon: '🍊' },
-            ocean: { id: 'ocean', name: '深海藍', bg: '#E0F2FE', cost: 30, icon: '🌊' },
-            space: { id: 'space', name: '星空紫', bg: '#F3E8FF', cost: 60, icon: '🌌' },
-            forest: { id: 'forest', name: '森林綠', bg: '#ECFDF5', cost: 100, icon: '🌲' }
-        };
-
-        // 淨春型視覺設定池 (Clear Spring Palette)
-        const visualPool = {
-            colors: [
-                { bg: 'bg-[#A7E8D0]', text: 'text-[#215A43]', border: 'border-[#75BFA2]' },
-                { bg: 'bg-[#FFC4C4]', text: 'text-[#7D3232]', border: 'border-[#D99696]' },
-                { bg: 'bg-[#AEE1FF]', text: 'text-[#2D5A7A]', border: 'border-[#8ABDE3]' },
-                { bg: 'bg-[#FFF099]', text: 'text-[#756819]', border: 'border-[#D1C266]' },
-                { bg: 'bg-[#E2D4FF]', text: 'text-[#534080]', border: 'border-[#C2B2EB]' },
-                { bg: 'bg-[#FFD1A9]', text: 'text-[#824E24]', border: 'border-[#D9A076]' }
-            ],
-            // 簡化跨度設計，確保在 CSS Grid Dense 模式下不會破圖，大部分設定為 1x1
-            spans: [
-                'col-span-1 row-span-1', 'col-span-1 row-span-1', 'col-span-1 row-span-1', 
-                'col-span-2 row-span-1', 'col-span-1 row-span-2'
-            ],
-            sizes: ['text-3xl', 'text-4xl', 'text-5xl'],
-            radius: ['rounded-xl', 'rounded-2xl', 'rounded-[2rem]']
-        };
-
-        // --- DOM 元素綁定 ---
-        const menuScreen = document.getElementById('menu-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const gridContainer = document.getElementById('grid-container');
-        const timerDisplay = document.getElementById('timer');
-        const nextTargetDisplay = document.getElementById('next-target');
-        const modeTitle = document.getElementById('mode-title');
-        const winModal = document.getElementById('win-modal');
-        const winModalContent = document.getElementById('win-modal-content');
-        
-        // --- STREAMING_CHUNK:初始化與工具函式 ---
-        
-        // 初始化載入
-        document.getElementById('coin-count').textContent = coins;
-        document.getElementById('main-body').style.backgroundColor = THEMES[currentTheme].bg;
-        updateMenuRecords();
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
+<!-- ... existing code ... -->
+        function closeShop() {
+            document.getElementById('shop-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('shop-modal-content').classList.remove('scale-100');
+            document.getElementById('shop-modal-content').classList.add('scale-90');
         }
 
-        function getRandom(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
-        }
-
-        function formatTime(ms) {
-            if (ms === Infinity || !ms) return "--";
-            const minutes = Math.floor(ms / 60000);
-            const seconds = Math.floor((ms % 60000) / 1000);
-            const milliseconds = Math.floor((ms % 1000) / 10);
-            if (minutes > 0) {
-                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
-            }
-            return `${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
-        }
-
-        function getRecordKey(total, layout) {
-            return `${layout}_${total}_${currentCharSet}`;
-        }
-
-        // --- STREAMING_CHUNK:選單與顯示更新邏輯 ---
-
-        function changeCharSet() {
-            currentCharSet = document.getElementById('charset-select').value;
-            updateMenuRecords();
-        }
-
-        function updateMenuRecords() {
-            const configs = [
-                { id: 'record-regular-9', t: 9, l: 'regular' },
-                { id: 'record-regular-16', t: 16, l: 'regular' },
-                { id: 'record-regular-25', t: 25, l: 'regular' },
-                { id: 'record-irregular-16', t: 16, l: 'irregular' },
-                { id: 'record-irregular-25', t: 25, l: 'irregular' }
-            ];
-
-            configs.forEach(conf => {
-                const el = document.getElementById(conf.id);
-                const key = getRecordKey(conf.t, conf.l);
-                const record = bestRecords[key];
-                el.textContent = record ? `最佳: ${formatTime(record)}` : '最佳: --';
-            });
-        }
-
-        function updateTimer() {
-            const elapsedTime = Date.now() - startTime;
-            timerDisplay.textContent = formatTime(elapsedTime);
-        }
-
-        // --- STREAMING_CHUNK:遊戲核心渲染與邏輯 ---
-
-        function renderBoard() {
-            gridContainer.innerHTML = '';
-            
-            // 基礎陣列產生 (1 到 N)
-            let numbers = Array.from({ length: currentTotalNumbers }, (_, i) => i + 1);
-            numbers = shuffleArray(numbers);
-
-            // 根據模式設定 Grid 的 CSS
-            if (currentLayout === 'regular') {
-                if (currentTotalNumbers === 9) {
-                    gridContainer.className = 'grid grid-cols-3 gap-3 p-2 w-full max-w-[320px] aspect-square';
-                } else if (currentTotalNumbers === 16) {
-                    gridContainer.className = 'grid grid-cols-4 gap-3 p-2 w-full max-w-[400px] aspect-square';
-                } else {
-                    gridContainer.className = 'grid grid-cols-5 gap-3 p-2 w-full max-w-[500px] aspect-square';
-                }
-            } else {
-                // 不規則瀑布流設定
-                // 為了不跑版，固定欄數，依賴 dense 填補空隙
-                if (currentTotalNumbers === 16) {
-                    gridContainer.className = 'grid grid-cols-4 md:grid-cols-5 grid-flow-dense auto-rows-[80px] md:auto-rows-[90px] gap-3 p-2 w-full max-w-2xl';
-                } else {
-                    gridContainer.className = 'grid grid-cols-4 md:grid-cols-6 grid-flow-dense auto-rows-[70px] md:auto-rows-[85px] gap-3 p-2 w-full max-w-4xl';
-                }
-            }
-
-            // 控制大方塊的數量，避免 Grid 無法排滿導致破圖
-            let largeBlocksCount = 0;
-            const maxLargeBlocks = currentTotalNumbers === 16 ? 3 : 5;
-
-            numbers.forEach((num, index) => {
-                const btn = document.createElement('button');
-                btn.dataset.number = num; 
-                btn.textContent = CHAR_SETS[currentCharSet][num - 1]; // 根據字元包渲染
-
-                if (currentLayout === 'regular') {
-                    // 規則模式樣式
-                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-b-4 border-[#E2D4FF]
-                                    bg-white text-[#5C4033] 
-                                    text-3xl md:text-4xl rounded-2xl
-                                    relative select-none shadow-sm cursor-pointer`;
-                } else {
-                    // 不規則模式樣式
-                    const colorObj = getRandom(visualPool.colors);
-                    let spanClass = getRandom(visualPool.spans);
-                    const sizeClass = getRandom(visualPool.sizes);
-                    const radiusClass = getRandom(visualPool.radius);
-
-                    // 限制大方塊數量與手機版寬度
-                    if (spanClass !== 'col-span-1 row-span-1') {
-                        if (largeBlocksCount >= maxLargeBlocks || (window.innerWidth < 768 && spanClass.includes('col-span-2'))) {
-                            spanClass = 'col-span-1 row-span-1';
-                        } else {
-                            largeBlocksCount++;
-                        }
-                    }
-
-                    btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-b-4 ${colorObj.border}
-                                    ${colorObj.bg} ${colorObj.text} 
-                                    ${spanClass} ${sizeClass} ${radiusClass}
-                                    relative select-none cursor-pointer`;
-                    // 增加微光澤
-                    btn.innerHTML += `<div class="absolute top-0 left-0 right-0 h-1/2 bg-white/20 rounded-t-full pointer-events-none"></div>`;
-                }
-                
-                btn.style.animationDelay = `${index * 0.02}s`;
-                btn.addEventListener('click', handleCellClick);
-                // 支援觸控裝置的快速反應
-                btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleCellClick.call(btn); }, {passive: false});
-
-                gridContainer.appendChild(btn);
-            });
-        }
-
-        function handleCellClick() {
-            if (!isPlaying) return;
-            
-            const clickedNumber = parseInt(this.dataset.number);
-
-            if (clickedNumber === currentTarget) {
-                // 點擊正確：縮小消失，保留空間
-                this.classList.add('found');
-
-                currentTarget++;
-                
-                if (currentTarget > currentTotalNumbers) {
-                    endGame();
-                } else {
-                    // 更新下一個目標
-                    nextTargetDisplay.textContent = CHAR_SETS[currentCharSet][currentTarget - 1];
-                    nextTargetDisplay.classList.remove('pop-in');
-                    void nextTargetDisplay.offsetWidth; // 觸發重繪
-                    nextTargetDisplay.classList.add('pop-in');
-                }
-            } else {
-                // 點擊錯誤：抖動紅光提示
-                this.classList.remove('shake-animation');
-                void this.offsetWidth;
-                this.classList.add('shake-animation');
-                
-                setTimeout(() => {
-                    this.classList.remove('shake-animation');
-                }, 400);
-            }
-        }
-
-        // --- STREAMING_CHUNK:遊戲流程控制 ---
-
-        function startGame(totalNumbers, layout = 'irregular') {
-            currentTotalNumbers = totalNumbers;
-            currentLayout = layout;
-            
-            let modeName = layout === 'regular' ? '規則' : '不規則';
-            let charName = CHAR_SET_NAMES[currentCharSet];
-            modeTitle.textContent = `${modeName} ${charName} (${currentTotalNumbers})`;
-            
-            menuScreen.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
-            gameScreen.classList.add('flex');
-            
-            // 重置狀態
-            isPlaying = true;
-            currentTarget = 1;
-            nextTargetDisplay.textContent = CHAR_SETS[currentCharSet][0];
-            timerDisplay.textContent = "00:00.00";
-            
-            closeModal();
-            renderBoard();
-
-            // 啟動計時器
-            clearInterval(timerInterval);
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 30);
-        }
-
-        function calculateRank(timeInSeconds, totalNum) {
-            let rank, message, colorClass;
-            
-            // 鼓勵性質評價，最低C級
-            if (totalNum === 9) {
-                if (timeInSeconds <= 10) { rank = 'S'; message = '神乎其技！'; colorClass = 'text-[#FF8A8A]'; }
-                else if (timeInSeconds <= 15) { rank = 'A'; message = '極度專注！'; colorClass = 'text-[#FF9800]'; }
-                else if (timeInSeconds <= 20) { rank = 'B'; message = '表現很棒！'; colorClass = 'text-[#4CAF50]'; }
-                else { rank = 'C'; message = '漸入佳境，繼續保持！'; colorClass = 'text-[#2196F3]'; }
-            } else if (totalNum === 16) {
-                if (timeInSeconds <= 20) { rank = 'S'; message = '神乎其技！'; colorClass = 'text-[#FF8A8A]'; }
-                else if (timeInSeconds <= 30) { rank = 'A'; message = '極度專注！'; colorClass = 'text-[#FF9800]'; }
-                else if (timeInSeconds <= 45) { rank = 'B'; message = '表現很棒！'; colorClass = 'text-[#4CAF50]'; }
-                else { rank = 'C'; message = '穩紮穩打，再來一次！'; colorClass = 'text-[#2196F3]'; }
-            } else { // 25
-                if (timeInSeconds <= 35) { rank = 'S'; message = '鷹眼水豚！'; colorClass = 'text-[#FF8A8A]'; }
-                else if (timeInSeconds <= 55) { rank = 'A'; message = '注意力超群！'; colorClass = 'text-[#FF9800]'; }
-                else if (timeInSeconds <= 80) { rank = 'B'; message = '很有潛力喔！'; colorClass = 'text-[#4CAF50]'; }
-                else { rank = 'C'; message = '水豚為你加油！'; colorClass = 'text-[#2196F3]'; }
-            }
-            return { rank, message, colorClass };
-        }
-
-        function endGame() {
-            isPlaying = false;
-            clearInterval(timerInterval);
-            const totalTimeMs = Date.now() - startTime;
-            const timeInSeconds = totalTimeMs / 1000;
-            
-            document.getElementById('final-time').textContent = formatTime(totalTimeMs);
-            
-            // 處理紀錄保存
-            const recordKey = getRecordKey(currentTotalNumbers, currentLayout);
-            const previousBest = bestRecords[recordKey] || Infinity;
-            const isNewRecord = totalTimeMs < previousBest;
-            
-            if (isNewRecord) {
-                bestRecords[recordKey] = totalTimeMs;
-                localStorage.setItem('schulteRecords', JSON.stringify(bestRecords));
-                document.getElementById('new-record-badge').classList.remove('hidden');
-                updateMenuRecords(); // 更新主選單的文字
-            } else {
-                document.getElementById('new-record-badge').classList.add('hidden');
-            }
-
-            // 設定評價
-            const eval = calculateRank(timeInSeconds, currentTotalNumbers);
-            const rankDisplay = document.getElementById('rank-display');
-            rankDisplay.textContent = eval.rank;
-            rankDisplay.className = `text-3xl font-black mr-2 ${eval.colorClass}`;
-            document.getElementById('rank-message').textContent = eval.message;
-            
-            // 計算獲得金幣
-            let earnedCoins = 1; // 過關保底 1 元
-            if (eval.rank === 'S') earnedCoins = 10;
-            else if (eval.rank === 'A') earnedCoins = 5;
-            else if (eval.rank === 'B') earnedCoins = 2;
-            
-            coins += earnedCoins;
-            localStorage.setItem('schulteCoins', coins);
-            document.getElementById('coin-count').textContent = coins;
-            document.getElementById('earned-coins').textContent = `+${earnedCoins} 金幣`;
-
-            // 彩蛋：S級或破紀錄觸發彩紙與皇冠
-            const crown = document.getElementById('capybara-crown');
-            if (eval.rank === 'S' || isNewRecord) {
-                crown.classList.remove('hidden');
-                void crown.offsetWidth;
-                crown.classList.add('crown-animate');
-                triggerConfetti();
-            } else {
-                crown.classList.add('hidden');
-                crown.classList.remove('crown-animate');
-            }
-            
-            // 顯示過關畫面
-            winModal.classList.remove('pointer-events-none', 'opacity-0');
+        function openInfo() {
+            document.getElementById('info-modal').classList.remove('pointer-events-none', 'opacity-0');
             setTimeout(() => {
-                winModalContent.classList.remove('scale-90');
-                winModalContent.classList.add('scale-100');
+                document.getElementById('info-modal-content').classList.remove('scale-90');
+                document.getElementById('info-modal-content').classList.add('scale-100');
             }, 10);
         }
 
-        function restartCurrentMode() {
-            startGame(currentTotalNumbers, currentLayout);
+        function closeInfo() {
+            document.getElementById('info-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('info-modal-content').classList.remove('scale-100');
+            document.getElementById('info-modal-content').classList.add('scale-90');
         }
 
-        function backToMenu() {
-            isPlaying = false;
-            clearInterval(timerInterval);
-            closeModal();
-            gameScreen.classList.add('hidden');
-            gameScreen.classList.remove('flex');
-            menuScreen.classList.remove('hidden');
-        }
-
-        function closeModal() {
-            winModal.classList.add('opacity-0', 'pointer-events-none');
-            winModalContent.classList.remove('scale-100');
-            winModalContent.classList.add('scale-90');
-        }
-
-        // --- STREAMING_CHUNK:商店與特效系統 ---
-
+        function buyTheme(themeId) {
+<!-- ... existing code ... -->
         function openShop() {
             document.getElementById('shop-coin-display').textContent = coins;
             const shopItems = document.getElementById('shop-items');
@@ -685,7 +158,7 @@
                 } else {
                     const canAfford = coins >= theme.cost;
                     btnHtml = `<button onclick="buyTheme('${theme.id}')" class="w-full py-2 rounded-xl ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_3px_0_#d9a076]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-sm active:translate-y-[3px] active:shadow-none transition-all flex justify-center items-center gap-1">
-                                    <span class="text-xs">🪙</span> ${theme.cost} 解鎖
+                                    <i class="coin-icon" style="font-size: 0.8rem; margin-top: 2px;"></i> ${theme.cost} 解鎖
                                </button>`;
                 }
 
@@ -697,63 +170,4 @@
                 `;
                 shopItems.appendChild(card);
             });
-
-            document.getElementById('shop-modal').classList.remove('pointer-events-none', 'opacity-0');
-            setTimeout(() => {
-                document.getElementById('shop-modal-content').classList.remove('scale-90');
-                document.getElementById('shop-modal-content').classList.add('scale-100');
-            }, 10);
-        }
-
-        function closeShop() {
-            document.getElementById('shop-modal').classList.add('opacity-0', 'pointer-events-none');
-            document.getElementById('shop-modal-content').classList.remove('scale-100');
-            document.getElementById('shop-modal-content').classList.add('scale-90');
-        }
-
-        function buyTheme(themeId) {
-            const theme = THEMES[themeId];
-            if (coins >= theme.cost && !unlockedThemes.includes(themeId)) {
-                coins -= theme.cost;
-                unlockedThemes.push(themeId);
-                
-                localStorage.setItem('schulteCoins', coins);
-                localStorage.setItem('schulteThemes', JSON.stringify(unlockedThemes));
-                
-                document.getElementById('coin-count').textContent = coins;
-                equipTheme(themeId); 
-            }
-        }
-
-        function equipTheme(themeId) {
-            currentTheme = themeId;
-            localStorage.setItem('schulteCurrentTheme', themeId);
-            document.getElementById('main-body').style.backgroundColor = THEMES[themeId].bg;
-            openShop(); // 刷新介面
-        }
-
-        function triggerConfetti() {
-            const colors = ['#FFC4C4', '#A7E8D0', '#FFF099', '#AEE1FF', '#E2D4FF', '#FFD1A9'];
-            for (let i = 0; i < 70; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                
-                const size = Math.random() * 8 + 6;
-                confetti.style.width = `${size}px`;
-                confetti.style.height = `${size}px`;
-                
-                confetti.style.animationDuration = (Math.random() * 2.5 + 2) + 's';
-                confetti.style.animationDelay = (Math.random() * 0.5) + 's';
-                
-                document.body.appendChild(confetti);
-                
-                setTimeout(() => {
-                    if(document.body.contains(confetti)) confetti.remove();
-                }, 5000);
-            }
-        }
-    </script>
-</body>
-</html>
+<!-- ... existing code ... -->
