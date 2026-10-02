@@ -26,7 +26,6 @@
             50% { transform: translateY(-10px); }
         }
 
-        /* 純 CSS 繪製的金幣圖示，解決Emoji支援度問題 */
         .coin-icon {
             display: inline-block;
             width: 1.2em;
@@ -55,22 +54,22 @@
             opacity: 1;
         }
 
-        /* 遊戲方塊樣式 */
         .grid-piece {
             transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s ease, background-color 0.3s ease;
             user-select: none;
+            /* 避免 iOS 上長按選取文字 */
+            -webkit-touch-callout: none; 
         }
 
-        /* 點擊後消失模式 */
         .grid-piece.clicked {
             opacity: 0;
             pointer-events: none;
             transform: scale(0.8);
         }
 
-        /* 點擊後保留模式（無視覺變化，僅取消點擊事件避免干擾） */
         .grid-piece.clicked-keep {
             pointer-events: none;
+            filter: brightness(0.9);
         }
 
         .shake {
@@ -94,16 +93,21 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: rgba(0,0,0,0.15); 
             border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden">
+
     <!-- 頂部選單列：左上角放按鈕，右上角放金幣與稱號 -->
     <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-start z-30 pointer-events-none">
         <div class="flex flex-col gap-2 pointer-events-auto">
-            <button onclick="openShop()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
+            <button onclick="openShop()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 active:scale-95 transition-transform">
                 🛍️ 商店
             </button>
-            <button onclick="openAchievements()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
+            <button onclick="openAchievements()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 active:scale-95 transition-transform">
                 🏆 成就
             </button>
-            <button onclick="openInfo()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 transition-transform">
+            <button onclick="openInfo()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 active:scale-95 transition-transform">
                 ❓ 說明
             </button>
         </div>
@@ -113,19 +117,18 @@
                 <i class="coin-icon"></i> <span id="coin-count">0</span>
             </div>
             <!-- 稱號展示標籤 -->
-            <div id="current-title-badge" onclick="openAchievements()" class="bg-[#FFFDF0] backdrop-blur-md px-3 py-1 rounded-full shadow-xs font-bold text-xs text-[#D2691E] border border-[#FFF099] cursor-pointer hover:scale-105 transition-transform">
+            <div id="current-title-badge" onclick="openAchievements()" class="bg-[#FFFDF0] backdrop-blur-md px-3 py-1 rounded-full shadow-xs font-bold text-xs text-[#D2691E] border border-[#FFF099] cursor-pointer hover:scale-105 active:scale-95 transition-transform">
                 🌱 稱號: 初學乍練
             </div>
         </div>
     </div>
 
     <!-- 主選單畫面 -->
-    <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl z-10 flex-1 transition-opacity duration-300 mt-12 sm:mt-8">
+    <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl mx-auto z-10 flex-1 transition-opacity duration-300 mt-20 sm:mt-12 pb-10">
         
         <!-- 舒爾特方格意象 LOGO -->
-        <svg class="w-32 h-32 md:w-40 md:h-40 logo-float mb-4 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <svg class="w-28 h-28 md:w-36 md:h-36 logo-float mb-4 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <rect x="10" y="10" width="80" height="80" rx="20" fill="#FFE4B5"/>
-            <!-- 3x3 方格 -->
             <rect x="20" y="20" width="16" height="16" rx="6" fill="#FFB6C1"/>
             <rect x="42" y="20" width="16" height="16" rx="6" fill="#A7E8D0"/>
             <rect x="64" y="20" width="16" height="16" rx="6" fill="#FFD1A9"/>
@@ -143,7 +146,6 @@
         
         <!-- 遊戲設定選單區塊 -->
         <div class="mb-6 bg-white/60 p-3 rounded-2xl backdrop-blur-sm border border-white/50 flex flex-col sm:flex-row gap-3 shadow-sm">
-            <!-- 模式選單將由 JavaScript 動態產生，以反映解鎖狀態 -->
             <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center text-sm sm:text-base">
             </select>
             
@@ -158,17 +160,17 @@
 
         <div class="w-full max-w-sm px-4 flex flex-col gap-4">
             <!-- 基礎模式區域 -->
-            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm">
+            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🌱 基礎模式 (16格)</h2>
                 <div class="flex gap-3">
                     <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(16, 'regular')" class="h-14 bg-[#FFB6C1] hover:bg-[#ff9eab] text-[#8B0A50] font-black rounded-xl shadow-[0_4px_0_#d98292] active:shadow-[0_0px_0_#d98292] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                        <button onclick="startGame(16, 'regular')" class="h-14 bg-[#FFB6C1] text-[#8B0A50] font-black rounded-xl shadow-[0_4px_0_#d98292] active:shadow-[0_0px_0_#d98292] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>📦 規則排列</span>
                         </button>
                         <p id="record-regular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
                     <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(16, 'irregular')" class="h-14 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                        <button onclick="startGame(16, 'irregular')" class="h-14 bg-[#FFD1A9] text-[#824E24] font-black rounded-xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>🎨 不規則</span>
                         </button>
                         <p id="record-irregular-16" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
@@ -177,20 +179,37 @@
             </div>
 
             <!-- 挑戰模式區域 -->
-            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm">
+            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🔥 挑戰模式 (25格)</h2>
                 <div class="flex gap-3">
                     <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(25, 'regular')" class="h-14 bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                        <button onclick="startGame(25, 'regular')" class="h-14 bg-[#A7E8D0] text-[#215A43] font-black rounded-xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>📦 規則排列</span>
                         </button>
                         <p id="record-regular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
                     </div>
                     <div class="flex-1 flex flex-col">
-                        <button onclick="startGame(25, 'irregular')" class="h-14 bg-[#FFE4B5] hover:bg-[#ffcc80] text-[#8B4500] font-black rounded-xl shadow-[0_4px_0_#d4a357] active:shadow-[0_0px_0_#d4a357] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                        <button onclick="startGame(25, 'irregular')" class="h-14 bg-[#FFE4B5] text-[#8B4500] font-black rounded-xl shadow-[0_4px_0_#d4a357] active:shadow-[0_0px_0_#d4a357] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
                             <span>🎨 不規則</span>
                         </button>
                         <p id="record-irregular-25" class="text-center text-xs text-gray-500 font-bold mt-2">最佳: --</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 限時挑戰區域 -->
+            <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
+                <h2 class="text-[#8B5A2B] font-black text-center mb-3">⏳ 限時挑戰</h2>
+                <div class="flex gap-3">
+                    <div class="flex-1 flex flex-col">
+                        <button onclick="startGame(16, 'regular', 15)" class="h-14 bg-[#FFD700] text-[#8B6508] font-black rounded-xl shadow-[0_4px_0_#DAA520] active:shadow-[0_0px_0_#DAA520] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                            <span>⏱️ 16格 (15秒)</span>
+                        </button>
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                        <button onclick="startGame(25, 'regular', 30)" class="h-14 bg-[#FFA500] text-[#8B4500] font-black rounded-xl shadow-[0_4px_0_#CD8500] active:shadow-[0_0px_0_#CD8500] active:translate-y-[4px] transition-all flex items-center justify-center gap-2 text-sm md:text-base">
+                            <span>⏱️ 25格 (30秒)</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -198,15 +217,15 @@
     </div>
 
     <!-- 遊戲進行畫面 -->
-    <div id="game-screen" class="hidden w-full flex-col items-center w-full relative mt-12 sm:mt-8 px-2">
-        <header class="w-full max-w-3xl flex flex-col items-center mb-4 relative z-10">
-            <div class="bg-white/80 backdrop-blur-md px-6 py-2 rounded-3xl shadow-sm mb-4 border border-white">
+    <div id="game-screen" class="hidden w-full flex-col items-center justify-center flex-1 relative px-4 pb-10 pt-20">
+        <header class="w-full max-w-[500px] flex flex-col items-center mb-6 relative z-10">
+            <div class="bg-white/80 backdrop-blur-md px-8 py-2 rounded-3xl shadow-sm mb-4 border border-white">
                 <p class="text-gray-500 font-bold text-sm text-center">計時</p>
                 <p id="timer" class="text-4xl font-black text-[#5C4033] tabular-nums tracking-tighter">0.00</p>
             </div>
             
-            <div class="w-full flex justify-between items-center px-2">
-                <button onclick="backToMenu()" class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors font-bold border border-gray-100 cursor-pointer">
+            <div class="w-full flex justify-between items-center">
+                <button onclick="backToMenu()" class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-500 font-bold border border-gray-100 cursor-pointer active:scale-95 transition-transform">
                     ✕
                 </button>
                 <div class="bg-[#FFFDF0] px-5 py-2 rounded-2xl shadow-inner border-2 border-[#FFF099] flex items-center gap-3">
@@ -228,7 +247,6 @@
             
             <div class="relative inline-block">
                 <div id="modal-crown" class="crown">👑</div>
-                <!-- 獎盃 LOGO -->
                 <svg class="w-24 h-24 mx-auto mb-2 drop-shadow-md logo-float" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="50" cy="50" r="45" fill="#FFE4B5"/>
                     <path d="M 30 40 L 70 40 L 60 70 L 40 70 Z" fill="#FFDF00"/>
@@ -253,16 +271,16 @@
                 <span class="text-lg font-black text-[#D2691E] flex items-center"><i class="coin-icon"></i> +<span id="reward-coins">0</span></span>
             </div>
             
-            <button onclick="backToMenu()" class="w-full bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-black py-4 rounded-2xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all text-lg cursor-pointer">
+            <button onclick="backToMenu()" class="w-full bg-[#FFD1A9] text-[#824E24] font-black py-4 rounded-2xl shadow-[0_4px_0_#d9a076] active:shadow-[0_0px_0_#d9a076] active:translate-y-[4px] transition-all text-lg cursor-pointer">
                 回主畫面
             </button>
         </div>
     </div>
 
-    <!-- 優化版商店視窗 -->
+    <!-- 商店視窗 -->
     <div id="shop-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh] h-[600px]" id="shop-modal-content">
-            <button onclick="closeShop()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
+            <button onclick="closeShop()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
             
             <div class="flex-shrink-0">
                 <h2 class="text-2xl md:text-3xl font-black text-[#5C4033] mb-2 mt-2 flex justify-center items-center gap-2">
@@ -276,27 +294,19 @@
             </div>
 
             <div class="overflow-y-auto px-2 pb-4 custom-scrollbar flex-1 text-left relative">
-                
-                <!-- 遊戲模式解鎖區 -->
                 <div class="mb-5">
                     <h3 class="font-bold text-[#8B5A2B] mb-3 flex items-center gap-2 border-b-2 border-gray-100 pb-2">
                         <span class="text-xl">🎮</span> 解鎖新模式
                     </h3>
-                    <div id="shop-modes" class="flex flex-col gap-2">
-                        <!-- 動態產生模式卡片 -->
-                    </div>
+                    <div id="shop-modes" class="flex flex-col gap-2"></div>
                 </div>
                 
-                <!-- 外觀主題解鎖區 -->
                 <div>
                     <h3 class="font-bold text-[#8B5A2B] mb-3 flex items-center gap-2 border-b-2 border-gray-100 pb-2">
                         <span class="text-xl">🎨</span> 解鎖新主題
                     </h3>
-                    <div id="shop-themes" class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <!-- 動態產生主題卡片 -->
-                    </div>
+                    <div id="shop-themes" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -304,7 +314,7 @@
     <!-- 說明視窗 -->
     <div id="info-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-left shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[80vh]" id="info-modal-content">
-            <button onclick="closeInfo()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer">✕</button>
+            <button onclick="closeInfo()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer">✕</button>
             
             <h2 class="text-2xl font-black text-[#5C4033] mb-4 mt-2 flex justify-center items-center gap-2">
                 ❓ 遊戲說明
@@ -331,7 +341,7 @@
             </div>
             
             <div class="mt-4 flex justify-center">
-                <button onclick="closeInfo()" class="w-full bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-3 rounded-2xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-lg cursor-pointer">
+                <button onclick="closeInfo()" class="w-full bg-[#A7E8D0] text-[#215A43] font-black py-3 rounded-2xl shadow-[0_4px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[4px] transition-all text-lg cursor-pointer">
                     我知道了！
                 </button>
             </div>
@@ -341,7 +351,7 @@
     <!-- 成就視窗 -->
     <div id="achievements-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-6 max-w-md w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh] h-[550px]" id="achievements-modal-content">
-            <button onclick="closeAchievements()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl hover:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
+            <button onclick="closeAchievements()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
             
             <div class="flex-shrink-0">
                 <h2 class="text-2xl md:text-3xl font-black text-[#5C4033] mb-2 mt-2 flex justify-center items-center gap-2">
@@ -367,10 +377,10 @@
         let gameSize = 16;
         let gameMode = 'regular'; 
         let clickMode = 'disappear'; 
+        let gameTimeLimit = 0;
         
         let coins = parseInt(localStorage.getItem('capy_coins') || '0');
         
-        // 【優化】商店系統配置資料
         const SHOP_ITEMS = {
             modes: [
                 { id: 'mode_abc', name: '英文模式', desc: '解鎖 A 到 Y 字母', cost: 50, icon: '🔤' },
@@ -398,12 +408,11 @@
         let currentTheme = localStorage.getItem('schulte_theme') || 'theme_default';
         let unlockedItems = [];
 
-        // 成就與稱號系統資料
         const ACHIEVEMENTS = [
-            { id: 'ach_novice', title: '🌱 初學乍練', desc: '完成任意一場舒爾特方格遊戲', condition: () => totalGamesPlayed >= 1 },
-            { id: 'ach_sharp', title: '⚡ 眼明手快', desc: '在任意模式中獲得 S 級評價', condition: () => hasAchievedS },
+            { id: 'ach_novice', title: '🌱 初學乍練', desc: '完成任意一場遊戲', condition: () => totalGamesPlayed >= 1 },
+            { id: 'ach_sharp', title: '⚡ 眼明手快', desc: '在任意模式獲得 S 級', condition: () => hasAchievedS },
             { id: 'ach_rich', title: '💰 金幣富翁', desc: '累計獲得 100 枚金幣', condition: () => totalEarnedCoins >= 100 },
-            { id: 'ach_fashion', title: '🎨 風格大師', desc: '解鎖 3 種以上的外觀主題', condition: () => unlockedItems.filter(i => i.startsWith('theme_')).length >= 3 },
+            { id: 'ach_fashion', title: '🎨 風格大師', desc: '解鎖 3 種外觀主題', condition: () => unlockedItems.filter(i => i.startsWith('theme_')).length >= 3 },
             { id: 'ach_master', title: '👑 舒爾特之神', desc: '解鎖所有遊戲模式與主題', condition: () => unlockedItems.length >= (SHOP_ITEMS.modes.length + 1 + SHOP_ITEMS.themes.length) }
         ];
 
@@ -423,23 +432,10 @@
             updateTitleDisplay();
         };
 
-        // 檢查並解鎖成就
-        function checkAchievements() {
-            ACHIEVEMENTS.forEach(ach => {
-                if (!unlockedAchievements.includes(ach.id) && ach.condition()) {
-                    unlockedAchievements.push(ach.id);
-                    localStorage.setItem('schulte_achievements', JSON.stringify(unlockedAchievements));
-                }
-            });
-        }
-
-        function updateTitleDisplay() {
-            document.getElementById('current-title-badge').textContent = `稱號: ${currentTitle}`;
-        }
-
+        // 修復: 補充完整的 migrateStorage 函式
+        function migrateStorage() {
             let loadedItems = JSON.parse(localStorage.getItem('schulte_unlocked') || 'null');
             if (!loadedItems) {
-                // 如果是新玩家或從舊版升級
                 unlockedItems = ['theme_default', 'mode_123'];
                 let oldUnlocked = JSON.parse(localStorage.getItem('capy_unlocked') || '[]');
                 oldUnlocked.forEach(item => {
@@ -456,16 +452,26 @@
             localStorage.setItem('schulte_unlocked', JSON.stringify(unlockedItems));
         }
 
-        // 動態生成模式選單（未解鎖加上鎖頭）
+        function checkAchievements() {
+            ACHIEVEMENTS.forEach(ach => {
+                if (!unlockedAchievements.includes(ach.id) && ach.condition()) {
+                    unlockedAchievements.push(ach.id);
+                    localStorage.setItem('schulte_achievements', JSON.stringify(unlockedAchievements));
+                }
+            });
+        }
+
+        function updateTitleDisplay() {
+            document.getElementById('current-title-badge').textContent = `稱號: ${currentTitle}`;
+        }
+
         function updateModeSelect() {
             const select = document.getElementById('char-type-select');
             const currentVal = select.value || '123';
             select.innerHTML = '';
             
-            // 基礎數字模式永遠可用
             select.add(new Option(`🔢 數字模式 (1-25)`, '123'));
             
-            // 處理其他需要解鎖的模式
             ['abc', 'bopomo', 'emoji'].forEach(modeKey => {
                 const isUnlocked = unlockedItems.includes(`mode_${modeKey}`);
                 const option = document.createElement('option');
@@ -481,7 +487,6 @@
                 select.add(option);
             });
             
-            // 如果原本選的模式被鎖住了（異常狀況），退回123
             const targetOption = select.querySelector(`option[value="${currentVal}"]`);
             if (targetOption && !targetOption.disabled) {
                 select.value = currentVal;
@@ -518,9 +523,10 @@
             });
         }
 
-        function startGame(size, mode) {
+        function startGame(size, mode, timeLimit = 0) {
             gameSize = size;
             gameMode = mode;
+            gameTimeLimit = timeLimit;
             currentTargetIndex = 0;
             isPlaying = true;
 
@@ -535,7 +541,7 @@
             updateNextTargetDisplay();
             generateGrid();
             
-            document.getElementById('timer').textContent = "0.00";
+            document.getElementById('timer').textContent = gameTimeLimit > 0 ? gameTimeLimit.toFixed(2) : "0.00";
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 10);
         }
@@ -587,21 +593,26 @@
             if (!isPlaying) return;
 
             if (value === currentSequence[currentTargetIndex]) {
+                // 優化: 加入短暫震動回饋 (若裝置支援)
+                if (navigator.vibrate) navigator.vibrate(20);
+
                 if (clickMode === 'disappear') {
                     btn.classList.add('clicked');
                 } else {
-                    // 保留模式：完全無視覺變化，僅取消指針事件避免重複點擊
                     btn.classList.add('clicked-keep');
                 }
                 
                 currentTargetIndex++;
                 
                 if (currentTargetIndex >= currentSequence.length) {
-                    endGame();
+                    endGame(true);
                 } else {
                     updateNextTargetDisplay();
                 }
             } else {
+                // 優化: 錯誤時給予連續震動回饋
+                if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
+
                 btn.classList.remove('shake');
                 void btn.offsetWidth; 
                 btn.classList.add('shake');
@@ -609,11 +620,21 @@
         }
 
         function updateTimer() {
-            const elapsed = (Date.now() - startTime) / 1000;
-            document.getElementById('timer').textContent = elapsed.toFixed(2);
+            if (gameTimeLimit > 0) {
+                const remaining = gameTimeLimit - (Date.now() - startTime) / 1000;
+                if (remaining <= 0) {
+                    document.getElementById('timer').textContent = "0.00";
+                    endGame(false); 
+                } else {
+                    document.getElementById('timer').textContent = remaining.toFixed(2);
+                }
+            } else {
+                const elapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('timer').textContent = elapsed.toFixed(2);
+            }
         }
 
-        function endGame() {
+        function endGame(isSuccess = true) {
             isPlaying = false;
             clearInterval(timerInterval);
             
@@ -621,27 +642,41 @@
             localStorage.setItem('schulte_total_games', totalGamesPlayed);
 
             const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-            document.getElementById('final-time').innerHTML = `${finalTime}<span class="text-lg text-gray-400 ml-1">s</span>`;
             
             let rating = 'C';
             let earnedCoins = 5;
             let msg = "繼續加油！";
             const timeNum = parseFloat(finalTime);
             
-            const standard = gameSize === 16 ? { s: 12, a: 18, b: 25 } : { s: 25, a: 35, b: 50 };
+            if (!isSuccess) {
+                document.getElementById('final-time').innerHTML = `<span class="text-3xl text-red-500">時間到！</span>`;
+                rating = 'Fail';
+                earnedCoins = 1;
+                msg = "差一點點！再試一次吧！";
+            } else {
+                document.getElementById('final-time').innerHTML = `${finalTime}<span class="text-lg text-gray-400 ml-1">s</span>`;
+                
+                if (gameTimeLimit > 0) {
+                    rating = 'S'; earnedCoins = 50; msg = "極限挑戰成功！";
+                    hasAchievedS = true;
+                    localStorage.setItem('schulte_has_s', 'true');
+                } else {
+                    const standard = gameSize === 16 ? { s: 12, a: 18, b: 25 } : { s: 25, a: 35, b: 50 };
 
-            if (timeNum <= standard.s) {
-                rating = 'S'; earnedCoins = 30; msg = "太神啦！專注力大師！";
-                hasAchievedS = true;
-                localStorage.setItem('schulte_has_s', 'true');
-            } else if (timeNum <= standard.a) {
-                rating = 'A'; earnedCoins = 15; msg = "表現非常棒！";
-            } else if (timeNum <= standard.b) {
-                rating = 'B'; earnedCoins = 10; msg = "漸入佳境，繼續保持！";
+                    if (timeNum <= standard.s) {
+                        rating = 'S'; earnedCoins = 30; msg = "太神啦！專注力大師！";
+                        hasAchievedS = true;
+                        localStorage.setItem('schulte_has_s', 'true');
+                    } else if (timeNum <= standard.a) {
+                        rating = 'A'; earnedCoins = 15; msg = "表現非常棒！";
+                    } else if (timeNum <= standard.b) {
+                        rating = 'B'; earnedCoins = 10; msg = "漸入佳境，繼續保持！";
+                    }
+                }
             }
 
             document.getElementById('rating-text').textContent = `評級: ${rating}`;
-            document.getElementById('rating-text').style.color = rating === 'S' ? '#FF4500' : '#D2691E';
+            document.getElementById('rating-text').style.color = rating === 'S' ? '#FF4500' : (rating === 'Fail' ? '#8B0000' : '#D2691E');
             document.getElementById('encouragement-text').textContent = msg;
             
             coins += earnedCoins;
@@ -651,20 +686,66 @@
             document.getElementById('reward-coins').textContent = earnedCoins;
             updateCoinDisplay();
 
-            const recordKey = `score_${gameMode}_${gameSize}_${clickMode}_${timeLimit}`;
-            const oldRecord = parseFloat(localStorage.getItem(recordKey) || '999');
-            if (timeNum < oldRecord) {
-                localStorage.setItem(recordKey, finalTime);
+            if (isSuccess && gameTimeLimit === 0) {
+                const recordKey = `score_${gameMode}_${gameSize}_${clickMode}`;
+                const oldRecord = parseFloat(localStorage.getItem(recordKey) || '999');
+                if (timeNum < oldRecord) {
+                    localStorage.setItem(recordKey, finalTime);
+                }
             }
 
             checkAchievements();
             showWinModal(rating === 'S');
         }
 
+        // 補齊: 顯示結算視窗並加入彩帶特效
+        function showWinModal(isS) {
+            const modal = document.getElementById('win-modal');
+            const content = document.getElementById('win-modal-content');
+            const crown = document.getElementById('modal-crown');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                content.classList.remove('scale-90');
+                content.classList.add('scale-100');
+                if (isS) {
+                    crown.classList.add('show');
+                    // 呼叫已經載入的 Confetti 套件
+                    if (typeof confetti === 'function') {
+                        confetti({
+                            particleCount: 150,
+                            spread: 70,
+                            origin: { y: 0.6 },
+                            zIndex: 100
+                        });
+                    }
+                } else {
+                    crown.classList.remove('show');
+                }
+            }, 10);
+        }
+
+        // 補齊: 返回主畫面邏輯
+        function backToMenu() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            
+            const winModal = document.getElementById('win-modal');
+            const winContent = document.getElementById('win-modal-content');
+            winModal.classList.add('opacity-0', 'pointer-events-none');
+            winContent.classList.remove('scale-100');
+            winContent.classList.add('scale-90');
+            
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('menu-screen').classList.remove('hidden');
+            
+            loadHighScores(); 
+        }
+
         function openShop() {
             document.getElementById('shop-coin-display').textContent = coins;
             
-            // 渲染遊戲模式商品
             const shopModes = document.getElementById('shop-modes');
             shopModes.innerHTML = '';
             SHOP_ITEMS.modes.forEach(mode => {
@@ -673,7 +754,7 @@
                 
                 let btnHtml = isUnlocked 
                     ? `<button disabled class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs border border-gray-200">已解鎖</button>`
-                    : `<button onclick="buyItem('${mode.id}', ${mode.cost})" class="px-3 py-1.5 rounded-lg ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_2px_0_#d9a076] cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-xs active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-1"><i class="coin-icon" style="font-size: 0.7rem; margin-top:1px;"></i> ${mode.cost}</button>`;
+                    : `<button onclick="buyItem('${mode.id}', ${mode.cost})" class="px-3 py-1.5 rounded-lg ${canAfford ? 'bg-[#FFD1A9] text-[#824E24] shadow-[0_2px_0_#d9a076] cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-xs active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-1"><i class="coin-icon" style="font-size: 0.7rem; margin-top:1px;"></i> ${mode.cost}</button>`;
                 
                 shopModes.innerHTML += `
                     <div class="bg-white p-3 rounded-2xl border-2 ${isUnlocked ? 'border-green-100' : 'border-gray-100'} flex items-center justify-between shadow-sm">
@@ -689,7 +770,6 @@
                 `;
             });
 
-            // 渲染外觀主題商品
             const shopThemes = document.getElementById('shop-themes');
             shopThemes.innerHTML = '';
             SHOP_ITEMS.themes.forEach(theme => {
@@ -701,9 +781,9 @@
                 if (isEquipped) {
                     btnHtml = `<button disabled class="w-full py-1.5 rounded-lg bg-gray-200 text-gray-500 font-bold text-xs">裝備中</button>`;
                 } else if (isUnlocked) {
-                    btnHtml = `<button onclick="equipTheme('${theme.id}')" class="w-full py-1.5 rounded-lg bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-bold text-xs shadow-[0_2px_0_#75BFA2] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer">裝備</button>`;
+                    btnHtml = `<button onclick="equipTheme('${theme.id}')" class="w-full py-1.5 rounded-lg bg-[#A7E8D0] text-[#215A43] font-bold text-xs shadow-[0_2px_0_#75BFA2] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer">裝備</button>`;
                 } else {
-                    btnHtml = `<button onclick="buyItem('${theme.id}', ${theme.cost})" class="w-full py-1.5 rounded-lg ${canAfford ? 'bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] shadow-[0_2px_0_#d9a076] cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-xs active:translate-y-[2px] active:shadow-none transition-all flex justify-center items-center gap-1"><i class="coin-icon" style="font-size: 0.7rem; margin-top:1px;"></i> ${theme.cost}</button>`;
+                    btnHtml = `<button onclick="buyItem('${theme.id}', ${theme.cost})" class="w-full py-1.5 rounded-lg ${canAfford ? 'bg-[#FFD1A9] text-[#824E24] shadow-[0_2px_0_#d9a076] cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} font-bold text-xs active:translate-y-[2px] active:shadow-none transition-all flex justify-center items-center gap-1"><i class="coin-icon" style="font-size: 0.7rem; margin-top:1px;"></i> ${theme.cost}</button>`;
                 }
 
                 shopThemes.innerHTML += `
@@ -748,7 +828,7 @@
 
         function equipTheme(themeId) {
             applyTheme(themeId);
-            openShop(); // 重新整理商店畫面以顯示「裝備中」狀態
+            openShop(); 
         }
 
         function openInfo() {
@@ -779,7 +859,7 @@
                     if (isEquipped) {
                         actionBtn = `<span class="px-3 py-1 bg-green-100 text-green-700 font-bold text-xs rounded-lg">使用中</span>`;
                     } else {
-                        actionBtn = `<button onclick="equipTitle('${ach.title}')" class="px-3 py-1 bg-[#FFD1A9] hover:bg-[#ffb97b] text-[#824E24] font-bold text-xs rounded-lg shadow-xs cursor-pointer active:translate-y-[1px]">裝備稱號</button>`;
+                        actionBtn = `<button onclick="equipTitle('${ach.title}')" class="px-3 py-1 bg-[#FFD1A9] text-[#824E24] font-bold text-xs rounded-lg shadow-xs cursor-pointer active:translate-y-[1px]">裝備稱號</button>`;
                     }
                 } else {
                     actionBtn = `<span class="px-3 py-1 bg-gray-100 text-gray-400 font-bold text-xs rounded-lg">未解鎖</span>`;
@@ -813,7 +893,7 @@
             currentTitle = title;
             localStorage.setItem('schulte_current_title', title);
             updateTitleDisplay();
-            openAchievements(); // 重新整理成就視窗
+            openAchievements(); 
         }
     </script>
 </body>
