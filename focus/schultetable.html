@@ -1186,82 +1186,83 @@
             document.getElementById('achievements-modal-content').classList.add('scale-90');
         }
 
-        // 成就視窗：5*4 質感圖卡渲染 logic (全無須滾動)
-        function renderAchievementsGrid() {
-            const gridContainer = document.getElementById('achievements-grid');
-            if (!gridContainer) return;
-            gridContainer.innerHTML = '';
+// 成就視窗：5*4 質感圖卡渲染 logic (優化高度與文字換行)
+function renderAchievementsGrid() {
+    const gridContainer = document.getElementById('achievements-grid');
+    if (!gridContainer) return;
+    gridContainer.innerHTML = '';
 
-            let unlockedCount = 0;
+    let unlockedCount = 0;
 
-            ACHIEVEMENTS.forEach(ach => {
-                const isUnlocked = unlockedAchievements.includes(ach.id);
-                if (isUnlocked) unlockedCount++;
-                const isEquipped = currentTitle === ach.title;
+    ACHIEVEMENTS.forEach(ach => {
+        const isUnlocked = unlockedAchievements.includes(ach.id);
+        if (isUnlocked) unlockedCount++;
+        const isEquipped = currentTitle === ach.title;
 
-                const parts = ach.title.split(' ');
-                const icon = parts[0];
-                const titleText = parts.slice(1).join(' ');
+        const parts = ach.title.split(' ');
+        const icon = parts[0];
+        const titleText = parts.slice(1).join(' ');
 
-                let displayTitle = titleText || ach.title;
-                let displayDesc = ach.desc;
-                let displayIcon = icon;
+        let displayTitle = titleText || ach.title;
+        let displayDesc = ach.desc;
+        let displayIcon = icon;
 
-                if (ach.secret && !isUnlocked) {
-                    displayTitle = "秘密成就";
-                    displayDesc = "達成隱藏條件後即可解鎖！";
-                    displayIcon = "❓";
-                }
-
-                let cardStyle = '';
-                let badgeHtml = '';
-
-                if (isUnlocked) {
-                    if (isEquipped) {
-                        cardStyle = 'bg-emerald-50 border-2 border-emerald-500 shadow-sm';
-                        badgeHtml = '<span class="text-[9px] font-black text-emerald-700 bg-emerald-200/80 px-1 rounded mt-0.5">已裝備</span>';
-                    } else {
-                        cardStyle = 'bg-[#FFFDF0] border-2 border-[#FFE082] hover:border-[#FFB300] hover:bg-[#FFF9C4] cursor-pointer shadow-xs active:scale-95';
-                        badgeHtml = '<span class="text-[9px] font-bold text-[#D2691E] bg-[#FFE082]/60 px-1 rounded mt-0.5">點擊裝備</span>';
-                    }
-                } else {
-                    if (ach.secret) {
-                        cardStyle = 'bg-purple-50/80 border border-purple-200 opacity-70 cursor-pointer hover:opacity-100';
-                        badgeHtml = '<span class="text-[9px] font-bold text-purple-600 bg-purple-100 px-1 rounded mt-0.5">隱藏</span>';
-                    } else {
-                        cardStyle = 'bg-gray-50 border border-gray-200 opacity-60 cursor-pointer hover:opacity-90';
-                        badgeHtml = '<span class="text-[9px] font-bold text-gray-400 bg-gray-200/70 px-1 rounded mt-0.5">未解鎖</span>';
-                    }
-                }
-
-                const card = document.createElement('div');
-                card.className = `flex flex-col items-center justify-between p-1.5 sm:p-2 rounded-2xl ${cardStyle} transition-all select-none h-20 sm:h-22`;
-                
-                card.innerHTML = `
-                    <div class="text-2xl sm:text-3xl drop-shadow-xs leading-none mt-0.5">${displayIcon}</div>
-                    <div class="text-[11px] sm:text-xs font-black text-[#5C4033] truncate max-w-full px-0.5 text-center leading-tight">
-                        ${displayTitle}
-                    </div>
-                    ${badgeHtml}
-                `;
-
-                card.onclick = () => {
-                    const tipEl = document.getElementById('ach-detail-tip');
-                    if (tipEl) {
-                        tipEl.innerHTML = `<span class="text-[#D2691E] font-black">${ach.title}</span>：${displayDesc}`;
-                    }
-
-                    if (isUnlocked && !isEquipped) {
-                        equipTitle(ach.title);
-                    }
-                };
-
-                gridContainer.appendChild(card);
-            });
-
-            document.getElementById('ach-current-title-modal').textContent = currentTitle;
-            document.getElementById('ach-progress-text').textContent = `解鎖進度: ${unlockedCount}/${ACHIEVEMENTS.length}`;
+        if (ach.secret && !isUnlocked) {
+            displayTitle = "秘密成就";
+            displayDesc = "達成隱藏條件後即可解鎖！";
+            displayIcon = "❓";
         }
+
+        let cardStyle = '';
+        let badgeHtml = '';
+
+        if (isUnlocked) {
+            if (isEquipped) {
+                cardStyle = 'bg-emerald-50 border-2 border-emerald-500 shadow-sm';
+                badgeHtml = '<span class="text-[10px] font-black text-emerald-700 bg-emerald-200/80 px-1.5 py-0.5 rounded">已裝備</span>';
+            } else {
+                cardStyle = 'bg-[#FFFDF0] border-2 border-[#FFE082] hover:border-[#FFB300] hover:bg-[#FFF9C4] cursor-pointer shadow-xs active:scale-95';
+                badgeHtml = '<span class="text-[10px] font-bold text-[#D2691E] bg-[#FFE082]/60 px-1.5 py-0.5 rounded">點擊裝備</span>';
+            }
+        } else {
+            if (ach.secret) {
+                cardStyle = 'bg-purple-50/80 border border-purple-200 opacity-70 cursor-pointer hover:opacity-100';
+                badgeHtml = '<span class="text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">隱藏</span>';
+            } else {
+                cardStyle = 'bg-gray-50 border border-gray-200 opacity-60 cursor-pointer hover:opacity-90';
+                badgeHtml = '<span class="text-[10px] font-bold text-gray-400 bg-gray-200/70 px-1.5 py-0.5 rounded">未解鎖</span>';
+            }
+        }
+
+        const card = document.createElement('div');
+        // 改用 min-h 與 h-auto 彈性高度，並移除 truncate 讓文字自然換行不擠壓
+        card.className = `flex flex-col items-center justify-between p-2 rounded-2xl ${cardStyle} transition-all select-none min-h-[96px] sm:min-h-[108px] h-auto`;
+        
+        card.innerHTML = `
+            <div class="text-2xl sm:text-3xl drop-shadow-xs leading-none mt-1">${displayIcon}</div>
+            <div class="text-xs sm:text-sm font-black text-[#5C4033] px-1 text-center leading-tight break-words w-full my-1">
+                ${displayTitle}
+            </div>
+            <div class="mb-0.5">${badgeHtml}</div>
+        `;
+
+        card.onclick = () => {
+            const tipEl = document.getElementById('ach-detail-tip');
+            if (tipEl) {
+                tipEl.innerHTML = `<span class="text-[#D2691E] font-black">${ach.title}</span>：${displayDesc}`;
+            }
+
+            if (isUnlocked && !isEquipped) {
+                equipTitle(ach.title);
+            }
+        };
+
+        gridContainer.appendChild(card);
+    });
+
+    document.getElementById('ach-current-title-modal').textContent = currentTitle;
+    document.getElementById('ach-progress-text').textContent = `解鎖進度: ${unlockedCount}/${ACHIEVEMENTS.length}`;
+}
 
         function equipTitle(title) {
             currentTitle = title;
