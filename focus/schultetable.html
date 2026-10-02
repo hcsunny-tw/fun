@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卡皮巴拉不規則舒爾特方格</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #FFFDF0; /* 淨春型：鵝黃底色 */
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #FFC4C4; border-radius: 10px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px) rotate(-3deg); }
+            40%, 80% { transform: translateX(5px) rotate(3deg); }
+        }
+        .shake-animation {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+            background-color: #FF8A8A !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .schulte-cell {
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+        }
+        .schulte-cell:active:not(.found) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+        }
+        .schulte-cell.found {
+            opacity: 0.4;
+            transform: scale(0.95);
+            box-shadow: none;
+            pointer-events: none;
+            filter: grayscale(50%);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .capybara-float {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+
+    <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-lg z-10 flex-1 transition-opacity duration-300">
+        <svg class="w-40 h-40 capybara-float mb-4 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect x="15" y="40" width="70" height="45" rx="22" fill="#9C6B30"/>
+            <circle cx="25" cy="40" r="8" fill="#754D20"/>
+            <circle cx="75" cy="40" r="8" fill="#754D20"/>
+            <line x1="30" y1="55" x2="45" y2="55" stroke="#3E2723" stroke-width="4" stroke-linecap="round"/>
+            <line x1="70" y1="55" x2="55" y2="55" stroke="#3E2723" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 45 68 Q 50 74 55 68" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <circle cx="50" cy="62" r="3.5" fill="#3E2723"/>
+            <circle cx="50" cy="25" r="12" fill="#FF9800"/>
+            <path d="M 50 13 Q 55 5 60 10" stroke="#4CAF50" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+
+        <h1 class="text-4xl md:text-5xl font-black text-[#5C4033] tracking-wider drop-shadow-sm mb-2 text-center">舒爾特方格</h1>
+        <p class="text-[#8B5A2B] font-bold mb-8 text-center text-lg">水豚的專注力考驗 🍊</p>
+
+        <div class="flex flex-col gap-4 w-full px-4">
+            <button onclick="startGame(16)" class="w-full bg-[#A7E8D0] hover:bg-[#85d8ba] text-[#215A43] font-black py-4 px-6 rounded-2xl shadow-[0_5px_0_#75BFA2] active:shadow-[0_0px_0_#75BFA2] active:translate-y-[5px] transition-all text-xl flex items-center justify-center gap-2">
+                <span class="text-2xl">🌱</span> 基礎模式 (1-16)
+            </button>
+            <button onclick="startGame(25)" class="w-full bg-[#FFC4C4] hover:bg-[#ffadad] text-[#7D3232] font-black py-4 px-6 rounded-2xl shadow-[0_5px_0_#D99696] active:shadow-[0_0px_0_#D99696] active:translate-y-[5px] transition-all text-xl flex items-center justify-center gap-2">
+                <span class="text-2xl">🔥</span> 挑戰模式 (1-25)
+            </button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden w-full flex-col items-center w-full relative">
+        <header class="w-full max-w-3xl flex flex-col items-center mb-6 relative z-10">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-8 h-8 capybara-float" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="15" y="40" width="70" height="45" rx="22" fill="#9C6B30"/>
+                    <circle cx="25" cy="40" r="8" fill="#754D20"/>
+                    <circle cx="75" cy="40" r="8" fill="#754D20"/>
+                    <circle cx="50" cy="25" r="12" fill="#FF9800"/>
+                </svg>
+                <h2 id="mode-title" class="text-2xl font-black text-[#5C4033]">模式</h2>
+            </div>
+            
+            <!-- 控制面板 -->
+            <div class="bg-white/70 backdrop-blur-md p-4 rounded-3xl shadow-lg flex flex-wrap justify-center items-center gap-4 md:gap-8 w-full max-w-lg border-2 border-white">
+                <div class="flex flex-col items-center min-w-[60px]">
+                    <span class="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest">找尋</span>
+                    <div id="next-target" class="text-3xl md:text-4xl font-black text-rose-500 w-12 text-center">1</div>
+                </div>
+                
+                <div class="w-px h-10 bg-gray-300"></div>
+
+                <div class="flex flex-col items-center min-w-[100px]">
+                    <span class="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest">時間</span>
+                    <div id="timer" class="text-2xl md:text-3xl font-black text-[#5C4033] tabular-nums">00:00.00</div>
+                </div>
+
+                <button onclick="backToMenu()" class="bg-[#FFF099] hover:bg-[#ffeb66] text-[#756819] font-black py-2 px-4 rounded-xl shadow-[0_4px_0_#D1C266] active:shadow-[0_0px_0_#D1C266] active:translate-y-[4px] transition-all text-sm md:text-base">
+                    返回選單
+                </button>
+            </div>
+        </header>
+
+        <main class="w-full relative">
+            <!-- 網格容器 (寬度與欄位會透過 JS 動態設定) -->
+            <div id="grid-container" class="grid auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 mx-auto transition-all duration-300">
+                <!-- 方塊動態生成 -->
+            </div>
+        </main>
+    </div>
+
+    <div id="win-modal" class="fixed inset-0 bg-[#5C4033]/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-[40px] p-8 max-w-sm w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 border-8 border-[#FFF099] relative" id="win-modal-content">
+            
+            <div class="absolute -top-16 left-1/2 transform -translate-x-1/2">
+                <svg class="w-32 h-32 capybara-float drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="15" y="30" width="70" height="60" rx="30" fill="#9C6B30"/>
+                    <circle cx="25" cy="25" r="10" fill="#754D20"/>
+                    <circle cx="75" cy="25" r="10" fill="#754D20"/>
+                    <path d="M 30 50 Q 40 45 45 50" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <path d="M 70 50 Q 60 45 55 50" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <path d="M 40 70 Q 50 80 60 70" stroke="#3E2723" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <circle cx="50" cy="60" r="5" fill="#3E2723"/>
+                    <circle cx="25" cy="65" r="8" fill="#FFB5A7" opacity="0.6"/>
+                    <circle cx="75" cy="65" r="8" fill="#FFB5A7" opacity="0.6"/>
+                </svg>
+            </div>
+
+            <h2 class="text-4xl font-black text-[#FF8A8A] mt-12 mb-2">太棒了！</h2>
+            <p class="text-[#8B5A2B] font-bold text-lg mb-4">你完成了水豚的考驗 🍊</p>
+            
+            <div class="bg-[#FFFDF0] rounded-2xl p-4 mb-6 border-2 border-dashed border-[#A7E8D0]">
+                <p class="text-gray-500 text-sm font-bold">你的成績</p>
+                <p id="final-time" class="text-4xl font-black text-[#2c5d4b] tabular-nums mt-1">00:00.00</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="backToMenu()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-black py-4 px-2 rounded-2xl shadow-[0_5px_0_#9ca3af] active:shadow-[0_0px_0_#9ca3af] active:translate-y-[5px] transition-all text-lg">
+                    回選單
+                </button>
+                <button onclick="restartCurrentMode()" class="flex-[2] bg-[#FFC4C4] hover:bg-[#ffadad] text-[#8c3a3a] font-black py-4 px-2 rounded-2xl shadow-[0_5px_0_#df8a8a] active:shadow-[0_0px_0_#df8a8a] active:translate-y-[5px] transition-all text-lg">
+                    再來一次！
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        let currentTotalNumbers = 25;
+        let currentTarget = 1;
+        let isPlaying = false;
+        let startTime = 0;
+        let timerInterval = null;
+
+        // DOM 元素
+        const menuScreen = document.getElementById('menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gridContainer = document.getElementById('grid-container');
+        const timerDisplay = document.getElementById('timer');
+        const nextTargetDisplay = document.getElementById('next-target');
+        const modeTitle = document.getElementById('mode-title');
+        const winModal = document.getElementById('win-modal');
+        const winModalContent = document.getElementById('win-modal-content');
+        const finalTimeDisplay = document.getElementById('final-time');
+
+        // 淨春型視覺設定池 (Clear Spring Palette)
+        const visualPool = {
+            colors: [
+                { bg: 'bg-[#A7E8D0]', text: 'text-[#215A43]' }, // 薄荷綠
+                { bg: 'bg-[#FFC4C4]', text: 'text-[#7D3232]' }, // 蜜桃粉
+                { bg: 'bg-[#AEE1FF]', text: 'text-[#2D5A7A]' }, // 天青藍
+                { bg: 'bg-[#FFF099]', text: 'text-[#756819]' }, // 鵝黃
+                { bg: 'bg-[#E2D4FF]', text: 'text-[#534080]' }, // 薰衣草
+                { bg: 'bg-[#FFD1A9]', text: 'text-[#824E24]' }  // 珊瑚橘
+            ],
+            spans: [
+                'col-span-1 row-span-1', 'col-span-1 row-span-1', 'col-span-1 row-span-1', 
+                'col-span-2 row-span-1', 'col-span-1 row-span-2', 'col-span-1 row-span-1'
+            ],
+            sizes: ['text-3xl', 'text-4xl', 'text-5xl', 'text-2xl'],
+            radius: ['rounded-2xl', 'rounded-3xl', 'rounded-[2rem]']
+        };
+
+        // 工具函式：洗牌
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // 工具函式：隨機取值
+        function getRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        // 時間格式化
+        function formatTime(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            const milliseconds = Math.floor((ms % 1000) / 10);
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateTimer() {
+            const elapsedTime = Date.now() - startTime;
+            timerDisplay.textContent = formatTime(elapsedTime);
+        }
+
+        function renderBoard() {
+            gridContainer.innerHTML = '';
+            
+            // 根據模式動態設定 CSS Grid 欄位與容器寬度
+            if (currentTotalNumbers === 16) {
+                gridContainer.className = 'grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-2xl mx-auto transition-all duration-300';
+            } else {
+                gridContainer.className = 'grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4 auto-rows-[80px] md:auto-rows-[100px] grid-flow-dense p-2 w-full max-w-4xl mx-auto transition-all duration-300';
+            }
+
+            let numbers = Array.from({ length: currentTotalNumbers }, (_, i) => i + 1);
+            numbers = shuffleArray(numbers);
+
+            let largeBlocksCount = 0;
+            // 基礎模式稍微減少大區塊數量避免版面破洞
+            const maxLargeBlocks = currentTotalNumbers === 16 ? 3 : (window.innerWidth < 768 ? 4 : 8);
+
+            numbers.forEach((num, index) => {
+                const btn = document.createElement('button');
+                btn.dataset.number = num;
+                btn.textContent = num;
+
+                const colorObj = getRandom(visualPool.colors);
+                let spanClass = getRandom(visualPool.spans);
+                const sizeClass = getRandom(visualPool.sizes);
+                const radiusClass = getRandom(visualPool.radius);
+
+                // 控制大區塊數量
+                if (spanClass !== 'col-span-1 row-span-1') {
+                    if (largeBlocksCount >= maxLargeBlocks || (window.innerWidth < 768 && spanClass.includes('col-span-2'))) {
+                        spanClass = 'col-span-1 row-span-1';
+                    } else {
+                        largeBlocksCount++;
+                    }
+                }
+
+                btn.className = `schulte-cell flex items-center justify-center font-black pop-in border-4 border-white/50
+                                ${colorObj.bg} ${colorObj.text} 
+                                ${spanClass} ${sizeClass} ${radiusClass}
+                                relative overflow-hidden select-none`;
+                
+                btn.style.animationDelay = `${index * 0.02}s`;
+                btn.innerHTML += `<div class="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none"></div>`;
+
+                btn.addEventListener('click', handleCellClick);
+                btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleCellClick.call(btn); }, {passive: false});
+
+                gridContainer.appendChild(btn);
+            });
+        }
+
+        function handleCellClick() {
+            if (!isPlaying) return;
+            
+            const clickedNumber = parseInt(this.dataset.number);
+
+            if (clickedNumber === currentTarget) {
+                this.classList.add('found');
+                
+                const checkMark = document.createElement('div');
+                checkMark.innerHTML = '✔';
+                checkMark.className = 'absolute text-4xl text-white drop-shadow-md';
+                this.appendChild(checkMark);
+
+                currentTarget++;
+                
+                if (currentTarget > currentTotalNumbers) {
+                    endGame();
+                } else {
+                    nextTargetDisplay.textContent = currentTarget;
+                    nextTargetDisplay.classList.remove('pop-in');
+                    void nextTargetDisplay.offsetWidth;
+                    nextTargetDisplay.classList.add('pop-in');
+                }
+            } else {
+                this.classList.remove('shake-animation');
+                void this.offsetWidth;
+                this.classList.add('shake-animation');
+                
+                setTimeout(() => {
+                    this.classList.remove('shake-animation');
+                }, 400);
+            }
+        }
+
+        function startGame(totalNumbers) {
+            currentTotalNumbers = totalNumbers;
+            modeTitle.textContent = totalNumbers === 16 ? '基礎模式' : '挑戰模式';
+            
+            // 切換畫面
+            menuScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('flex');
+            
+            // 重置狀態
+            isPlaying = true;
+            currentTarget = 1;
+            nextTargetDisplay.textContent = currentTarget;
+            timerDisplay.textContent = "00:00.00";
+            
+            closeModal();
+            renderBoard();
+
+            // 啟動計時器
+            clearInterval(timerInterval);
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 30);
+        }
+
+        function restartCurrentMode() {
+            startGame(currentTotalNumbers);
+        }
+
+        function backToMenu() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            closeModal();
+            
+            // 切換回主選單
+            gameScreen.classList.add('hidden');
+            gameScreen.classList.remove('flex');
+            menuScreen.classList.remove('hidden');
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            const totalTime = Date.now() - startTime;
+            finalTimeDisplay.textContent = formatTime(totalTime);
+            
+            // 顯示過關畫面
+            winModal.classList.remove('pointer-events-none', 'opacity-0');
+            setTimeout(() => {
+                winModalContent.classList.remove('scale-90');
+                winModalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            winModal.classList.add('opacity-0', 'pointer-events-none');
+            winModalContent.classList.remove('scale-100');
+            winModalContent.classList.add('scale-90');
+        }
+
+        // 視窗縮放處理
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            if(isPlaying) {
+                // 如果正在玩，視窗改變大小時稍微延遲重新渲染以適應新版面
+                resizeTimer = setTimeout(() => {
+                    // 為了不打斷遊戲體驗，這裡只重算大區塊配置，理想作法是保留狀態
+                    // 在此簡單處理：讓 CSS 自動處理，不主動重繪 (移除 renderBoard 呼叫)
+                }, 200);
+            }
+        });
+
+    </script>
+</body>
+</html>
