@@ -57,7 +57,6 @@
         .grid-piece {
             transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s ease, background-color 0.3s ease;
             user-select: none;
-            /* 避免 iOS 上長按選取文字 */
             -webkit-touch-callout: none; 
         }
 
@@ -98,7 +97,7 @@
 </head>
 <body class="min-h-screen flex flex-col overflow-x-hidden">
 
-    <!-- 頂部選單列：左上角放按鈕，右上角放金幣與稱號 -->
+    <!-- 頂部選單列 -->
     <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-start z-30 pointer-events-none">
         <div class="flex flex-col gap-2 pointer-events-auto">
             <button onclick="openShop()" class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center justify-center gap-2 border border-white cursor-pointer hover:scale-105 active:scale-95 transition-transform">
@@ -119,7 +118,6 @@
             <div class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm font-black text-[#5C4033] flex items-center gap-1 border border-white">
                 <i class="coin-icon"></i> <span id="coin-count">0</span>
             </div>
-            <!-- 稱號展示標籤 -->
             <div id="current-title-badge" onclick="openAchievements()" class="bg-[#FFFDF0] backdrop-blur-md px-3 py-1 rounded-full shadow-xs font-bold text-xs text-[#D2691E] border border-[#FFF099] cursor-pointer hover:scale-105 active:scale-95 transition-transform">
                 🌱 稱號: 初學乍練
             </div>
@@ -129,7 +127,6 @@
     <!-- 主選單畫面 -->
     <div id="menu-screen" class="flex flex-col items-center justify-center w-full max-w-xl mx-auto z-10 flex-1 transition-opacity duration-300 mt-20 sm:mt-12 pb-10">
         
-        <!-- 舒爾特方格意象 LOGO -->
         <svg class="w-28 h-28 md:w-36 md:h-36 logo-float mb-4 drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <rect x="10" y="10" width="80" height="80" rx="20" fill="#FFE4B5"/>
             <rect x="20" y="20" width="16" height="16" rx="6" fill="#FFB6C1"/>
@@ -147,17 +144,13 @@
             舒爾特方格
         </h1>
         
-        <!-- 新增：今日體力顯示 -->
         <div id="energy-display" class="mb-4 bg-white/80 backdrop-blur-md px-5 py-1.5 rounded-full shadow-sm border border-white/50 flex items-center justify-center gap-2 cursor-help transition-transform hover:scale-105" title="每日最多遊玩5場，保持大腦最佳吸收狀態！">
             <span class="text-lg">⚡</span>
             <span class="font-bold text-[#5C4033] text-sm">今日體力</span>
-            <div class="flex gap-1 ml-1" id="energy-bars">
-                <!-- 由 JS 動態生成體力條 -->
-            </div>
+            <div class="flex gap-1 ml-1" id="energy-bars"></div>
             <span id="energy-text" class="font-black text-[#D2691E] ml-1">5/5</span>
         </div>
         
-        <!-- 遊戲設定選單區塊 -->
         <div class="mb-6 bg-white/60 p-3 rounded-2xl backdrop-blur-sm border border-white/50 flex flex-col sm:flex-row gap-3 shadow-sm">
             <select id="char-type-select" class="bg-transparent font-bold text-[#5C4033] outline-none cursor-pointer px-2 text-center text-sm sm:text-base" onchange="loadHighScores()">
             </select>
@@ -172,7 +165,7 @@
         </div>
 
         <div class="w-full max-w-sm px-4 flex flex-col gap-4">
-            <!-- 基礎模式區域 -->
+            <!-- 基礎模式 -->
             <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🌱 基礎模式 (16格)</h2>
                 <div class="flex gap-3">
@@ -193,7 +186,7 @@
                 </div>
             </div>
 
-            <!-- 挑戰模式區域 -->
+            <!-- 挑戰模式 -->
             <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">🔥 挑戰模式 (25格)</h2>
                 <div class="flex gap-3">
@@ -214,7 +207,7 @@
                 </div>
             </div>
 
-            <!-- 限時挑戰區域 -->
+            <!-- 限時挑戰 -->
             <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-shadow">
                 <h2 class="text-[#8B5A2B] font-black text-center mb-3">⏳ 限時挑戰</h2>
                 <div class="flex gap-3">
@@ -254,7 +247,6 @@
         </header>
 
         <div id="grid-container" class="w-full max-w-[500px] aspect-square grid gap-2 md:gap-3 p-3 bg-white/40 backdrop-blur-sm rounded-[32px] shadow-lg border border-white dense-grid">
-            <!-- 遊戲方塊由 JS 產生 -->
         </div>
     </div>
 
@@ -294,7 +286,7 @@
         </div>
     </div>
 
-    <!-- 新增：體力耗盡視窗 -->
+    <!-- 體力耗盡視窗 -->
     <div id="energy-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[70] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-[40px] p-8 max-w-sm w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative" id="energy-modal-content">
             <div id="energy-modal-icon" class="text-6xl mb-4 logo-float">😴</div>
@@ -356,12 +348,21 @@
                 ❓ 遊戲說明
             </h2>
             
-            <div class="overflow-y-auto px-2 custom-scrollbar flex-1">
-                <div class="mb-4 bg-[#FFFDF0] p-4 rounded-2xl border border-[#FFF099]">
+            <div class="overflow-y-auto px-2 custom-scrollbar flex-1 space-y-4">
+                <div class="bg-[#FFFDF0] p-4 rounded-2xl border border-[#FFF099]">
                     <h3 class="font-bold text-[#754D20] text-base md:text-lg mb-2">💡 舒爾特方格是什麼？</h3>
                     <p class="text-gray-600 text-sm leading-relaxed font-bold">
                         這是全球公認最簡單有效的專注力訓練法。透過在打亂的網格中快速尋找目標，能有效擴大周邊視覺、提升閱讀速度與抗干擾能力。
                     </p>
+                </div>
+
+                <div class="bg-orange-50 p-4 rounded-2xl border border-orange-200">
+                    <h3 class="font-bold text-[#8B4500] text-base md:text-lg mb-2">🎯 國小學童評級標準 (25格)</h3>
+                    <ul class="text-gray-600 text-sm leading-relaxed font-bold space-y-1">
+                        <li>👑 <strong class="text-red-500">S 級 (優秀)</strong>：26.00 秒以內</li>
+                        <li>⭐ <strong class="text-amber-600">A 級 (合格)</strong>：35.00 秒以內</li>
+                        <li>👍 <strong class="text-blue-500">B 級 (良好)</strong>：48.00 秒以內</li>
+                    </ul>
                 </div>
 
                 <div class="bg-[#F3E8FF] p-4 rounded-2xl border border-[#E2D4FF]">
@@ -371,7 +372,6 @@
                         <li>眼睛盡量注視畫面<strong class="text-rose-500">中央</strong>，用「餘光」尋找。</li>
                         <li>依照順序，用最快速度點擊所有方塊。</li>
                         <li>過關速度越快，評級與金幣獎勵越高！</li>
-                        <li>收集金幣可以到商店解鎖新模式與新主題喔！</li>
                     </ul>
                 </div>
             </div>
@@ -397,32 +397,40 @@
             </div>
 
             <div id="report-list" class="overflow-y-auto px-1 flex-1 custom-scrollbar space-y-4 text-left">
-                <!-- 動態生成報表內容 -->
             </div>
         </div>
     </div>
 
-    <!-- 成就視窗 (更新為列表設計，移除點擊展開) -->
+    <!-- 成就視窗 (全新 5*4 響應式圖卡設計，無需滾動滑動) -->
     <div id="achievements-modal" class="fixed inset-0 bg-[#5C4033]/60 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white rounded-[32px] p-5 sm:p-6 max-w-[450px] w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col max-h-[85vh]" id="achievements-modal-content">
-            <button onclick="closeAchievements()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 text-gray-500 rounded-full font-black text-xl active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
+        <div class="bg-white rounded-[32px] p-4 sm:p-5 max-w-2xl w-11/12 text-center shadow-2xl transform scale-90 transition-transform duration-300 relative flex flex-col justify-between" id="achievements-modal-content">
+            <button onclick="closeAchievements()" class="absolute top-3 right-3 w-9 h-9 bg-gray-100 text-gray-500 rounded-full font-black text-lg active:bg-gray-200 transition-colors flex items-center justify-center cursor-pointer z-10">✕</button>
             
-            <div class="flex-shrink-0 mb-3">
-                <h2 class="text-2xl sm:text-3xl font-black text-[#5C4033] mt-1 flex justify-center items-center gap-2">
+            <div class="flex-shrink-0 mb-2">
+                <h2 class="text-xl sm:text-2xl font-black text-[#5C4033] flex justify-center items-center gap-2">
                     🏆 榮譽成就
                 </h2>
+                <!-- 動態提示欄：點擊圖卡時會更新說明 -->
+                <p id="ach-detail-tip" class="text-xs text-[#8B5A2B] font-bold mt-1 h-5 overflow-hidden transition-all text-center">
+                    💡 點擊圖卡可查看達成條件；點擊已解鎖圖卡可更換稱號！
+                </p>
             </div>
 
-            <!-- 成就列表 -->
-            <div id="achievements-list" class="overflow-y-auto px-1 flex-1 custom-scrollbar space-y-3 text-left">
-                <!-- 動態生成成就項目 -->
+            <!-- 5*4 圖卡網格（RWD 對應：手機 4x5，平板/電腦 5x4，無須滾動） -->
+            <div id="achievements-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-1.5 sm:gap-2.5 my-1">
+                <!-- 20 個圖卡由 JS 動態生成 -->
+            </div>
+
+            <!-- 稱號狀態與進度條 footer -->
+            <div class="mt-2 bg-[#FFFDF0] px-3 py-2 rounded-xl border border-[#FFF099] flex items-center justify-between text-xs font-bold text-[#754D20]">
+                <span>目前稱號：<strong id="ach-current-title-modal" class="text-[#D2691E]">🌱 初學乍練</strong></span>
+                <span id="ach-progress-text" class="text-gray-500 font-bold">解鎖進度: 0/20</span>
             </div>
         </div>
     </div>
 
-    <!-- 腳本區域 -->
     <script>
-        const MAX_DAILY_GAMES = 5; // 新增：每日最大遊玩次數
+        const MAX_DAILY_GAMES = 5;
 
         let timerInterval;
         let startTime;
@@ -468,11 +476,9 @@
         let failedGamesCount = parseInt(localStorage.getItem('schulte_failed_games') || '0');
         let wrongClicksInCurrentGame = 0;
         
-        // 時間限制與每日任務追蹤
         function getGameDay() {
             const now = new Date();
             const twTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Taipei"}));
-            // 每天早上 8:00 重置，若在 8:00 前，算作前一天的額度
             if (twTime.getHours() < 8) {
                 twTime.setDate(twTime.getDate() - 1);
             }
@@ -485,7 +491,6 @@
             localStorage.setItem('schulte_today_date', todayString);
             localStorage.setItem('schulte_daily_games', '0');
             
-            // 更新連續登入天數
             let streak = parseInt(localStorage.getItem('schulte_streak') || '0');
             let lastPlayDate = localStorage.getItem('schulte_last_play_date');
             if (lastPlayDate) {
@@ -506,33 +511,31 @@
         let dailyGamesPlayed = parseInt(localStorage.getItem('schulte_daily_games') || '0');
         let currentStreak = parseInt(localStorage.getItem('schulte_streak') || '1');
 
+        // 成就陣列（共 20 個項目，完美對應 5*4 圖卡，已移除夜貓子）
         const ACHIEVEMENTS = [
-            { id: 'ach_novice', title: '🌱 初學乍練', desc: '完成任意一場遊戲', condition: () => totalGamesPlayed >= 1, secret: false },
-            { id: 'ach_sharp', title: '⚡ 眼明手快', desc: '在任意模式獲得 S 級', condition: () => hasAchievedS, secret: false },
+            { id: 'ach_novice', title: '🌱 初學乍練', desc: '完成任意一場遊戲訓練', condition: () => totalGamesPlayed >= 1, secret: false },
+            { id: 'ach_sharp', title: '⚡ 眼明手快', desc: '在任意模式獲得 S 級優秀評價', condition: () => hasAchievedS, secret: false },
             { id: 'ach_rich', title: '💰 金幣富翁', desc: '累計獲得 100 枚金幣', condition: () => totalEarnedCoins >= 100, secret: false },
             { id: 'ach_fashion', title: '🎨 風格大師', desc: '解鎖 3 種外觀主題', condition: () => unlockedItems.filter(i => i.startsWith('theme_')).length >= 3, secret: false },
             { id: 'ach_master', title: '👑 舒爾特之神', desc: '解鎖所有遊戲模式與主題', condition: () => unlockedItems.length >= (SHOP_ITEMS.modes.length + 1 + SHOP_ITEMS.themes.length), secret: false },
             
-            // --- 進階成就 ---
-            { id: 'ach_games_10', title: '🎓 漸入佳境', desc: '累積遊玩 10 場', condition: () => totalGamesPlayed >= 10, secret: false },
-            { id: 'ach_games_50', title: '🧠 專注達人', desc: '累積遊玩 50 場', condition: () => totalGamesPlayed >= 50, secret: false },
+            { id: 'ach_games_10', title: '🎓 漸入佳境', desc: '累積遊玩達 10 場', condition: () => totalGamesPlayed >= 10, secret: false },
+            { id: 'ach_games_50', title: '🧠 專注達人', desc: '累積遊玩達 50 場', condition: () => totalGamesPlayed >= 50, secret: false },
             { id: 'ach_s_10', title: '🦅 鷹眼守護者', desc: '累積獲得 10 次 S 級評價', condition: () => totalSRanks >= 10, secret: false },
             { id: 'ach_rich_500', title: '💎 財富自由', desc: '累計獲得 500 枚金幣', condition: () => totalEarnedCoins >= 500, secret: false },
             { id: 'ach_modes_all', title: '🌈 探索者', desc: '解鎖商店所有遊戲模式', condition: () => unlockedItems.filter(i => i.startsWith('mode_')).length >= SHOP_ITEMS.modes.length, secret: false },
-            { id: 'ach_daily_10', title: '📅 每日特訓', desc: '單日遊玩達 10 場，保持好習慣！', condition: () => dailyGamesPlayed >= 10, secret: false },
-            { id: 'ach_speed_10s', title: '🚀 音速小子', desc: '在 10 秒內完成任意關卡', condition: () => false, secret: false }, // 透過 endGame 動態判斷解鎖
             
-            // --- 新增 5 個成就 ---
-            { id: 'ach_perfect', title: '🎯 完美主義', desc: '單場通關 0 次錯誤點擊', condition: () => false, secret: false }, // 透過 endGame 解鎖
-            { id: 'ach_streak_3', title: '🔥 持之以恆', desc: '連續 3 天進行遊戲', condition: () => currentStreak >= 3, secret: false },
+            { id: 'ach_daily_10', title: '📅 每日特訓', desc: '單日遊玩達 10 場，保持好習慣！', condition: () => dailyGamesPlayed >= 10, secret: false },
+            { id: 'ach_speed_10s', title: '🚀 音速小子', desc: '在 10 秒內完成任意關卡', condition: () => false, secret: false },
+            { id: 'ach_perfect', title: '🎯 完美主義', desc: '單場通關 0 次錯誤點擊', condition: () => false, secret: false },
+            { id: 'ach_streak_3', title: '🔥 持之以恆', desc: '連續 3 天登場進行遊戲', condition: () => currentStreak >= 3, secret: false },
+            { id: 'ach_streak_7', title: '🌟 七日恆心', desc: '連續 7 天登場進行遊戲', condition: () => currentStreak >= 7, secret: false },
+            
             { id: 'ach_invincible', title: '🏆 百戰百勝', desc: '累積遊玩達 100 場', condition: () => totalGamesPlayed >= 100, secret: false },
-            { id: 'ach_night_owl', title: '🦉 夜貓子', desc: '在晚上 21:00 至 22:30 間遊玩', condition: () => false, secret: false }, // 透過 startGame 解鎖
-            { id: 'ach_early_bird', title: '🐓 晨型人', desc: '在早上 08:00 至 10:00 間遊玩', condition: () => false, secret: false }, // 透過 startGame 解鎖
-
-            // --- 秘密成就 (未解鎖前隱藏說明) ---
-            { id: 'ach_secret_slow', title: '🦥 樹懶轉世', desc: '單場通關時間超過 60 秒', condition: () => false, secret: true }, // 透過 endGame 動態判斷解鎖
+            { id: 'ach_early_bird', title: '🐓 晨型人', desc: '在早上 08:00 至 10:00 間遊玩', condition: () => false, secret: false },
+            { id: 'ach_secret_slow', title: '🦥 樹懶轉世', desc: '單場通關時間超過 60 秒', condition: () => false, secret: true },
             { id: 'ach_secret_fail', title: '🛡️ 不屈不撓', desc: '限時挑戰失敗累計 3 次', condition: () => failedGamesCount >= 3, secret: true },
-            { id: 'ach_secret_wrong', title: '🌪️ 亂點一通', desc: '單場點錯 10 次以上並過關', condition: () => false, secret: true } // 透過 endGame 動態判斷解鎖
+            { id: 'ach_secret_wrong', title: '🌪️ 亂點一通', desc: '單場點錯 10 次以上並過關', condition: () => false, secret: true }
         ];
 
         let unlockedAchievements = JSON.parse(localStorage.getItem('schulte_achievements') || '["ach_novice"]');
@@ -549,10 +552,9 @@
             loadHighScores();
             checkAchievements();
             updateTitleDisplay();
-            updateEnergyDisplay(); // 新增：初始化體力顯示
+            updateEnergyDisplay();
         };
 
-        // 修復: 補充完整的 migrateStorage 函式
         function migrateStorage() {
             let loadedItems = JSON.parse(localStorage.getItem('schulte_unlocked') || 'null');
             if (!loadedItems) {
@@ -643,7 +645,6 @@
             modes.forEach(m => {
                 let score = localStorage.getItem(m.key);
                 
-                // 相容舊資料邏輯：如果是數字模式，且新 key 沒資料，嘗試讀舊 key (score_regular_16_disappear)
                 if (!score && currentCharType === '123') {
                     score = localStorage.getItem(`score_${m.key.split('_')[3]}_${m.size}_${currentClickMode}`);
                     if (score) localStorage.setItem(m.key, score);
@@ -666,22 +667,21 @@
             });
         }
 
+        /* 針對 7 ~ 11 歲國小學童調整評級標準：
+           25格模式：優秀(S級) <= 26秒；合格(A級) <= 35秒；良好(B級) <= 48秒
+           16格模式：優秀(S級) <= 16秒；合格(A級) <= 22秒；良好(B級) <= 30秒 */
         function getScoreRank(timeNum, size) {
-            const standard = size === 16 ? { s: 12, a: 18, b: 25 } : { s: 25, a: 35, b: 50 };
+            const standard = size === 16 ? { s: 16, a: 22, b: 30 } : { s: 26, a: 35, b: 48 };
             if (timeNum <= standard.s) return 'S';
             if (timeNum <= standard.a) return 'A';
             if (timeNum <= standard.b) return 'B';
             return 'C';
         }
 
-        // 新增：更新體力UI顯示
         function updateEnergyDisplay() {
             const energyRemaining = Math.max(0, MAX_DAILY_GAMES - dailyGamesPlayed);
-            
-            // 更新文字
             document.getElementById('energy-text').textContent = `${energyRemaining}/${MAX_DAILY_GAMES}`;
             
-            // 更新圖形體力條
             const barsContainer = document.getElementById('energy-bars');
             barsContainer.innerHTML = '';
             for(let i=0; i<MAX_DAILY_GAMES; i++) {
@@ -692,12 +692,10 @@
             
             const isPlayableTime = checkPlayableTime();
 
-            // 更新按鈕狀態 (UI 視覺弱化)
             const playButtons = document.querySelectorAll('button[onclick^="startGame"]');
             playButtons.forEach(btn => {
                 if (energyRemaining <= 0 || !isPlayableTime) {
                     btn.classList.add('opacity-60', 'saturate-50');
-                    // 移除 active 點擊下壓動畫，避免產生"還能按"的錯覺
                     btn.classList.remove('active:translate-y-[4px]');
                 } else {
                     btn.classList.remove('opacity-60', 'saturate-50');
@@ -720,30 +718,26 @@
         }
 
         function startGame(size, mode, timeLimit = 0) {
-            // 時間檢查
             if (!checkPlayableTime()) {
                 openEnergyModal(false); 
                 return;
             }
 
-            // 新增：體力檢查
             if (dailyGamesPlayed >= MAX_DAILY_GAMES) {
                 openEnergyModal(true);
-                return; // 阻止遊戲開始
+                return;
             }
 
-            // 判斷時段成就
             const now = new Date();
             const twTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Taipei"}));
             const hours = twTime.getHours();
-            if (hours >= 21 && hours < 23) unlockAchievement('ach_night_owl');
             if (hours >= 8 && hours < 10) unlockAchievement('ach_early_bird');
 
             gameSize = size;
             gameMode = mode;
             gameTimeLimit = timeLimit;
             currentTargetIndex = 0;
-            wrongClicksInCurrentGame = 0; // 重置當局錯誤點擊次數
+            wrongClicksInCurrentGame = 0;
             isPlaying = true;
 
             const type = document.getElementById('char-type-select').value;
@@ -809,7 +803,6 @@
             if (!isPlaying) return;
 
             if (value === currentSequence[currentTargetIndex]) {
-                // 優化: 加入短暫震動回饋 (若裝置支援)
                 if (navigator.vibrate) navigator.vibrate(20);
 
                 if (clickMode === 'disappear') {
@@ -826,10 +819,8 @@
                     updateNextTargetDisplay();
                 }
             } else {
-                // 優化: 錯誤時給予連續震動回饋
                 if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
-                
-                wrongClicksInCurrentGame++; // 記錄錯誤點擊次數
+                wrongClicksInCurrentGame++;
 
                 btn.classList.remove('shake');
                 void btn.offsetWidth; 
@@ -856,12 +847,12 @@
             isPlaying = false;
             clearInterval(timerInterval);
             
-            totalGamesPlayed++; // 補齊：總遊玩次數也要記得增加
+            totalGamesPlayed++;
             dailyGamesPlayed++; 
             localStorage.setItem('schulte_total_games', totalGamesPlayed);
             localStorage.setItem('schulte_daily_games', dailyGamesPlayed);
             
-            updateEnergyDisplay(); // 新增：遊玩後更新體力顯示
+            updateEnergyDisplay();
 
             const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
             
@@ -876,7 +867,7 @@
                 earnedCoins = 1;
                 msg = "差一點點！再試一次吧！";
                 
-                failedGamesCount++; // 記錄失敗次數供秘密成就使用
+                failedGamesCount++;
                 localStorage.setItem('schulte_failed_games', failedGamesCount);
             } else {
                 document.getElementById('final-time').innerHTML = `${finalTime}<span class="text-lg text-gray-400 ml-1">s</span>`;
@@ -886,16 +877,17 @@
                     hasAchievedS = true;
                     localStorage.setItem('schulte_has_s', 'true');
                 } else {
-                    const standard = gameSize === 16 ? { s: 12, a: 18, b: 25 } : { s: 25, a: 35, b: 50 };
+                    // 根據學童常模評級標準
+                    const standard = gameSize === 16 ? { s: 16, a: 22, b: 30 } : { s: 26, a: 35, b: 48 };
 
                     if (timeNum <= standard.s) {
-                        rating = 'S'; earnedCoins = 30; msg = "太神啦！專注力大師！";
+                        rating = 'S'; earnedCoins = 30; msg = "太厲害了！專注力達人！";
                         hasAchievedS = true;
                         localStorage.setItem('schulte_has_s', 'true');
                     } else if (timeNum <= standard.a) {
-                        rating = 'A'; earnedCoins = 15; msg = "表現非常棒！";
+                        rating = 'A'; earnedCoins = 15; msg = "表現優秀，繼續保持！";
                     } else if (timeNum <= standard.b) {
-                        rating = 'B'; earnedCoins = 10; msg = "漸入佳境，繼續保持！";
+                        rating = 'B'; earnedCoins = 10; msg = "順利完成，再接再勵！";
                     }
                 }
             }
@@ -924,7 +916,6 @@
                 localStorage.setItem('schulte_total_s_ranks', totalSRanks);
             }
 
-            // 判斷需要在結算時強制解鎖的成就
             if (isSuccess && timeNum <= 10) unlockAchievement('ach_speed_10s');
             if (isSuccess && timeNum > 60) unlockAchievement('ach_secret_slow');
             if (isSuccess && wrongClicksInCurrentGame >= 10) unlockAchievement('ach_secret_wrong');
@@ -941,7 +932,6 @@
             }
         }
 
-        // 補齊: 顯示結算視窗並加入彩帶特效
         function showWinModal(isS) {
             const modal = document.getElementById('win-modal');
             const content = document.getElementById('win-modal-content');
@@ -953,7 +943,6 @@
                 content.classList.add('scale-100');
                 if (isS) {
                     crown.classList.add('show');
-                    // 呼叫已經載入的 Confetti 套件
                     if (typeof confetti === 'function') {
                         confetti({
                             particleCount: 150,
@@ -968,7 +957,6 @@
             }, 10);
         }
 
-        // 補齊: 返回主畫面邏輯
         function backToMenu() {
             isPlaying = false;
             clearInterval(timerInterval);
@@ -984,10 +972,9 @@
             document.getElementById('menu-screen').classList.remove('hidden');
             
             loadHighScores(); 
-            updateEnergyDisplay(); // 確保回到主畫面時體力是最新的
+            updateEnergyDisplay();
         }
 
-        // 新增：開啟體力耗盡與時間限制視窗
         function openEnergyModal(isEnergyEmpty) {
             const title = document.getElementById('energy-modal-title');
             const desc = document.getElementById('energy-modal-desc');
@@ -1010,7 +997,6 @@
             }, 10);
         }
 
-        // 新增：關閉體力耗盡視窗
         function closeEnergyModal() {
             document.getElementById('energy-modal').classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('energy-modal-content').classList.remove('scale-100');
@@ -1119,7 +1105,6 @@
             document.getElementById('info-modal-content').classList.add('scale-90');
         }
 
-        // --- 報表視窗 ---
         function openReport() {
             const listContainer = document.getElementById('report-list');
             listContainer.innerHTML = '';
@@ -1129,7 +1114,6 @@
             
             listContainer.innerHTML += `<div class="text-center text-sm font-bold text-gray-500 mb-2">目前成績篩選: ${clickModeName}</div>`;
 
-            // 列出已解鎖的模式
             const availableModes = ['123', ...unlockedItems.filter(i => i.startsWith('mode_')).map(i => i.replace('mode_', ''))];
             
             availableModes.forEach(modeKey => {
@@ -1145,7 +1129,6 @@
 
                 let cardsHtml = sizes.map(s => {
                     let score = localStorage.getItem(s.key);
-                    // 相容舊資料讀取 (僅限數字模式)
                     if (!score && modeKey === '123') score = localStorage.getItem(`score_${s.key.split('_')[3]}_${s.s}_${clickMode}`);
                     
                     const rank = score ? getScoreRank(parseFloat(score), s.s) : '-';
@@ -1188,7 +1171,7 @@
 
         function openAchievements() {
             checkAchievements();
-            renderAchievementsList();
+            renderAchievementsGrid();
 
             document.getElementById('achievements-modal').classList.remove('pointer-events-none', 'opacity-0');
             setTimeout(() => {
@@ -1203,65 +1186,88 @@
             document.getElementById('achievements-modal-content').classList.add('scale-90');
         }
 
-        function renderAchievementsList() {
-            const listContainer = document.getElementById('achievements-list');
-            listContainer.innerHTML = '';
+        // 成就視窗：5*4 質感圖卡渲染 logic (全無須滾動)
+        function renderAchievementsGrid() {
+            const gridContainer = document.getElementById('achievements-grid');
+            if (!gridContainer) return;
+            gridContainer.innerHTML = '';
+
+            let unlockedCount = 0;
 
             ACHIEVEMENTS.forEach(ach => {
                 const isUnlocked = unlockedAchievements.includes(ach.id);
+                if (isUnlocked) unlockedCount++;
                 const isEquipped = currentTitle === ach.title;
 
                 const parts = ach.title.split(' ');
                 const icon = parts[0];
                 const titleText = parts.slice(1).join(' ');
 
-                let displayTitle = ach.title;
+                let displayTitle = titleText || ach.title;
                 let displayDesc = ach.desc;
                 let displayIcon = icon;
 
-                // 處理秘密成就未解鎖的顯示
                 if (ach.secret && !isUnlocked) {
-                    displayTitle = "🔒 秘密成就";
-                    displayDesc = "達成特定隱藏條件後解鎖，充滿驚喜！";
+                    displayTitle = "秘密成就";
+                    displayDesc = "達成隱藏條件後即可解鎖！";
                     displayIcon = "❓";
                 }
 
-                let bgClass = isUnlocked ? 'bg-[#FFFDF0] border-[#FFF099]' : 'bg-gray-50 border-gray-200 opacity-60';
-                if (ach.secret && !isUnlocked) bgClass = 'bg-purple-50 border-purple-100 opacity-60';
+                let cardStyle = '';
+                let badgeHtml = '';
 
-                let actionBtn = '';
                 if (isUnlocked) {
                     if (isEquipped) {
-                        actionBtn = `<button disabled class="px-3 py-1.5 bg-green-100 text-green-700 font-black text-xs rounded-lg border border-green-200 whitespace-nowrap">已裝備</button>`;
+                        cardStyle = 'bg-emerald-50 border-2 border-emerald-500 shadow-sm';
+                        badgeHtml = '<span class="text-[9px] font-black text-emerald-700 bg-emerald-200/80 px-1 rounded mt-0.5">已裝備</span>';
                     } else {
-                        actionBtn = `<button onclick="equipTitle('${ach.title}')" class="px-3 py-1.5 bg-[#FFD1A9] text-[#824E24] font-black text-xs rounded-lg shadow-[0_3px_0_#d9a076] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap">裝備</button>`;
+                        cardStyle = 'bg-[#FFFDF0] border-2 border-[#FFE082] hover:border-[#FFB300] hover:bg-[#FFF9C4] cursor-pointer shadow-xs active:scale-95';
+                        badgeHtml = '<span class="text-[9px] font-bold text-[#D2691E] bg-[#FFE082]/60 px-1 rounded mt-0.5">點擊裝備</span>';
                     }
                 } else {
-                    actionBtn = `<button disabled class="px-3 py-1.5 bg-gray-100 text-gray-400 font-black text-xs rounded-lg border border-gray-200 whitespace-nowrap">未解鎖</button>`;
+                    if (ach.secret) {
+                        cardStyle = 'bg-purple-50/80 border border-purple-200 opacity-70 cursor-pointer hover:opacity-100';
+                        badgeHtml = '<span class="text-[9px] font-bold text-purple-600 bg-purple-100 px-1 rounded mt-0.5">隱藏</span>';
+                    } else {
+                        cardStyle = 'bg-gray-50 border border-gray-200 opacity-60 cursor-pointer hover:opacity-90';
+                        badgeHtml = '<span class="text-[9px] font-bold text-gray-400 bg-gray-200/70 px-1 rounded mt-0.5">未解鎖</span>';
+                    }
                 }
 
-                listContainer.innerHTML += `
-                    <div class="flex items-center p-3 rounded-2xl border-2 ${bgClass} shadow-sm transition-all pointer-events-none">
-                        <div class="text-3xl sm:text-4xl drop-shadow-sm shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full shadow-inner border border-gray-100 mr-3">
-                            ${displayIcon}
-                        </div>
-                        <div class="flex flex-col justify-center flex-1 pr-2">
-                            <h3 class="font-black text-[#5C4033] text-sm sm:text-base leading-tight mb-0.5">${displayTitle}</h3>
-                            <p class="text-[11px] sm:text-xs text-gray-500 font-bold leading-snug">${displayDesc}</p>
-                        </div>
-                        <div class="flex flex-col justify-center items-end shrink-0 pointer-events-auto">
-                            ${actionBtn}
-                        </div>
+                const card = document.createElement('div');
+                card.className = `flex flex-col items-center justify-between p-1.5 sm:p-2 rounded-2xl ${cardStyle} transition-all select-none h-20 sm:h-22`;
+                
+                card.innerHTML = `
+                    <div class="text-2xl sm:text-3xl drop-shadow-xs leading-none mt-0.5">${displayIcon}</div>
+                    <div class="text-[11px] sm:text-xs font-black text-[#5C4033] truncate max-w-full px-0.5 text-center leading-tight">
+                        ${displayTitle}
                     </div>
+                    ${badgeHtml}
                 `;
+
+                card.onclick = () => {
+                    const tipEl = document.getElementById('ach-detail-tip');
+                    if (tipEl) {
+                        tipEl.innerHTML = `<span class="text-[#D2691E] font-black">${ach.title}</span>：${displayDesc}`;
+                    }
+
+                    if (isUnlocked && !isEquipped) {
+                        equipTitle(ach.title);
+                    }
+                };
+
+                gridContainer.appendChild(card);
             });
+
+            document.getElementById('ach-current-title-modal').textContent = currentTitle;
+            document.getElementById('ach-progress-text').textContent = `解鎖進度: ${unlockedCount}/${ACHIEVEMENTS.length}`;
         }
 
         function equipTitle(title) {
             currentTitle = title;
             localStorage.setItem('schulte_current_title', title);
             updateTitleDisplay();
-            renderAchievementsList();
+            renderAchievementsGrid();
         }
     </script>
 </body>
